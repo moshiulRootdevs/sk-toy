@@ -1,0 +1,585 @@
+'use client';
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
+import { useCartStore, useUIStore, useAuthStore } from '@/lib/store';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { NavigationItem, Category, Settings, Product } from '@/types';
+import { imgUrl, fmtTk } from '@/lib/utils';
+
+function catSlug(link: string): string | null {
+  const m = link.match(/^\/(?:categories|cat)\/([^?#/]+)/);
+  return m ? m[1] : null;
+}
+
+function buildCatMap(cats: Category[], map: Map<string, Category> = new Map()): Map<string, Category> {
+  for (const c of cats) {
+    map.set(c.slug, c);
+    if (c.children?.length) buildCatMap(c.children, map);
+  }
+  return map;
+}
+
+function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="relative group/tip">
+      {children}
+      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50 whitespace-nowrap">
+        <div className="bg-[#1F2F4A] text-[#FFFBF2] px-2.5 py-1 rounded-lg text-[11px] font-medium leading-none"
+             style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+          {label}
+        </div>
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-[5px] w-2.5 h-2.5 bg-[#1F2F4A] rotate-45 rounded-[2px]" />
+      </div>
+    </div>
+  );
+}
+
+function MegaLink({ href, onClose, children, muted }: { href: string; onClose: () => void; children: React.ReactNode; muted?: boolean }) {
+  return (
+    <li style={{ marginBottom: '6px' }}>
+      <Link href={href} onClick={onClose} className="mega-link" style={{ fontSize: muted ? '13px' : '14px', color: muted ? '#7A8299' : '#1F2F4A' }}>
+        <span>{children}</span>
+        <span className="arrow">→</span>
+      </Link>
+    </li>
+  );
+}
+
+function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
+  const cols = (cat.children || []).slice(0, 4);
+  if (!cols.length) return null;
+
+  // Top-level category link — single-segment slug always works for top-level
+  const catPageHref = `/categories/${cat.slug}`;
+
+  // For sub/leaf categories, use products page with category filter
+  // (avoids multi-segment slug routing issues; backend already resolves descendants)
+  function subHref(sub: Category) {
+    return `/products?category=${sub._id}`;
+  }
+
+  return (
+    <div style={{
+      position: 'absolute', top: '100%', left: 0, right: 0,
+      background: '#FFFBF2',
+      borderTop: '2px solid #E6D9BD',
+      boxShadow: '0 12px 40px -8px rgba(31,47,74,0.18)',
+      padding: '28px 0 32px',
+      zIndex: 50,
+    }}>
+      <div className="max-w-[1360px] mx-auto px-8">
+        <div style={{ display: 'grid', gridTemplateColumns: `1.2fr ${cols.map(() => '1fr').join(' ')}`, gap: '36px', alignItems: 'start' }}>
+
+          {/* Feature card */}
+          <div style={{
+            background: 'linear-gradient(140deg, #F5E9D2 0%, #D8EDD6 100%)',
+            borderRadius: '16px', padding: '22px 20px',
+            minHeight: '240px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          }}>
+            <div>
+              <span style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#7A8299' }}>
+                Shop the collection
+              </span>
+              <h3 style={{ fontFamily: 'var(--font-fredoka, system-ui)', fontSize: '24px', fontWeight: 600, margin: '8px 0 6px', lineHeight: 1.15, color: '#1F2F4A' }}>
+                {cat.name}
+              </h3>
+              <p style={{ color: '#5A5048', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
+                {(cat as any).tag || 'Browse the full range — filtered, sorted, ready to shop.'}
+              </p>
+            </div>
+            <Link
+              href={catPageHref}
+              onClick={onClose}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#1F2F4A', color: '#FFFBF2', padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 500, textDecoration: 'none', alignSelf: 'flex-start', marginTop: '16px' }}
+            >
+              See all <span style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>→</span>
+            </Link>
+          </div>
+
+          {/* Subcategory columns */}
+          {cols.map((sub) => (
+            <div key={sub._id}>
+              <Link
+                href={subHref(sub)}
+                onClick={onClose}
+                style={{ display: 'block', fontFamily: 'var(--font-mono-var, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#1F2F4A', fontWeight: 700, marginBottom: '12px', textDecoration: 'none' }}
+              >
+                {sub.name}
+              </Link>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {(sub.children || []).map((s3) => (
+                  <MegaLink key={s3._id} href={subHref(s3)} onClose={onClose}>
+                    {s3.name}
+                  </MegaLink>
+                ))}
+                {(sub.children || []).length > 0 && (
+                  <MegaLink href={subHref(sub)} onClose={onClose} muted>
+                    Shop all {sub.name.toLowerCase()}
+                  </MegaLink>
+                )}
+              </ul>
+            </div>
+          ))}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Header({ initialSettings, initialCategories }: { initialSettings?: Settings | null; initialCategories?: Category[] | null }) {
+  const router = useRouter();
+  const [searchQ, setSearchQ] = useState('');
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [dropPos, setDropPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [megaOpen, setMegaOpen] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function openMega(id: string) {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setMegaOpen(id);
+  }
+  function closeMega() {
+    closeTimer.current = setTimeout(() => setMegaOpen(null), 120);
+  }
+
+  const count = useCartStore((s) => s.items.reduce((a, i) => a + i.qty, 0));
+  const { setCartOpen, setMobileMenuOpen } = useUIStore();
+  const { customer } = useAuthStore();
+
+  const [cartShaking, setCartShaking] = useState(false);
+  const prevCount = useRef(count);
+  useEffect(() => {
+    if (count > prevCount.current) {
+      setCartShaking(true);
+      const t = setTimeout(() => setCartShaking(false), 600);
+      prevCount.current = count;
+      return () => clearTimeout(t);
+    }
+    prevCount.current = count;
+  }, [count]);
+
+  const { data: nav } = useQuery<NavigationItem[]>({
+    queryKey: ['navigation'],
+    queryFn: () => api.get('/navigation').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: settings } = useQuery<Settings>({
+    queryKey: ['settings'],
+    queryFn: () => api.get('/settings').then((r) => r.data),
+    initialData: initialSettings ?? undefined,
+    staleTime: 60_000,
+  });
+
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/categories').then((r) => r.data),
+    initialData: initialCategories ?? undefined,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const catMap = categories ? buildCatMap(categories) : null;
+
+  useEffect(() => {
+    return () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
+  }, []);
+
+  // Debounced product suggestions
+  useEffect(() => {
+    if (searchQ.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    setSuggestLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await api.get(`/products?search=${encodeURIComponent(searchQ.trim())}&limit=6`);
+        setSuggestions(r.data.products || []);
+        setShowSuggestions(true);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQ]);
+
+  // Compute portal position whenever suggestions open
+  useEffect(() => {
+    if (!showSuggestions || !formRef.current) return;
+    function update() {
+      if (!formRef.current) return;
+      const r = formRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
+    }
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [showSuggestions, suggestions.length]);
+
+  // Close on click-outside
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      const inForm = formRef.current?.contains(e.target as Node);
+      const inPanel = (e.target as Element)?.closest('[data-search-panel]');
+      if (!inForm && !inPanel) setShowSuggestions(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // "/" shortcut to focus search
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+      if (e.key === 'Escape') setShowSuggestions(false);
+    }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  const stripMessages: string[] =
+    settings?.topStrip?.enabled && settings.topStrip.messages?.filter(Boolean).length
+      ? settings.topStrip.messages.filter(Boolean)
+      : ['Free shipping over ৳2,500 · COD available across Bangladesh · 7-day easy returns'];
+
+  const [stripIdx, setStripIdx] = useState(0);
+  const [stripVisible, setStripVisible] = useState(true);
+  const [stripShowAll, setStripShowAll] = useState(false);
+
+  useEffect(() => {
+    if (stripMessages.length <= 1) return;
+
+    let idx = 0;
+    let running = true;
+
+    function next() {
+      if (!running) return;
+      setStripVisible(false);
+      setTimeout(() => {
+        if (!running) return;
+        idx++;
+        if (idx < stripMessages.length) {
+          // Still cycling — show next message
+          setStripIdx(idx);
+          setStripVisible(true);
+          setTimeout(next, 3500);
+        } else {
+          // Full cycle done — show all messages together
+          setStripShowAll(true);
+          setStripVisible(true);
+          // After 3s showing all, collapse back and restart
+          setTimeout(() => {
+            if (!running) return;
+            setStripVisible(false);
+            setTimeout(() => {
+              if (!running) return;
+              idx = 0;
+              setStripIdx(0);
+              setStripShowAll(false);
+              setStripVisible(true);
+              setTimeout(next, 3500);
+            }, 300);
+          }, 3000);
+        }
+      }, 300);
+    }
+
+    const firstTimer = setTimeout(next, 3500);
+    return () => {
+      running = false;
+      clearTimeout(firstTimer);
+    };
+  }, [stripMessages.length]);
+
+  const megaCat: Category | null = (() => {
+    if (!megaOpen || !nav || !catMap) return null;
+    const navItem = nav.find((n) => n._id === megaOpen);
+    if (!navItem) return null;
+    const slug = catSlug(navItem.link);
+    return slug ? (catMap.get(slug) ?? null) : null;
+  })();
+
+  return (
+    <>
+      {/* Top strip */}
+      <div className="bg-[#1F2F4A] text-[#FFFBF2] py-2 px-4 text-center hidden sm:block"
+           style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: '12px', letterSpacing: '0.04em', overflow: 'hidden' }}>
+        <div className="max-w-[1360px] mx-auto" style={{ overflow: 'hidden' }}>
+          <span
+            className="block text-center w-full"
+            style={{ transition: 'opacity 0.3s ease', opacity: stripVisible ? 1 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            {stripShowAll ? (
+              <span style={{ display: 'inline-flex', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
+                {stripMessages.map((msg, i) => (
+                  <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {i > 0 && <span style={{ margin: '0 14px', opacity: 0.3 }}>·</span>}
+                    {msg}
+                  </span>
+                ))}
+              </span>
+            ) : (
+              stripMessages[stripIdx]
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* Main header */}
+      <header className="bg-[#FFFBF2] border-b border-[#E6D9BD] sticky top-0 z-40">
+        <div className="max-w-[1360px] mx-auto px-8">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 py-5">
+
+            {/* Search */}
+            <div ref={searchRef} className="relative max-w-[380px] w-full">
+              <form
+                ref={formRef}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchQ.trim()) {
+                    setShowSuggestions(false);
+                    router.push(`/products?search=${encodeURIComponent(searchQ.trim())}`);
+                  }
+                }}
+                className="flex items-center bg-[#FBF4E8] border border-[#E6D9BD] px-4 py-2 gap-3 rounded-full focus-within:border-[#1F2F4A] focus-within:bg-[#FFFBF2] transition-colors"
+              >
+                <svg className="w-4 h-4 text-[#7A8299] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={inputRef}
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                  placeholder="Search dinosaurs, diecast, drones…"
+                  className="flex-1 bg-transparent text-sm text-[#1F2F4A] placeholder-[#7A8299] outline-none min-w-0"
+                />
+                {suggestLoading
+                  ? <svg className="w-3.5 h-3.5 text-[#7A8299] animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                  : <kbd className="hidden sm:inline-block text-[10px] text-[#7A8299] border border-[#E6D9BD] px-1.5 py-0.5 rounded shrink-0"
+                         style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>/</kbd>
+                }
+              </form>
+
+              {/* Suggestions — rendered in a portal to escape header stacking context */}
+              {showSuggestions && suggestions.length > 0 && dropPos && typeof window !== 'undefined' && createPortal(
+                <div
+                  data-search-panel=""
+                  style={{
+                    position: 'absolute',
+                    top: dropPos.top,
+                    left: dropPos.left,
+                    width: dropPos.width,
+                    zIndex: 99999,
+                    background: '#FFFBF2',
+                    border: '1px solid #1F2F4A',
+                    borderTop: '1px solid #E6D9BD',
+                    borderRadius: '0 0 16px 16px',
+                    boxShadow: '0 12px 32px -8px rgba(31,47,74,0.18)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <ul>
+                    {suggestions.map((product) => (
+                      <li key={product._id}>
+                        <Link
+                          href={`/products/${product.slug}`}
+                          onClick={() => { setShowSuggestions(false); setSearchQ(''); }}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#FBF4E8] transition-colors group"
+                        >
+                          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 relative bg-[#F5E9D2]">
+                            {product.images?.[0] && (
+                              <Image src={imgUrl(product.images[0])} alt={product.name} fill className="object-cover" sizes="40px" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#1F2F4A] truncate group-hover:text-[#EC5D4A] transition-colors">
+                              {product.name}
+                            </p>
+                            {product.category && typeof product.category === 'object' && (
+                              <p className="text-[11px] text-[#A89E92]" style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+                                {(product.category as any).name}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-sm font-semibold text-[#EC5D4A] shrink-0">{fmtTk(product.price)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="border-t border-[#E6D9BD] px-4 py-2.5">
+                    <Link
+                      href={`/products?search=${encodeURIComponent(searchQ.trim())}`}
+                      onClick={() => { setShowSuggestions(false); setSearchQ(''); }}
+                      className="flex items-center justify-between text-sm text-[#5A5048] hover:text-[#EC5D4A] transition-colors"
+                    >
+                      <span>See all results for <strong className="text-[#1F2F4A]">"{searchQ}"</strong></span>
+                      <span style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>→</span>
+                    </Link>
+                  </div>
+                </div>,
+                document.body,
+              )}
+            </div>
+
+            {/* Logo */}
+            <Link href="/" className="flex items-center">
+              {settings?.store?.logo ? (
+                <Image
+                  src={imgUrl(settings.store.logo)}
+                  alt={settings.store.name || 'SK Toy'}
+                  width={200} height={64}
+                  style={{ objectFit: 'contain', maxHeight: 56, width: 'auto' }}
+                  priority
+                />
+              ) : (
+                <span className="flex items-end leading-none select-none" style={{ fontSize: '30px', fontFamily: 'var(--font-fredoka, system-ui)', fontWeight: 600 }}>
+                  <span className="logo-letter" style={{ color: '#EC5D4A', animationDelay: '0s' }}>S</span>
+                  <span className="logo-letter" style={{ color: '#F5C443', animationDelay: '.08s' }}>K</span>
+                  <span className="logo-dot" />
+                  <span className="logo-letter" style={{ color: '#F39436', animationDelay: '.24s' }}>T</span>
+                  <span className="logo-letter" style={{ color: '#4FA36A', animationDelay: '.32s' }}>O</span>
+                  <span className="logo-letter" style={{ color: '#6FB8D9', animationDelay: '.40s' }}>Y</span>
+                </span>
+              )}
+            </Link>
+
+            {/* Icons */}
+            <div className="flex items-center gap-1 justify-end">
+              <button
+                className="lg:hidden p-2 rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Menu"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="4" y1="6" x2="20" y2="6" />
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+              </button>
+
+              <Tooltip label="Track Order">
+                <Link href="/track" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors" aria-label="Track order">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="1" y="3" width="15" height="13" rx="2" />
+                    <path d="M16 8h4l3 5v3h-7V8z" />
+                    <circle cx="5.5" cy="18.5" r="2.5" />
+                    <circle cx="18.5" cy="18.5" r="2.5" />
+                  </svg>
+                </Link>
+              </Tooltip>
+
+              <Tooltip label={customer ? 'My Account' : 'Sign In'}>
+                <Link href={customer ? '/account' : '/login'} className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors" aria-label="Account">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </Link>
+              </Tooltip>
+
+              <Tooltip label="Wishlist">
+                <Link href="/wishlist" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors" aria-label="Wishlist">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </Link>
+              </Tooltip>
+
+              <Tooltip label={count > 0 ? `Cart (${count})` : 'Cart'}>
+                <button
+                  onClick={() => setCartOpen(true)}
+                  className={`relative inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors${cartShaking ? ' cart-shake' : ''}`}
+                  aria-label="Cart"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                  {count > 0 && (
+                    <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] bg-[#EC5D4A] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-[#FFFBF2]"
+                          style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+                      {count > 9 ? '9+' : count}
+                    </span>
+                  )}
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+
+        {/* Nav bar */}
+        <nav
+          ref={navRef}
+          className="hidden lg:block border-t border-[#E6D9BD] bg-[#FFFBF2] relative"
+          onMouseLeave={closeMega}
+        >
+          <div className="max-w-[1360px] mx-auto px-8">
+            <ul className="flex items-center justify-center gap-0.5">
+              {(nav || []).map((item) => {
+                const slug = catSlug(item.link);
+                const cat = slug && catMap ? catMap.get(slug) : null;
+                const hasMega = (cat?.children?.length ?? 0) > 0;
+
+                return (
+                  <li key={item._id}
+                      onMouseEnter={() => hasMega ? openMega(item._id) : closeMega()}>
+                    <Link
+                      href={item.link}
+                      onClick={() => setMegaOpen(null)}
+                      className="flex items-center gap-1.5 px-[18px] py-3.5 text-sm font-medium text-[#1F2F4A] hover:text-[#EC5D4A] border-b-2 border-transparent hover:border-[#EC5D4A] transition-colors whitespace-nowrap"
+                      style={{ borderBottomColor: megaOpen === item._id ? '#EC5D4A' : undefined, color: megaOpen === item._id ? '#1F2F4A' : undefined }}
+                    >
+                      {item.label}
+                      {item.badge && (
+                        <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-sm font-bold tracking-wider uppercase ${item.badge === 'SALE' ? 'bg-[#4FA36A]' : 'bg-[#EC5D4A]'}`}
+                              style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+                          {item.badge}
+                        </span>
+                      )}
+                      {hasMega && (
+                        <svg className="w-2 h-2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* Mega panel — full-width, positioned at bottom of nav */}
+          {megaOpen && megaCat && megaCat.children?.length ? (
+            <div onMouseEnter={() => closeTimer.current && clearTimeout(closeTimer.current)} onMouseLeave={closeMega}>
+              <MegaMenu cat={megaCat} onClose={() => setMegaOpen(null)} />
+            </div>
+          ) : null}
+        </nav>
+      </header>
+    </>
+  );
+}
