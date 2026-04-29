@@ -11,7 +11,7 @@ interface TooltipProps {
 export default function Tooltip({ label, children, position = 'top' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const timeout = useRef<ReturnType<typeof setTimeout>>();
+  const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const calcPosition = useCallback(() => {
