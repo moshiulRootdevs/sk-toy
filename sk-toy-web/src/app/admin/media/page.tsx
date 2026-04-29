@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { imgUrl } from '@/lib/utils';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function MediaPage() {
   const qc = useQueryClient();
@@ -85,24 +86,26 @@ export default function MediaPage() {
             <div key={m._id} className="group relative aspect-square rounded-lg overflow-hidden bg-[#F4EEE3]">
               <Image src={imgUrl(m.url)} alt={m.name} fill className="object-cover" />
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <Tooltip label="Copy URL" position="bottom">
                 <button
                   onClick={() => { navigator.clipboard.writeText(m.url); toast.success('URL copied!'); }}
                   className="p-1.5 bg-white/90 rounded text-[#5A5048] hover:bg-white"
-                  title="Copy URL"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                   </svg>
                 </button>
+                </Tooltip>
+                <Tooltip label="Delete" position="bottom">
                 <button
                   onClick={() => deleteMutation.mutate(m._id)}
                   className="p-1.5 bg-red-500 rounded text-white hover:bg-red-600"
-                  title="Delete"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                   </svg>
                 </button>
+                </Tooltip>
               </div>
             </div>
           ))}

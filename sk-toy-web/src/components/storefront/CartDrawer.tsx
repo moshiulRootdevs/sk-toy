@@ -7,6 +7,7 @@ import { useCartStore, useUIStore } from '@/lib/store';
 import { fmtTk, imgUrl } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import api from '@/lib/api';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function CartDrawer() {
   const { cartOpen, setCartOpen } = useUIStore();
@@ -85,26 +86,28 @@ export default function CartDrawer() {
                   <div className="mt-1 flex items-center justify-between">
                     <span className="text-sm font-bold">{fmtTk(item.price * item.qty)}</span>
                     <div className="flex items-center gap-1.5">
+                      <Tooltip label="Decrease quantity">
                       <button
-                        title="Decrease quantity"
                         onClick={() => updateQty(item.productId, item.qty - 1, item.variant)}
                         className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
                       >
                         −
                       </button>
+                      </Tooltip>
                       <span className="w-6 text-center text-sm">{item.qty}</span>
+                      <Tooltip label="Increase quantity">
                       <button
-                        title="Increase quantity"
                         onClick={() => updateQty(item.productId, item.qty + 1, item.variant)}
                         className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50"
                       >
                         +
                       </button>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>
+                <Tooltip label="Remove item">
                 <button
-                  title="Remove item"
                   onClick={() => removeItem(item.productId, item.variant)}
                   className="shrink-0 p-1 text-gray-300 hover:text-red-400"
                 >
@@ -112,6 +115,7 @@ export default function CartDrawer() {
                     <path d="M18 6 6 18M6 6l12 12" />
                   </svg>
                 </button>
+                </Tooltip>
               </div>
               );
             })

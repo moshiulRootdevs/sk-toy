@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import AdminIcon from './AdminIcon';
 import toast from 'react-hot-toast';
+import Tooltip from '@/components/ui/Tooltip';
 
 const NAV_GROUPS = [
   {
@@ -200,10 +201,17 @@ export default function AdminSidebar({ open, collapsed, onClose, onToggleCollaps
               color: 'rgba(245,241,234,.55)', fontSize: 12, textDecoration: 'none',
               padding: '6px 0', justifyContent: collapsed ? 'center' : 'flex-start',
             }}
-            title="View storefront"
           >
-            <AdminIcon name="external" size={14} />
-            {!collapsed && <span>View storefront</span>}
+            {collapsed ? (
+              <Tooltip label="View storefront" position="bottom">
+                <span style={{ display: 'inline-flex' }}><AdminIcon name="external" size={14} /></span>
+              </Tooltip>
+            ) : (
+              <>
+                <AdminIcon name="external" size={14} />
+                <span>View storefront</span>
+              </>
+            )}
           </a>
 
           <button

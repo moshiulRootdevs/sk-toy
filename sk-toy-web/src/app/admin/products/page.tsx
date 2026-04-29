@@ -15,6 +15,7 @@ import Pill from '@/components/ui/Pill';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AdminIcon from '@/components/admin/AdminIcon';
 import SelectUI from '@/components/ui/Select';
+import Tooltip from '@/components/ui/Tooltip';
 
 const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235A5048' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
 
@@ -203,24 +204,26 @@ export default function AdminProductsPage() {
             key: 'actions', header: '',
             render: (p: any) => (
               <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                <Tooltip label="Edit">
                 <button
                   onClick={() => router.push(`/admin/products/${p._id}`)}
-                  title="Edit"
                   style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#8B8176' }}
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = '#F4EEE3'; el.style.color = '#2A2420'; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'none'; el.style.color = '#8B8176'; }}
                 >
                   <AdminIcon name="edit" size={14} />
                 </button>
+                </Tooltip>
+                <Tooltip label="Delete">
                 <button
                   onClick={() => setDeleteId(p._id)}
-                  title="Delete"
                   style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#A89E92' }}
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = '#FBDED8'; el.style.color = '#9B2914'; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'none'; el.style.color = '#A89E92'; }}
                 >
                   <AdminIcon name="trash" size={14} />
                 </button>
+                </Tooltip>
               </div>
             ),
           },

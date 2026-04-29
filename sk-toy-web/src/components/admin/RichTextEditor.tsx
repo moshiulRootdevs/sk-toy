@@ -6,6 +6,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import { useEffect } from 'react';
+import Tooltip from '@/components/ui/Tooltip';
 
 interface Props {
   value: string;
@@ -35,10 +36,10 @@ function ToolBtn({
   children: React.ReactNode;
 }) {
   return (
+    <Tooltip label={title}>
     <button
       type="button"
       onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-      title={title}
       style={{
         ...BTN,
         background: active ? '#FEF3F1' : 'transparent',
@@ -49,6 +50,7 @@ function ToolBtn({
     >
       {children}
     </button>
+    </Tooltip>
   );
 }
 
