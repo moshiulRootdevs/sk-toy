@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -35,116 +35,148 @@ const BLOCK_TYPES = [
   { type: 'divider',   label: 'Divider',   color: '#D8CFBF' },
 ];
 
+/* ── Sortable block wrapper ───────────────────────────────────────────────── */
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+function SortableBlock({ id, block, index, onUpdate, onRemove }: {
+  id: string; block: any; index: number;
+  onUpdate: (i: number, k: string, v: any) => void;
+  onRemove: (i: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const meta = BLOCK_TYPES.find(b => b.type === block.type) || BLOCK_TYPES[0];
+
+  return (
+    <div ref={setNodeRef} style={{ ...style, background: '#FFF', border: '1px solid #E8DFD2', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: '#FAF6EF', borderBottom: '1px solid #F4EEE3' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <button {...attributes} {...listeners} style={{ cursor: 'grab', color: '#A89E92', background: 'none', border: 'none', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+          </button>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#8B8176', textTransform: 'uppercase', letterSpacing: '.07em' }}>{meta.label}</span>
+        </div>
+        <button onClick={() => onRemove(index)}
+          style={{ border: 0, background: 'none', cursor: 'pointer', color: '#A89E92', fontSize: 18, padding: '2px 7px', borderRadius: 5, lineHeight: 1 }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#9B2914'; (e.currentTarget as HTMLElement).style.background = '#FBDED8'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#A89E92'; (e.currentTarget as HTMLElement).style.background = 'none'; }}>×</button>
+      </div>
+
+      <div style={{ padding: '16px 18px' }}>
+        {block.type === 'divider' && (
+          <div style={{ height: 2, background: '#E8DFD2', borderRadius: 2, margin: '4px 0' }} />
+        )}
+        {block.type === 'heading' && (
+          <input value={block.text || ''} onChange={e => onUpdate(index, 'text', e.target.value)}
+            placeholder="Section heading…" style={{ ...inp, fontSize: 16, fontWeight: 600 }} />
+        )}
+        {block.type === 'paragraph' && (
+          <textarea value={block.text || ''} onChange={e => onUpdate(index, 'text', e.target.value)}
+            placeholder="Write your paragraph here…" rows={6}
+            style={{ ...inp, resize: 'vertical', lineHeight: 1.75 }} />
+        )}
+        {block.type === 'list' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {(block.items || []).map((item: string, j: number) => (
+              <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ color: '#F39436', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>•</span>
+                <input value={item}
+                  onChange={e => { const it = [...(block.items || [])]; it[j] = e.target.value; onUpdate(index, 'items', it); }}
+                  placeholder="List item…" style={inp} />
+                <button onClick={() => onUpdate(index, 'items', (block.items || []).filter((_: any, k: number) => k !== j))}
+                  style={{ border: 0, background: 'none', cursor: 'pointer', color: '#A89E92', fontSize: 18, lineHeight: 1, padding: '2px 5px', borderRadius: 4 }}>×</button>
+              </div>
+            ))}
+            <button onClick={() => onUpdate(index, 'items', [...(block.items || []), ''])}
+              style={{ alignSelf: 'flex-start', padding: '5px 14px', borderRadius: 20, border: '1px solid #E8DFD2', background: '#FAF6EF', color: '#5A5048', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+              + Add item
+            </button>
+          </div>
+        )}
+        {block.type === 'qa' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={lbl}>Question</label>
+              <input value={block.q || ''} onChange={e => onUpdate(index, 'q', e.target.value)}
+                placeholder="What is your return policy?" style={{ ...inp, fontWeight: 500 }} />
+            </div>
+            <div>
+              <label style={lbl}>Answer</label>
+              <textarea value={block.a || ''} onChange={e => onUpdate(index, 'a', e.target.value)}
+                placeholder="We accept returns within 7 days of delivery…" rows={4}
+                style={{ ...inp, resize: 'vertical', lineHeight: 1.7 }} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Block editor component ───────────────────────────────────────────────── */
 function BlockEditor({ blocks, onChange }: { blocks: any[]; onChange: (b: any[]) => void }) {
+  const idCounter = useRef(0);
+  const blockIds = useRef<string[]>([]);
+
+  // Keep stable IDs for each block position
+  while (blockIds.current.length < blocks.length) {
+    blockIds.current.push(`block-${++idCounter.current}`);
+  }
+  if (blockIds.current.length > blocks.length) {
+    blockIds.current = blockIds.current.slice(0, blocks.length);
+  }
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
   function add(type: string) {
+    blockIds.current.push(`block-${++idCounter.current}`);
     onChange([...blocks, { type, text: '', q: '', a: '', items: [] }]);
   }
-  function remove(i: number) { onChange(blocks.filter((_, j) => j !== i)); }
-  function up(i: number) {
-    if (i === 0) return;
-    const b = [...blocks]; [b[i - 1], b[i]] = [b[i], b[i - 1]]; onChange(b);
-  }
-  function down(i: number) {
-    if (i === blocks.length - 1) return;
-    const b = [...blocks]; [b[i], b[i + 1]] = [b[i + 1], b[i]]; onChange(b);
+  function remove(i: number) {
+    blockIds.current.splice(i, 1);
+    onChange(blocks.filter((_, j) => j !== i));
   }
   function update(i: number, k: string, v: any) {
     const b = [...blocks]; b[i] = { ...b[i], [k]: v }; onChange(b);
   }
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = blockIds.current.indexOf(active.id as string);
+    const newIdx = blockIds.current.indexOf(over.id as string);
+    if (oldIdx === -1 || newIdx === -1) return;
+    blockIds.current = arrayMove(blockIds.current, oldIdx, newIdx);
+    onChange(arrayMove(blocks, oldIdx, newIdx));
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {BLOCK_TYPES.map(({ type, label, color }) => (
-          <button key={type} onClick={() => add(type)} style={{
-            padding: '5px 14px', borderRadius: 20, border: `1px solid ${color}55`,
-            background: color + '18', color: '#2A2420', fontSize: 12, fontWeight: 500,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}>+ {label}</button>
-        ))}
-      </div>
-
       {blocks.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#A89E92', fontSize: 13, background: '#FAF6EF', borderRadius: 10, border: '2px dashed #E8DFD2' }}>
           No content yet — add a block above to get started
         </div>
       )}
 
-      {blocks.map((block, i) => {
-        const meta = BLOCK_TYPES.find(b => b.type === block.type) || BLOCK_TYPES[0];
-        return (
-          <div key={i} style={{ background: '#FFF', border: '1px solid #E8DFD2', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: '#FAF6EF', borderBottom: '1px solid #F4EEE3' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#8B8176', textTransform: 'uppercase', letterSpacing: '.07em' }}>{meta.label}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 2 }}>
-                {(['↑', '↓'] as const).map((dir, di) => (
-                  <button key={dir} onClick={() => di === 0 ? up(i) : down(i)}
-                    disabled={di === 0 ? i === 0 : i === blocks.length - 1}
-                    style={{ border: 0, background: 'none', cursor: 'pointer', color: '#A89E92', fontSize: 14, padding: '2px 7px', borderRadius: 5, opacity: (di === 0 ? i === 0 : i === blocks.length - 1) ? 0.25 : 1 }}>
-                    {dir}
-                  </button>
-                ))}
-                <button onClick={() => remove(i)}
-                  style={{ border: 0, background: 'none', cursor: 'pointer', color: '#A89E92', fontSize: 18, padding: '2px 7px', borderRadius: 5, lineHeight: 1 }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#9B2914'; (e.currentTarget as HTMLElement).style.background = '#FBDED8'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#A89E92'; (e.currentTarget as HTMLElement).style.background = 'none'; }}>×</button>
-              </div>
-            </div>
-
-            <div style={{ padding: '16px 18px' }}>
-              {block.type === 'divider' && (
-                <div style={{ height: 2, background: '#E8DFD2', borderRadius: 2, margin: '4px 0' }} />
-              )}
-              {block.type === 'heading' && (
-                <input value={block.text || ''} onChange={e => update(i, 'text', e.target.value)}
-                  placeholder="Section heading…" style={{ ...inp, fontSize: 16, fontWeight: 600 }} />
-              )}
-              {block.type === 'paragraph' && (
-                <textarea value={block.text || ''} onChange={e => update(i, 'text', e.target.value)}
-                  placeholder="Write your paragraph here…" rows={6}
-                  style={{ ...inp, resize: 'vertical', lineHeight: 1.75 }} />
-              )}
-              {block.type === 'list' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {(block.items || []).map((item: string, j: number) => (
-                    <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span style={{ color: '#F39436', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>•</span>
-                      <input value={item}
-                        onChange={e => { const it = [...(block.items || [])]; it[j] = e.target.value; update(i, 'items', it); }}
-                        placeholder="List item…" style={inp} />
-                      <button onClick={() => update(i, 'items', (block.items || []).filter((_: any, k: number) => k !== j))}
-                        style={{ border: 0, background: 'none', cursor: 'pointer', color: '#A89E92', fontSize: 18, lineHeight: 1, padding: '2px 5px', borderRadius: 4 }}>×</button>
-                    </div>
-                  ))}
-                  <button onClick={() => update(i, 'items', [...(block.items || []), ''])}
-                    style={{ alignSelf: 'flex-start', padding: '5px 14px', borderRadius: 20, border: '1px solid #E8DFD2', background: '#FAF6EF', color: '#5A5048', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    + Add item
-                  </button>
-                </div>
-              )}
-              {block.type === 'qa' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div>
-                    <label style={lbl}>Question</label>
-                    <input value={block.q || ''} onChange={e => update(i, 'q', e.target.value)}
-                      placeholder="What is your return policy?" style={{ ...inp, fontWeight: 500 }} />
-                  </div>
-                  <div>
-                    <label style={lbl}>Answer</label>
-                    <textarea value={block.a || ''} onChange={e => update(i, 'a', e.target.value)}
-                      placeholder="We accept returns within 7 days of delivery…" rows={4}
-                      style={{ ...inp, resize: 'vertical', lineHeight: 1.7 }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
+      {blocks.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={blockIds.current} strategy={verticalListSortingStrategy}>
+            {blocks.map((block, i) => (
+              <SortableBlock
+                key={blockIds.current[i]}
+                id={blockIds.current[i]}
+                block={block}
+                index={i}
+                onUpdate={update}
+                onRemove={remove}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 }
@@ -266,21 +298,39 @@ export default function CmsPagesAdmin() {
           style={{ ...inp, fontSize: 15, fontWeight: 600 }} placeholder="Page title" />
       </div>
 
-      <div style={{ background: '#FFF', borderRadius: 12, border: '1px solid #E8DFD2', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px 12px', borderBottom: '1px solid #F4EEE3' }}>
+      {/* Sticky add-block bar — negative margin + padding trick to fill the scroll container edge */}
+      <div style={{
+        position: 'sticky', top: -24, zIndex: 10,
+        margin: '0 -28px', padding: '24px 28px 12px',
+        background: '#FAF6EF',
+      }}>
+        <div style={{
+          background: '#FFF', borderRadius: 12, border: '1px solid #E8DFD2',
+          padding: '14px 20px',
+        }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2A2420' }}>Content</div>
-          <div style={{ fontSize: 11, color: '#8B8176', marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: '#8B8176', marginTop: 2, marginBottom: 10 }}>
             {editing === 'faq'
               ? 'Use Q & A blocks for each question. Add Heading blocks to group related questions.'
-              : 'Use Heading to create sections, Paragraph for body text, and List for bullet points.'}
+              : 'Drag blocks to reorder. Use the buttons below to add new content blocks.'}
           </div>
-        </div>
-        <div style={{ padding: '20px 24px' }}>
-          <BlockEditor blocks={form.blocks} onChange={blocks => setForm((f: any) => ({ ...f, blocks }))} />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {BLOCK_TYPES.map(({ type, label, color }) => (
+              <button key={type} onClick={() => setForm((f: any) => ({ ...f, blocks: [...f.blocks, { type, text: '', q: '', a: '', items: [] }] }))} style={{
+                padding: '5px 14px', borderRadius: 20, border: `1px solid ${color}55`,
+                background: color + '18', color: '#2A2420', fontSize: 12, fontWeight: 500,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>+ {label}</button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Blocks list */}
+      <BlockEditor blocks={form.blocks} onChange={blocks => setForm((f: any) => ({ ...f, blocks }))} />
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+        <Button variant="outline" size="md" onClick={() => { setEditing(null); setForm(null); }}>Cancel</Button>
         <Button size="md" onClick={() => saveMutation.mutate(form)} loading={saveMutation.isPending}>Save Page</Button>
       </div>
     </div>

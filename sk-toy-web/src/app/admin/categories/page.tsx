@@ -12,67 +12,76 @@ import Toggle from '@/components/ui/Toggle';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AdminIcon from '@/components/admin/AdminIcon';
 import SelectUI from '@/components/ui/Select';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const EMPTY_FORM = { name: '', tag: '', icon: '', parent: '', hidden: false, order: 0 };
 
-const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235A5048' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
-
-const filterInput: React.CSSProperties = {
-  border: '1px solid #E8DFD2', borderRadius: 8,
-  padding: '8px 36px 8px 12px',
-  fontSize: 13, color: '#2A2420', background: '#FAF6EF',
-  backgroundImage: CHEVRON, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
-  appearance: 'none' as React.CSSProperties['appearance'],
-  outline: 'none', fontFamily: 'inherit', width: '100%',
-};
-
-function CategoryTree({ cats, allCats, level = 0, onEdit, onDelete }: {
-  cats: Category[];
-  allCats: Category[];
-  level?: number;
-  onEdit: (c: Category) => void;
-  onDelete: (c: Category) => void;
+function SortableCatRow({ cat, level, onEdit, onDelete, allChildren }: {
+  cat: Category; level: number;
+  onEdit: (c: Category) => void; onDelete: (c: Category) => void;
+  allChildren: Category[];
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat._id });
+  const style = {
+    transform: CSS.Transform.toString(transform), transition,
+    opacity: isDragging ? 0.5 : 1,
+    marginLeft: level > 0 ? 20 : 0,
+    borderLeft: level > 0 ? '1px solid #F4EEE3' : 'none',
+  };
+
   return (
-    <div style={{ marginLeft: level > 0 ? 20 : 0, borderLeft: level > 0 ? '1px solid #F4EEE3' : 'none' }}>
-      {cats.map((cat) => (
-        <div key={cat._id}>
-          <div
-            className="group"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8, marginLeft: level > 0 ? 8 : 0 }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FAF6EF'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-          >
-            {cat.icon && <span style={{ fontSize: 18 }}>{cat.icon}</span>}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontWeight: 500, color: '#2A2420', fontSize: level === 0 ? 13 : 12 }}>{cat.name}</span>
-              {cat.tag && <span style={{ fontSize: 11, color: '#A89E92', marginLeft: 8 }}>{cat.tag}</span>}
-              {cat.hidden && <span style={{ fontSize: 11, color: '#9B2914', marginLeft: 8 }}>(hidden)</span>}
-            </div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ display: 'flex', gap: 2 }}>
-              <button
-                onClick={() => onEdit(cat)}
-                style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#8B8176' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F4EEE3'; (e.currentTarget as HTMLElement).style.color = '#2A2420'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#8B8176'; }}
-              >
-                <AdminIcon name="edit" size={14} />
-              </button>
-              <button
-                onClick={() => onDelete(cat)}
-                style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#A89E92' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; (e.currentTarget as HTMLElement).style.color = '#9B2914'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
-              >
-                <AdminIcon name="trash" size={14} />
-              </button>
-            </div>
-          </div>
-          {cat.children && cat.children.length > 0 && (
-            <CategoryTree cats={cat.children} allCats={allCats} level={level + 1} onEdit={onEdit} onDelete={onDelete} />
-          )}
+    <div ref={setNodeRef} style={style}>
+      <div
+        className="group"
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8, marginLeft: level > 0 ? 8 : 0 }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FAF6EF'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      >
+        <button {...attributes} {...listeners} style={{ cursor: 'grab', color: '#A89E92', background: 'none', border: 'none', padding: 4, flexShrink: 0 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+        </button>
+        {cat.icon && <span style={{ fontSize: 18 }}>{cat.icon}</span>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ fontWeight: 500, color: '#2A2420', fontSize: level === 0 ? 13 : 12 }}>{cat.name}</span>
+          {cat.tag && <span style={{ fontSize: 11, color: '#A89E92', marginLeft: 8 }}>{cat.tag}</span>}
+          {cat.hidden && <span style={{ fontSize: 11, color: '#9B2914', marginLeft: 8 }}>(hidden)</span>}
         </div>
-      ))}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ display: 'flex', gap: 2 }}>
+          <button
+            onClick={() => onEdit(cat)}
+            style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#8B8176' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F4EEE3'; (e.currentTarget as HTMLElement).style.color = '#2A2420'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#8B8176'; }}
+          >
+            <AdminIcon name="edit" size={14} />
+          </button>
+          <button
+            onClick={() => onDelete(cat)}
+            style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#A89E92' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; (e.currentTarget as HTMLElement).style.color = '#9B2914'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
+          >
+            <AdminIcon name="trash" size={14} />
+          </button>
+        </div>
+      </div>
+      {/* Render children (not sortable at this level — only siblings are sortable) */}
+      {allChildren.length > 0 && (
+        <div>
+          {allChildren.map((child) => (
+            <SortableCatRow
+              key={child._id}
+              cat={child}
+              level={level + 1}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              allChildren={(child.children || []) as Category[]}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -83,6 +92,7 @@ export default function CategoriesPage() {
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<any>(EMPTY_FORM);
   const [deleteCat, setDeleteCat] = useState<Category | null>(null);
+  const [localTree, setLocalTree] = useState<Category[]>([]);
 
   const { data: tree = [], isLoading } = useQuery<Category[]>({
     queryKey: ['categories-admin-tree'],
@@ -95,10 +105,32 @@ export default function CategoriesPage() {
     staleTime: 5 * 60_000,
   });
 
+  const sorted = localTree.length ? localTree : [...tree].sort((a, b) => a.order - b.order);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const reorderMutation = useMutation({
+    mutationFn: (reordered: Category[]) =>
+      api.put('/categories/reorder', { items: reordered.map((c, i) => ({ id: c._id, order: i })) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories-admin-tree'] }); qc.invalidateQueries({ queryKey: ['categories-flat'] }); },
+    onError: () => toast.error('Reorder failed'),
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = sorted.findIndex((c) => c._id === active.id);
+    const newIdx = sorted.findIndex((c) => c._id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    const reordered = arrayMove(sorted, oldIdx, newIdx);
+    setLocalTree(reordered);
+    reorderMutation.mutate(reordered);
+  }
+
   const saveMutation = useMutation({
     mutationFn: (data: any) => isNew ? api.post('/categories', data) : api.put(`/categories/${editCat?._id}`, data),
     onSuccess: () => {
       toast.success(isNew ? 'Category created!' : 'Category updated!');
+      setLocalTree([]);
       qc.invalidateQueries({ queryKey: ['categories-admin-tree'] });
       qc.invalidateQueries({ queryKey: ['categories-flat'] });
       setEditCat(null);
@@ -110,6 +142,7 @@ export default function CategoriesPage() {
     mutationFn: (id: string) => api.delete(`/categories/${id}`),
     onSuccess: () => {
       toast.success('Category deleted');
+      setLocalTree([]);
       qc.invalidateQueries({ queryKey: ['categories-admin-tree'] });
       qc.invalidateQueries({ queryKey: ['categories-flat'] });
       setDeleteCat(null);
@@ -141,7 +174,7 @@ export default function CategoriesPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2A2420', margin: 0 }}>Categories</h1>
-          <p style={{ fontSize: 13, color: '#8B8176', marginTop: 4 }}>Supports unlimited subcategory depth</p>
+          <p style={{ fontSize: 13, color: '#8B8176', marginTop: 4 }}>Drag to reorder. Supports unlimited subcategory depth.</p>
         </div>
         <Button onClick={openNew} size="sm">
           <AdminIcon name="plus" size={13} color="#FFF" /> Add Category
@@ -155,11 +188,24 @@ export default function CategoriesPage() {
               <div key={i} style={{ height: 40, background: '#F4EEE3', borderRadius: 8, animation: 'pulse 2s infinite' }} />
             ))}
           </div>
-        ) : tree.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div style={{ padding: '48px 20px', textAlign: 'center', color: '#A89E92', fontSize: 13 }}>No categories yet</div>
         ) : (
           <div style={{ padding: 12 }}>
-            <CategoryTree cats={tree} allCats={flat} onEdit={openEdit} onDelete={setDeleteCat} />
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={sorted.map((c) => c._id)} strategy={verticalListSortingStrategy}>
+                {sorted.map((cat) => (
+                  <SortableCatRow
+                    key={cat._id}
+                    cat={cat}
+                    level={0}
+                    onEdit={openEdit}
+                    onDelete={setDeleteCat}
+                    allChildren={(cat.children || []) as Category[]}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         )}
       </div>

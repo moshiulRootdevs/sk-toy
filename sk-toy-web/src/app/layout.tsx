@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '@/providers/QueryProvider';
 import StoreHydration from '@/providers/StoreHydration';
 import { Toaster } from 'react-hot-toast';
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-inter',
   display: 'swap',
 });
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${poppins.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#FBF4E8] text-[#1F2F4A]" suppressHydrationWarning>
         <QueryProvider>
           <StoreHydration />

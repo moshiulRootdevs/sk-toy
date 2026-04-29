@@ -147,7 +147,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {[
                 { href: '/track',            label: 'Track Order' },
-                { href: '/pages/shipping',   label: 'Shipping Info' },
+                { href: '/pages/shipping-info', label: 'Shipping Info' },
                 { href: '/pages/faq',        label: 'FAQ' },
                 { href: '/pages/privacy',    label: 'Privacy Policy' },
                 { href: '/pages/terms',      label: 'Terms & Conditions' },

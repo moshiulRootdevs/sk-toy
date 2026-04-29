@@ -46,7 +46,6 @@ const NAV_GROUPS = [
   {
     label: 'Operations',
     items: [
-      { href: '/admin/shipping',  icon: 'shipping', label: 'Shipping' },
       { href: '/admin/audit',     icon: 'audit',    label: 'Audit Log' },
       { href: '/admin/settings',  icon: 'settings', label: 'Settings' },
     ],

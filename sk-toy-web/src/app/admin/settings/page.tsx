@@ -25,6 +25,7 @@ import { imgUrl } from '@/lib/utils';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Toggle from '@/components/ui/Toggle';
+import Tooltip from '@/components/ui/Tooltip';
 
 /* ── shared styles ─────────────────────────────────────────────────────── */
 const inp: React.CSSProperties = {
@@ -143,6 +144,7 @@ const TABS = [
   { key: 'seo', label: 'SEO', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>) },
   { key: 'social', label: 'Social', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>) },
   { key: 'policies', label: 'Policies', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>) },
+  { key: 'shipping', label: 'Shipping', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 9h4l3 4v4h-7"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg>) },
   { key: 'storefront', label: 'Storefront', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>) },
   { key: 'payments', label: 'Payments', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>) },
   { key: 'pages', label: 'Pages', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>) },
@@ -479,6 +481,43 @@ export default function SettingsPage() {
           </Card>
         </>)}
 
+        {/* ── Shipping ── */}
+        {activeTab === 'shipping' && (<>
+          <Card title="Delivery Options" subtitle="Both options appear as selectable cards on the checkout page and shipping info page">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {([
+                { key: 'insideDhaka', label: 'Inside Dhaka', color: '#4FA36A', defaults: { title: 'Inside Dhaka', desc: 'Delivered within 1–2 business days', amount: 60 } },
+                { key: 'outsideDhaka', label: 'Outside Dhaka', color: '#EC5D4A', defaults: { title: 'Outside Dhaka', desc: 'Delivered within 3–5 business days', amount: 120 } },
+              ] as const).map(({ key, label, color, defaults }) => (
+                <div key={key} style={{ background: '#FAF6EF', borderRadius: 12, border: '1px solid #E8DFD2', padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#2A2420' }}>{label}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input label="Label / Title"
+                      value={form.shipping?.[key]?.title || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, shipping: { ...f.shipping, [key]: { ...f.shipping?.[key], title: e.target.value } } }))}
+                      placeholder={defaults.title} />
+                    <Input label="Short Description"
+                      value={form.shipping?.[key]?.description || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, shipping: { ...f.shipping, [key]: { ...f.shipping?.[key], description: e.target.value } } }))}
+                      placeholder={defaults.desc} />
+                    <Input label="Delivery Fee (৳)" type="number"
+                      value={form.shipping?.[key]?.amount ?? defaults.amount}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, shipping: { ...f.shipping, [key]: { ...f.shipping?.[key], amount: Number(e.target.value) } } }))}
+                      placeholder={String(defaults.amount)} />
+                    <Input label="Free Delivery Over (৳)" type="number"
+                      value={form.shipping?.[key]?.freeOver || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, shipping: { ...f.shipping, [key]: { ...f.shipping?.[key], freeOver: Number(e.target.value) } } }))}
+                      hint="Leave 0 or blank to disable" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>)}
+
         {/* ── Storefront ── */}
         {activeTab === 'storefront' && (
           <Card title="Top Announcement Strip" subtitle="A slim banner shown at the very top of every storefront page">
@@ -561,7 +600,24 @@ export default function SettingsPage() {
                       <div style={{ fontSize: 11, color: '#A89E92', fontFamily: 'monospace' }}>/pages/{slug}</div>
                       {blockCount > 0 && <div style={{ fontSize: 11, color: '#A89E92', marginTop: 2 }}>{blockCount} block{blockCount !== 1 ? 's' : ''}</div>}
                     </div>
-                    <Button size="sm" onClick={() => openPage(slug, title)}>Edit Page</Button>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <Tooltip label="View page">
+                        <a href={`/pages/${slug}`} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: '1px solid #E8DFD2', background: '#FAF6EF', color: '#8B8176', textDecoration: 'none', cursor: 'pointer', transition: 'all .15s' }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#2A2420'; (e.currentTarget as HTMLElement).style.borderColor = '#D8CFBF'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#8B8176'; (e.currentTarget as HTMLElement).style.borderColor = '#E8DFD2'; }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                      </Tooltip>
+                      <Tooltip label="Edit page">
+                        <button onClick={() => openPage(slug, title)}
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: '1px solid #E8DFD2', background: '#FAF6EF', color: '#8B8176', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit' }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#2A2420'; (e.currentTarget as HTMLElement).style.borderColor = '#D8CFBF'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#8B8176'; (e.currentTarget as HTMLElement).style.borderColor = '#E8DFD2'; }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                      </Tooltip>
+                    </div>
                   </div>
                 </div>
               );
@@ -749,7 +805,7 @@ export default function SettingsPage() {
 
       {/* Bottom save bar — only for global-settings tabs */}
       {!hideBottomSave && (
-        <div style={{ position: 'sticky', bottom: 0, marginTop: 24, padding: '12px 0', borderTop: '1px solid #E8DFD2', background: '#FAF6EF', display: 'flex', justifyContent: 'flex-end', gap: 10, zIndex: 10 }}>
+        <div style={{ position: 'sticky', bottom: -60, zIndex: 10, margin: '24px -28px 0', padding: '12px 28px 60px', borderTop: '1px solid #E8DFD2', background: '#FAF6EF', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <Button size="md" variant="outline" onClick={() => { if (data) setForm(data); }}>Discard Changes</Button>
           <Button size="md" onClick={() => saveMutation.mutate()} loading={saveMutation.isPending}>Save Changes</Button>
         </div>
