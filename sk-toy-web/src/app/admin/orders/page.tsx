@@ -284,7 +284,7 @@ function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackin
                 const selectedStatus = newStatus || currentStatus;
                 return (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 14, width: '100%' }}>
-                    {allStatuses.map(({ value, label }, i) => {
+                    {allStatuses.map(({ value, label }: { value: string; label: string }, i: number) => {
                       const color = statusColors[value] || '#8B8176';
                       const isSelected = selectedStatus === value;
                       const isCurrent = currentStatus === value;
