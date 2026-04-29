@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useCallback } from 'react';
 import api from '@/lib/api';
-import { Category, Product, Brand } from '@/types';
+import { Category, Product } from '@/types';
 import ProductCard from '@/components/storefront/ProductCard';
 import Spinner from '@/components/ui/Spinner';
 import SelectUI from '@/components/ui/Select';
@@ -39,26 +39,24 @@ const AGE_OPTS = [
 interface Filters {
   ageGroup: string;
   gender: string;
-  brand: string;
   minPrice: number;
   maxPrice: number;
   badge: string;
 }
 
-const EMPTY_FILTERS: Filters = { ageGroup: '', gender: '', brand: '', minPrice: 0, maxPrice: 10000, badge: '' };
+const EMPTY_FILTERS: Filters = { ageGroup: '', gender: '', minPrice: 0, maxPrice: 10000, badge: '' };
 
 /* ─── Filter sidebar ─────────────────────────────────────────────────────── */
 function FilterSidebar({
-  filters, onChange, brands,
+  filters, onChange,
 }: {
   filters: Filters;
   onChange: (f: Partial<Filters>) => void;
-  brands: Brand[];
 }) {
   const [priceMax, setPriceMax] = useState(filters.maxPrice);
 
   const activeCount = [
-    filters.ageGroup, filters.gender, filters.brand, filters.badge,
+    filters.ageGroup, filters.gender, filters.badge,
     filters.maxPrice < 10000 ? 'price' : '',
   ].filter(Boolean).length;
 
@@ -166,26 +164,6 @@ function FilterSidebar({
         </div>
       </div>
 
-      {/* Brand */}
-      {brands.length > 0 && (
-        <div style={sectionStyle}>
-          <div style={headStyle}>Brand</div>
-          <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-            {brands.map((b) => (
-              <label key={b._id} style={checkRow}>
-                <input
-                  type="radio"
-                  name="brand"
-                  checked={filters.brand === b._id}
-                  onChange={() => onChange({ brand: filters.brand === b._id ? '' : b._id })}
-                  onClick={() => { if (filters.brand === b._id) onChange({ brand: '' }); }}
-                />
-                {b.name}
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
     </aside>
   );
 }
@@ -212,12 +190,6 @@ export default function CategoryPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: brands = [] } = useQuery<Brand[]>({
-    queryKey: ['brands'],
-    queryFn: () => api.get('/brands').then((r) => r.data),
-    staleTime: 10 * 60 * 1000,
-  });
-
   // Resolved category info — either DB category or virtual
   const catName = virtual?.name ?? category?.name ?? '';
   const catTag  = virtual?.tag  ?? category?.tag  ?? '';
@@ -232,7 +204,6 @@ export default function CategoryPage() {
     queryFn: () => {
       const params: Record<string, string | number> = { limit: 24 };
       if (sort && sort !== 'featured') params.sort = sort;
-      if (filters.brand)              params.brand    = filters.brand;
       if (filters.badge)              params.badge    = filters.badge;
       if (filters.maxPrice < 10000)   params.maxPrice = filters.maxPrice;
 
@@ -279,7 +250,7 @@ export default function CategoryPage() {
   const headLast = words[words.length - 1];
 
   const activeFilterCount = [
-    filters.ageGroup, filters.gender, filters.brand, filters.badge,
+    filters.ageGroup, filters.gender, filters.badge,
     filters.maxPrice < 10000 ? 'price' : '',
   ].filter(Boolean).length;
 
@@ -322,7 +293,7 @@ export default function CategoryPage() {
           <span style={{ color: '#EC5D4A' }}>{headLast}</span>
         </h1>
         <p style={{ fontSize: 14, color: '#5A5048', maxWidth: 600, margin: 0 }}>
-          {catTag || `A curated edit within ${catName}. Use the filters to narrow by age, brand, or price.`}
+          {catTag || `A curated edit within ${catName}. Use the filters to narrow by age, gender, or price.`}
         </p>
 
         {/* Subcategory subnav pills */}
@@ -391,7 +362,7 @@ export default function CategoryPage() {
           {/* Sidebar — desktop always visible, mobile toggled */}
           <div className={sidebarOpen ? 'block' : 'hidden lg:block'} style={{ flexShrink: 0 }}>
             <div style={{ background: '#FFFBF2', border: '1px solid #E8DFD2', borderRadius: 16, padding: 20, position: 'sticky', top: 90 }}>
-              <FilterSidebar filters={filters} onChange={updateFilter} brands={brands} />
+              <FilterSidebar filters={filters} onChange={updateFilter} />
             </div>
           </div>
 

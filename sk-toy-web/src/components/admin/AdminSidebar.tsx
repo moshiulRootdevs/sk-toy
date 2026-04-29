@@ -29,7 +29,6 @@ const NAV_GROUPS = [
     label: 'Catalog',
     items: [
       { href: '/admin/categories', icon: 'category', label: 'Categories' },
-      { href: '/admin/brands',     icon: 'brand',    label: 'Brands' },
     ],
   },
   {

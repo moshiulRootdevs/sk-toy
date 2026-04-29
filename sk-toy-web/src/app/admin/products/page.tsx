@@ -147,14 +147,6 @@ export default function AdminProductsPage() {
             ),
           },
           {
-            key: 'brand', header: 'Brand',
-            render: (p: any) => (
-              <span style={{ fontSize: 13, color: '#5A5048' }}>
-                {typeof p.brand === 'object' ? p.brand?.name : (p.brand || '—')}
-              </span>
-            ),
-          },
-          {
             key: 'category', header: 'Categories',
             render: (p: any) => {
               const cats = Array.isArray(p.categories) && p.categories.length

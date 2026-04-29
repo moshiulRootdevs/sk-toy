@@ -126,8 +126,7 @@ export default function Footer() {
               {[
                 { href: '/categories/new-arrivals', label: 'New Arrivals' },
                 { href: '/products?filter=sale',    label: 'Sale Items' },
-                { href: '/brands',                  label: 'Shop by Brand' },
-                { href: '/categories/by-age',       label: 'Shop by Age' },
+                { href: '/categories/shop-by-age',  label: 'Shop by Age' },
                 { href: '/products',                label: 'All Products' },
               ].map((l) => (
                 <li key={l.href}>
@@ -172,7 +171,6 @@ export default function Footer() {
               {[
                 { href: '/pages/about', label: 'About SK Toy' },
                 { href: '/blog',        label: 'Journal' },
-                { href: '/brands',      label: 'Our Brands' },
               ].map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-[14px] text-[#FFFBF2]/85 hover:text-[#4FA36A] transition-colors">{l.label}</Link>

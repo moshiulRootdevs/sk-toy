@@ -179,14 +179,9 @@ export default function ProductDetailPage() {
 
         {/* Info */}
         <div>
-          {(product.badge || product.brand) && (
+          {product.badge && (
             <div className="flex items-center gap-2 mb-2">
-              {product.badge && (
-                <span className="text-xs bg-[#EC5D4A] text-white px-2.5 py-0.5 rounded-full font-semibold">{product.badge}</span>
-              )}
-              {product.brand && typeof product.brand === 'object' && (
-                <span className="text-xs text-gray-500">{(product.brand as any).name}</span>
-              )}
+              <span className="text-xs bg-[#EC5D4A] text-white px-2.5 py-0.5 rounded-full font-semibold">{product.badge}</span>
             </div>
           )}
 

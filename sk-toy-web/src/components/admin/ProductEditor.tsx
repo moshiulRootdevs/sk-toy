@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { Product, Category, Brand } from '@/types';
+import { Product, Category } from '@/types';
 import { imgUrl } from '@/lib/utils';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -329,7 +329,7 @@ interface ProductEditorProps {
 const EMPTY: any = {
   name: '', sku: '', description: '', price: '', comparePrice: '', stock: '',
   ageGroup: '', gender: '', badge: '', active: true, trackInventory: true,
-  categories: [], brand: '', images: [], variants: [],
+  categories: [], images: [], variants: [],
   metaTitle: '', metaDescription: '', slug: '',
 };
 
@@ -369,7 +369,6 @@ export default function ProductEditor({ productId }: ProductEditorProps) {
           : (p.category ? [p.category] : []);
         return arr.map((c: any) => (typeof c === 'object' ? c?._id : c)).filter(Boolean);
       })(),
-      brand: typeof p.brand === 'object' ? (p.brand as any)?._id : (p.brand || ''),
       images: p.images || [],
       variants: p.variants || [],
       metaTitle: p.metaTitle || '',
@@ -408,13 +407,6 @@ export default function ProductEditor({ productId }: ProductEditorProps) {
     queryFn: () => api.get('/categories/flat').then((r) => r.data),
     staleTime: 5 * 60_000,
   });
-
-  const { data: brands } = useQuery<Brand[]>({
-    queryKey: ['brands'],
-    queryFn: () => api.get('/brands').then((r) => r.data),
-    staleTime: 5 * 60_000,
-  });
-
 
   const saveMutation = useMutation({
     mutationFn: (data: any) =>
@@ -623,12 +615,6 @@ export default function ProductEditor({ productId }: ProductEditorProps) {
                   options={(categories || []).map((c) => ({ value: c._id, label: c.name }))}
                 />
               </Field>
-              <Field label="Brand">
-                <Select
-                  value={form.brand} onChange={set('brand')} placeholder="— Select —"
-                  options={(brands || []).map((b) => ({ value: b._id, label: b.name }))}
-                />
-              </Field>
               <Field label="Age range">
                 <Select value={form.ageGroup} onChange={set('ageGroup')} options={AGE_GROUPS} />
               </Field>
@@ -683,12 +669,10 @@ export default function ProductEditor({ productId }: ProductEditorProps) {
                     const catObjs = (form.categories || [])
                       .map((id: string) => (categories || []).find((c) => c._id === id))
                       .filter(Boolean) as Category[];
-                    const brandObj = (brands || []).find((b) => b._id === form.brand);
                     const { data } = await api.post('/ai/seo', {
                       name: form.name,
                       description: form.description,
                       category: catObjs.map((c) => c.name).join(', '),
-                      brand: brandObj?.name,
                       ageGroup: form.ageGroup,
                       gender: form.gender,
                     });

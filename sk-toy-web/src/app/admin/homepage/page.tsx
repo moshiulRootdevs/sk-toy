@@ -35,7 +35,7 @@ const SECTION_TYPES = [
   { value: 'categories', label: 'Categories Grid' },
   { value: 'products', label: 'Products Section' },
   { value: 'editorial_band', label: 'Editorial Band' },
-  { value: 'brands', label: 'Brands Section' },
+
   { value: 'journal', label: 'Journal / Blog' },
   { value: 'newsletter', label: 'Newsletter' },
   { value: 'banner', label: 'Promo Banner' },

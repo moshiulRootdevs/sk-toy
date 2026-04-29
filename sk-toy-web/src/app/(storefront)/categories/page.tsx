@@ -10,9 +10,8 @@ import Spinner from '@/components/ui/Spinner';
 
 const CAT_COLORS = ['#EC5D4A','#F5C443','#F39436','#4FA36A','#6FB8D9','#9C7BC9','#F28BA8','#EC5D4A','#4FA36A','#F39436','#6FB8D9','#F5C443'];
 const CAT_ICONS: Record<string, string> = {
-  'new-arrivals': '✦', 'by-age': '🎂', 'by-gender': '👧', 'toys': '🚗',
-  'learning': '📐', 'baby': '🍼', 'outdoor': '🌿', 'brands': '🏷', 'sale': '🏷',
-  'clearance': '📦', 'damaged': '🔖', 'journal': '📖',
+  'shop-by-age': '👶', 'cars-vehicles': '🚗', 'baby-toddler': '🧸', 'educational': '🧠',
+  'electronic-entertainment': '🎮', 'dolls-figures': '🪆', 'books-learning': '📚', 'combo-gift-sets': '🎁',
 };
 
 export default function CategoriesPage() {
@@ -51,7 +50,7 @@ export default function CategoriesPage() {
         ) : roots.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: 80, color: '#A89E92' }}>No categories found.</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
             {roots.map((cat, i) => {
               const color = CAT_COLORS[i % CAT_COLORS.length];
               const icon = cat.icon || CAT_ICONS[cat.slug] || '🧸';

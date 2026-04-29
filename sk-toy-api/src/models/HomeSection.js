@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const homeSectionSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['hero', 'categories', 'products', 'editorial_band', 'brands', 'journal', 'newsletter', 'banner', 'ages'],
+    enum: ['hero', 'categories', 'products', 'editorial_band', 'journal', 'newsletter', 'banner', 'ages'],
     required: true,
   },
   title:    String,          // admin label & storefront heading

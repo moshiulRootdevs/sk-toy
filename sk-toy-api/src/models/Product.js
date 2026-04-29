@@ -13,7 +13,6 @@ const productSchema = new mongoose.Schema({
   slug:        { type: String, required: true, unique: true },
   sku:         { type: String, unique: true, sparse: true },
   description: String,
-  brand:       { type: mongoose.Schema.Types.ObjectId, ref: 'Brand' },
   // `category` is the legacy primary category (mirrors categories[0]). Kept for back-compat.
   category:    { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
   // `categories` is the canonical multi-category field.
@@ -49,7 +48,7 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ slug: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ categories: 1 });
-productSchema.index({ brand: 1 });
+
 productSchema.index({ active: 1 });
 productSchema.index({ name: 'text', description: 'text' });
 

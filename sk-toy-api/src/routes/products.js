@@ -34,11 +34,11 @@ router.get('/', async (req, res, next) => {
     if (req.query.ids) {
       const idList = String(req.query.ids).split(',').filter(Boolean);
       const products = await Product.find({ _id: { $in: idList } })
-        .populate('brand', 'name slug').populate('category', 'name slug').populate('categories', 'name slug').lean();
+        .populate('category', 'name slug').populate('categories', 'name slug').lean();
       return res.json({ products, total: products.length, page: 1, pages: 1 });
     }
 
-    const { search, category, brand, ageGroup, gender, badge, minPrice, maxPrice, sort, page = 1, limit = 20 } = req.query;
+    const { search, category, ageGroup, gender, badge, minPrice, maxPrice, sort, page = 1, limit = 20 } = req.query;
     const q = { active: true };
 
     if (search)   q.$text = { $search: search };
@@ -46,7 +46,6 @@ router.get('/', async (req, res, next) => {
       const ids = await getCategoryAndDescendants(category);
       q.categories = { $in: ids };
     }
-    if (brand)    q.brand = brand;
     if (ageGroup) q.ageGroup = ageGroup;
     if (gender)   q.gender = gender;
     if (minPrice || maxPrice) {
@@ -74,7 +73,7 @@ router.get('/', async (req, res, next) => {
 
     const skip = (+page - 1) * +limit;
     const [products, total] = await Promise.all([
-      Product.find(q).populate('brand', 'name slug').populate('category', 'name slug').populate('categories', 'name slug').sort(sortBy).skip(skip).limit(+limit).lean(),
+      Product.find(q).populate('category', 'name slug').populate('categories', 'name slug').sort(sortBy).skip(skip).limit(+limit).lean(),
       Product.countDocuments(q),
     ]);
 
@@ -86,7 +85,6 @@ router.get('/', async (req, res, next) => {
 router.get('/slug/:slug', async (req, res, next) => {
   try {
     const product = await Product.findOne({ slug: req.params.slug, active: true })
-      .populate('brand', 'name slug')
       .populate('category', 'name slug').populate('categories', 'name slug')
       .lean();
     if (!product) return res.status(404).json({ message: 'Product not found' });
@@ -103,26 +101,6 @@ router.get('/sku/check', adminAuth, async (req, res, next) => {
     if (excludeId) query._id = { $ne: excludeId };
     const exists = await Product.findOne(query).lean();
     res.json({ available: !exists });
-  } catch (err) { next(err); }
-});
-
-// GET /api/products/:id
-router.get('/:id', async (req, res, next) => {
-  try {
-    const product = await Product.findById(req.params.id)
-      .populate('brand', 'name slug')
-      .populate('category', 'name slug').populate('categories', 'name slug')
-      .lean();
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json(product);
-  } catch (err) { next(err); }
-});
-
-// GET /api/products/:id/reviews
-router.get('/:id/reviews', async (req, res, next) => {
-  try {
-    const reviews = await Review.find({ product: req.params.id, status: 'approved' }).sort({ createdAt: -1 });
-    res.json(reviews);
   } catch (err) { next(err); }
 });
 
@@ -152,13 +130,30 @@ router.get('/trending', async (req, res, next) => {
       { $limit: limit },
     ]);
 
-    // Populate brand & category for display
     const populated = await Product.populate(docs, [
-      { path: 'brand', select: 'name slug' },
       { path: 'category', select: 'name slug' },
       { path: 'categories', select: 'name slug' },
     ]);
     res.json(populated);
+  } catch (err) { next(err); }
+});
+
+// GET /api/products/:id
+router.get('/:id', async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .populate('category', 'name slug').populate('categories', 'name slug')
+      .lean();
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.json(product);
+  } catch (err) { next(err); }
+});
+
+// GET /api/products/:id/reviews
+router.get('/:id/reviews', async (req, res, next) => {
+  try {
+    const reviews = await Review.find({ product: req.params.id, status: 'approved' }).sort({ createdAt: -1 });
+    res.json(reviews);
   } catch (err) { next(err); }
 });
 
@@ -204,7 +199,6 @@ router.get('/:id/related', async (req, res, next) => {
 
     const orClauses = [];
     if (uniqueCategoryIds.length) orClauses.push({ categories: { $in: uniqueCategoryIds } });
-    if (product.brand)      orClauses.push({ brand: product.brand });
     if (product.ageGroup)   orClauses.push({ ageGroup: product.ageGroup });
     if (product.gender)     orClauses.push({ gender: product.gender });
     if (orClauses.length === 0) return res.json([]);
@@ -214,7 +208,6 @@ router.get('/:id/related', async (req, res, next) => {
       active: true,
       $or: orClauses,
     })
-      .populate('brand', 'name slug')
       .populate('category', 'name slug').populate('categories', 'name slug')
       .lean();
 
@@ -225,7 +218,6 @@ router.get('/:id/related', async (req, res, next) => {
         .map((c) => String(c._id || c));
       const matched = pCatIds.filter((id) => sameCatSet.has(id)).length;
       if (matched > 0) score += 3 + (matched - 1); // bonus for multi-overlap
-      if (product.brand && p.brand && String(p.brand._id || p.brand) === String(product.brand)) score += 2;
       if (product.ageGroup && p.ageGroup === product.ageGroup) score += 1;
       if (product.gender && p.gender === product.gender) score += 1;
       return { p, score };
@@ -246,18 +238,17 @@ router.get('/:id/related', async (req, res, next) => {
 // GET /api/products/admin/all — unfiltered list for admin (must come before /admin/:id)
 router.get('/admin/all', adminAuth, async (req, res, next) => {
   try {
-    const { search, category, brand, stockFilter, page = 1, limit = 50 } = req.query;
+    const { search, category, stockFilter, page = 1, limit = 50 } = req.query;
     const q = {};
     if (search) q.$or = [{ name: { $regex: search, $options: 'i' } }, { sku: { $regex: search, $options: 'i' } }];
     if (category && category !== 'all') q.categories = category;
-    if (brand && brand !== 'all') q.brand = brand;
     if (stockFilter === 'low') { q.stock = { $gt: 0, $lt: 8 }; }
     else if (stockFilter === 'out') { q.stock = 0; }
     else if (stockFilter === 'ok') { q.stock = { $gte: 8 }; }
 
     const skip = (+page - 1) * +limit;
     const [products, total] = await Promise.all([
-      Product.find(q).populate('brand', 'name').populate('category', 'name slug').populate('categories', 'name slug').sort({ createdAt: -1 }).skip(skip).limit(+limit).lean(),
+      Product.find(q).populate('category', 'name slug').populate('categories', 'name slug').sort({ createdAt: -1 }).skip(skip).limit(+limit).lean(),
       Product.countDocuments(q),
     ]);
     res.json({ products, total, page: +page, pages: Math.ceil(total / +limit) });
@@ -268,7 +259,6 @@ router.get('/admin/all', adminAuth, async (req, res, next) => {
 router.get('/admin/:id', adminAuth, async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('brand', 'name slug')
       .populate('category', 'name slug').populate('categories', 'name slug')
       .lean();
     if (!product) return res.status(404).json({ message: 'Product not found' });
@@ -290,13 +280,12 @@ function normalizeCategoryFields(body) {
 // POST /api/products
 router.post('/', adminAuth, audit('CREATED', 'Product', (req) => `Created product: ${req.body.name}`), async (req, res, next) => {
   try {
-    const { name, slug: clientSlug, category, categories, brand, sku, ...rest } = req.body;
+    const { name, slug: clientSlug, category, categories, sku, ...rest } = req.body;
     if (!name?.trim()) return res.status(400).json({ message: 'Name is required' });
     const slug = clientSlug?.trim() ? clientSlug.trim() : await uniqueSlug(name.trim());
     const data = { name: name.trim(), slug, ...rest };
     const { categories: cats, primary } = normalizeCategoryFields({ category, categories });
     if (cats.length) { data.categories = cats; data.category = primary; }
-    if (brand) data.brand = brand;
     if (sku?.trim()) data.sku = sku.trim();
     const product = await Product.create(data);
     res.status(201).json(product);
@@ -316,7 +305,7 @@ router.post('/', adminAuth, audit('CREATED', 'Product', (req) => `Created produc
 // PUT /api/products/:id
 router.put('/:id', adminAuth, audit('UPDATED', 'Product', (req) => `Updated product: ${req.body.name || req.params.id}`), async (req, res, next) => {
   try {
-    const { slug: clientSlug, category, categories, brand, sku, ...rest } = req.body;
+    const { slug: clientSlug, category, categories, sku, ...rest } = req.body;
     const updates = { ...rest };
     if (clientSlug?.trim()) updates.slug = clientSlug.trim();
 
@@ -332,7 +321,6 @@ router.put('/:id', adminAuth, audit('UPDATED', 'Product', (req) => `Updated prod
       }
     }
 
-    if (brand) updates.brand = brand; else updates.$unset = { ...updates.$unset, brand: 1 };
     if (sku?.trim()) updates.sku = sku.trim(); else updates.$unset = { ...updates.$unset, sku: 1 };
     const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
     if (!product) return res.status(404).json({ message: 'Not found' });

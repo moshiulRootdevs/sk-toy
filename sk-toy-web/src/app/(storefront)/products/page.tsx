@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useState, Suspense } from 'react';
 import api from '@/lib/api';
-import { Product, Category, Brand } from '@/types';
+import { Product, Category } from '@/types';
 import ProductCard from '@/components/storefront/ProductCard';
 import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
@@ -33,19 +33,17 @@ function ProductsContent() {
 
   const q = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';
-  const brand = searchParams.get('brand') || '';
   const sort = searchParams.get('sort') || 'newest';
   const age = searchParams.get('age') || '';
   const filter = searchParams.get('filter') || '';
   const page = Number(searchParams.get('page') || 1);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['products', { q, category, brand, sort, age, filter, page }],
+    queryKey: ['products', { q, category, sort, age, filter, page }],
     queryFn: () => {
       const params: Record<string, string | number> = { sort, page, limit: 20 };
       if (q)        params.search   = q;
       if (category) params.category = category;
-      if (brand)    params.brand    = brand;
       if (age)      params.ageGroup = age;
       if (filter)   params.badge    = filter;
       return api.get('/products', { params }).then((r) => r.data);
@@ -55,12 +53,6 @@ function ProductsContent() {
   const { data: categories } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: () => api.get('/categories').then((r) => r.data),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: brands } = useQuery<Brand[]>({
-    queryKey: ['brands'],
-    queryFn: () => api.get('/brands').then((r) => r.data),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -166,19 +158,6 @@ function ProductsContent() {
             ))}
           </FilterGroup>
 
-          {/* Brands */}
-          {brands && brands.length > 0 && (
-            <FilterGroup title="Brand">
-              {brands.slice(0, 10).map((b) => (
-                <FilterItem
-                  key={b._id}
-                  label={b.name}
-                  active={brand === b._id}
-                  onClick={() => setParam('brand', brand === b._id ? '' : b._id)}
-                />
-              ))}
-            </FilterGroup>
-          )}
         </aside>
 
         {/* Mobile overlay */}

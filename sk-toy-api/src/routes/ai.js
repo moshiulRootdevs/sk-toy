@@ -22,13 +22,12 @@ router.post('/seo', adminAuth, async (req, res, next) => {
       return res.status(503).json({ message: 'OpenAI API key not configured. Set OPENAI_API_KEY in .env.' });
     }
 
-    const { name, description, category, brand, ageGroup, gender } = req.body;
+    const { name, description, category, ageGroup, gender } = req.body;
     if (!name) return res.status(400).json({ message: 'Product name is required' });
 
     const context = [
       `Product name: ${name}`,
       category  ? `Category: ${category}`   : '',
-      brand     ? `Brand: ${brand}`         : '',
       ageGroup  ? `Age group: ${ageGroup}`  : '',
       gender    ? `Gender: ${gender}`       : '',
       description ? `Description (HTML): ${description.replace(/<[^>]+>/g, ' ').slice(0, 400)}` : '',
@@ -48,7 +47,7 @@ Generate concise, keyword-rich SEO content. Respond ONLY with valid JSON — no 
           content: `Generate SEO fields for this product:\n${context}\n\nRespond with JSON:\n{"slug":"...","metaTitle":"...","metaDescription":"..."}
 Rules:
 - slug: lowercase, hyphens only, max 60 chars
-- metaTitle: 50-60 chars, include brand/key feature
+- metaTitle: 50-60 chars, include key feature
 - metaDescription: 140-160 chars, mention key benefits, include a soft CTA`,
         },
       ],

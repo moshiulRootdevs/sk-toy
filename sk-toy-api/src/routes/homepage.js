@@ -4,7 +4,7 @@ const Product = require('../models/Product');
 const Banner = require('../models/Banner');
 const BlogPost = require('../models/BlogPost');
 const Category = require('../models/Category');
-const Brand = require('../models/Brand');
+
 const CatalogueTile = require('../models/CatalogueTile');
 const { adminAuth } = require('../middleware/auth');
 
@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
         const refs = (s.productRefs || []).map(String);
         if (refs.length) {
           const prods = await Product.find({ _id: { $in: refs }, active: true })
-            .populate('brand', 'name').populate('category', 'name slug').lean();
+            .populate('category', 'name slug').lean();
           s.products = refs.map((id) => prods.find((p) => String(p._id) === id)).filter(Boolean);
         } else {
           s.products = [];
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
         else if (s.filter)                 q.category = s.filter;
         const sortBy = s.filter === 'featured' ? { rating: -1, reviewCount: -1 } : { createdAt: -1 };
         s.products = await Product.find(q).sort(sortBy).limit(s.limit || 8)
-          .populate('brand', 'name').populate('category', 'name slug').lean();
+          .populate('category', 'name slug').lean();
       }
     }
     if (s.type === 'hero') {
@@ -68,9 +68,6 @@ router.get('/', async (req, res) => {
             .populate('children', 'name slug icon tag image').lean();
         }
       }
-    }
-    if (s.type === 'brands') {
-      s.brands = await Brand.find({}).sort({ order: 1 }).limit(12).lean();
     }
     if (s.type === 'journal') {
       s.posts = await BlogPost.find({ status: 'published' }).sort({ publishedAt: -1 }).limit(3).lean();

@@ -18,7 +18,7 @@ const PAGE_META: Record<string, { label: string; icon: string }> = {
   reviews:    { label: 'Reviews & Q&A', icon: 'review' },
   coupons:    { label: 'Coupons',     icon: 'coupon' },
   categories: { label: 'Categories',  icon: 'category' },
-  brands:     { label: 'Brands',      icon: 'brand' },
+
   cms:        { label: 'Pages',       icon: 'cms' },
   hero:       { label: 'Hero Section', icon: 'flag' },
   homepage:   { label: 'Homepage',    icon: 'home' },

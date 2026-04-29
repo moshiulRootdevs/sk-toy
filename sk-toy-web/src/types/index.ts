@@ -11,18 +11,6 @@ export interface Category {
   children?: Category[];
 }
 
-export interface Brand {
-  _id: string;
-  name: string;
-  slug: string;
-  em?: string;
-  logo?: string;
-  description?: string;
-  website?: string;
-  active: boolean;
-  order: number;
-}
-
 export interface ProductVariant {
   _id?: string;
   name: string;
@@ -38,7 +26,6 @@ export interface Product {
   slug: string;
   sku?: string;
   description?: string;
-  brand?: Brand | string;
   category?: Category | string;
   categories?: Array<Category | string>;
   ageGroup?: string;
@@ -162,7 +149,7 @@ export interface BandButton {
 
 export interface HomeSection {
   _id: string;
-  type: 'hero' | 'categories' | 'products' | 'editorial_band' | 'brands' | 'journal' | 'newsletter' | 'banner' | 'ages';
+  type: 'hero' | 'categories' | 'products' | 'editorial_band' | 'journal' | 'newsletter' | 'banner' | 'ages';
   title?: string;
   eyebrow?: string;
   subtitle?: string;

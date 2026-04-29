@@ -88,11 +88,6 @@ export default function ProductCard({ product, className }: ProductCardProps) {
 
       {/* Body */}
       <div className="pt-3 px-0.5 pb-1">
-        <p className="text-[10px] text-[#7A8299] uppercase tracking-[0.08em] mb-1"
-           style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
-          {(product as any).brand?.name || ''}
-        </p>
-
         <Link href={`/products/${product.slug}`}>
           <h3 className="text-[14px] font-medium text-[#1F2F4A] leading-snug truncate hover:text-[#EC5D4A] transition-colors mb-2"
               style={{ fontFamily: 'var(--font-inter, system-ui)' }}

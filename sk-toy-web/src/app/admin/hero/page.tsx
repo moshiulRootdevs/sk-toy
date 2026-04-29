@@ -97,8 +97,8 @@ function ImageSlot({ url, onUpload, onRemove, index }: { url: string; onUpload: 
 
 /* ── main page ── */
 const DEFAULT_STATS = [
-  { num: '64+', label: 'Trusted Brands' },
   { num: '1,200+', label: 'Products' },
+  { num: '8', label: 'Categories' },
   { num: '7-day', label: 'Easy Returns' },
 ];
 

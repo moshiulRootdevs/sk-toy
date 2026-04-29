@@ -16,7 +16,6 @@ export default function HomeSections({ sections }: { sections: HomeSection[] }) 
           case 'ages':        return <AgesSection key={section._id} section={section} />;
           case 'products':    return <ProductsSection key={section._id} section={section} />;
           case 'editorial_band': return <EditorialBand key={section._id} section={section} />;
-          case 'brands':      return <BrandsSection key={section._id} section={section} />;
           case 'journal':     return <JournalSection key={section._id} section={section} />;
           case 'newsletter':  return null;
           case 'banner':      return <BannerSection key={section._id} section={section} />;
@@ -43,8 +42,8 @@ const FALLBACK_IMAGES = [
 ];
 
 const DEFAULT_STATS = [
-  { num: '64+',    label: 'Trusted Brands' },
   { num: '1,200+', label: 'Products' },
+  { num: '8',      label: 'Categories' },
   { num: '7-day',  label: 'Easy Returns' },
 ];
 
@@ -163,18 +162,14 @@ function HeroSection({ section }: { section: HomeSection }) {
 /* ─── Categories ─────────────────────────────────────────────────────────── */
 const CAT_COLORS = ['#EC5D4A','#F5C443','#F39436','#4FA36A','#6FB8D9','#9C7BC9','#F28BA8','#EC5D4A','#4FA36A','#F39436','#6FB8D9','#F5C443'];
 const CAT_ICONS: Record<string, string> = {
-  'new-arrivals': '✦',
-  'by-age':       '🎂',
-  'by-gender':    '👧',
-  'toys':         '🚗',
-  'learning':     '📐',
-  'baby':         '🍼',
-  'outdoor':      '🌿',
-  'brands':       '🏷',
-  'sale':         '🏷',
-  'clearance':    '📦',
-  'damaged':      '🔖',
-  'journal':      '📖',
+  'shop-by-age':              '👶',
+  'cars-vehicles':            '🚗',
+  'baby-toddler':             '🧸',
+  'educational':              '🧠',
+  'electronic-entertainment': '🎮',
+  'dolls-figures':            '🪆',
+  'books-learning':           '📚',
+  'combo-gift-sets':          '🎁',
 };
 
 function CategoriesSection({ section }: { section: HomeSection }) {
@@ -183,7 +178,7 @@ function CategoriesSection({ section }: { section: HomeSection }) {
     <section className="py-16 bg-[#FBF4E8]">
       <div className="max-w-[1360px] mx-auto px-8">
         <SectionHead section={section} />
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
           {cats.map((cat: any, i: number) => {
             const color = cat.bgColor || CAT_COLORS[i % CAT_COLORS.length];
             const icon  = cat.icon || CAT_ICONS[cat.slug] || '🧸';
@@ -415,29 +410,6 @@ function EditorialBand({ section }: { section: HomeSection }) {
               <path d="M12 2 14.5 9.5 22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" />
             </svg>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Brands ─────────────────────────────────────────────────────────────── */
-function BrandsSection({ section }: { section: HomeSection }) {
-  const brands = (section as any).brands || [];
-  return (
-    <section className="py-16 bg-[#FBF4E8]">
-      <div className="max-w-[1360px] mx-auto px-8">
-        <SectionHead section={section} />
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-8 border-t border-b border-[#E6D9BD] py-6">
-          {brands.map((brand: any) => (
-            <Link key={brand._id} href={`/brands/${brand.slug}`}
-              className="aspect-[3/2] bg-[#FFFBF2] border border-[#E6D9BD] rounded-[10px] flex items-center justify-center text-[20px] font-semibold tracking-tight hover:border-[#1F2F4A] hover:-translate-y-px transition-all"
-              style={{ fontFamily: 'var(--font-inter, system-ui)' }}>
-              {brand.logo
-                ? <Image src={imgUrl(brand.logo)} alt={brand.name} width={80} height={40} className="object-contain" />
-                : <span className="text-[#7A8299]">{brand.em || brand.name}</span>}
-            </Link>
-          ))}
         </div>
       </div>
     </section>
