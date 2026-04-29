@@ -170,7 +170,7 @@ export default function OrderConfirmPage() {
             <TotalRow label="Subtotal" value={fmtTk(order.subtotal)} />
             <TotalRow label="Shipping" value={order.shipping === 0 ? 'Free' : fmtTk(order.shipping)} green={order.shipping === 0} />
             {order.discount > 0 && <TotalRow label="Discount" value={`-${fmtTk(order.discount)}`} green />}
-            {order.giftWrapCost > 0 && <TotalRow label="Gift Wrap" value={fmtTk(order.giftWrapCost)} />}
+            {(order.giftWrapCost ?? 0) > 0 && <TotalRow label="Gift Wrap" value={fmtTk(order.giftWrapCost!)} />}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #E6D9BD', marginTop: 10, paddingTop: 10 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1F2F4A' }}>Total</span>
               <span style={{ fontSize: 18, fontWeight: 700, color: '#EC5D4A' }}>{fmtTk(order.total)}</span>
