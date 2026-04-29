@@ -7,7 +7,7 @@ export function fmtDate(d: string | Date): string {
 }
 
 export function fmtDateTime(d: string | Date): string {
-  return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(d).toLocaleString(undefined, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 export function relTime(d: string | Date): string {

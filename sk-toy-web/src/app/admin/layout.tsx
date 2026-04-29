@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminGuard from '@/components/admin/AdminGuard';
@@ -41,21 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return false;
   });
   const toggleCollapsed = () => setCollapsed((c) => { const next = !c; localStorage.setItem('sk_sidebar_collapsed', next ? '1' : '0'); return next; });
-  const [searchQ, setSearchQ]             = useState('');
-  const searchRef = useRef<HTMLInputElement>(null);
-
   const { adminUser } = useAuthStore();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
 
   if (pathname === '/admin/login') return <>{children}</>;
 
@@ -115,31 +101,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span>{meta.label}</span>
             </div>
 
-            {/* Search */}
-            <div style={{ marginLeft: 24, flex: 1, maxWidth: 460 }}>
-              <label style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                background: '#FAF6EF', border: '1px solid #E8DFD2', borderRadius: 8,
-                padding: '7px 12px', cursor: 'text', color: '#8B8176', fontSize: 13,
-              }}>
-                <AdminIcon name="search" size={14} color="#8B8176" />
-                <input
-                  ref={searchRef}
-                  value={searchQ}
-                  onChange={(e) => setSearchQ(e.target.value)}
-                  placeholder="Search products, orders, customers…"
-                  style={{
-                    flex: 1, border: 0, outline: 0, background: 'transparent',
-                    fontSize: 13, fontFamily: 'inherit', color: '#2A2420',
-                  }}
-                />
-                <span style={{
-                  fontSize: 11, color: '#A89E92', background: '#FFF',
-                  border: '1px solid #E8DFD2', borderRadius: 4, padding: '1px 6px',
-                  fontFamily: 'var(--font-mono-var, monospace)',
-                }}>⌘K</span>
-              </label>
-            </div>
+            <div style={{ flex: 1 }} />
 
             {/* Right: storefront link + notifications + user */}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>

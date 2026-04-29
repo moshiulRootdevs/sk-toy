@@ -350,19 +350,20 @@ router.post('/:id/images', adminAuth, ...uploadProduct.array('images', 10), asyn
   } catch (err) { next(err); }
 });
 
-// DELETE /api/products/:id
-router.delete('/:id', adminAuth, audit('DELETED', 'Product', (req) => `Deleted product ${req.params.id}`), async (req, res, next) => {
+// DELETE /api/products/:id — soft delete (deactivate), preserves order history
+router.delete('/:id', adminAuth, audit('DELETED', 'Product', (req) => `Soft-deleted product ${req.params.id}`), async (req, res, next) => {
   try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Deleted' });
+    const product = await Product.findByIdAndUpdate(req.params.id, { active: false }, { new: true });
+    if (!product) return res.status(404).json({ message: 'Not found' });
+    res.json({ message: 'Product deactivated' });
   } catch (err) { next(err); }
 });
 
-// POST /api/products/bulk-delete
+// POST /api/products/bulk-delete — soft delete (deactivate)
 router.post('/bulk-delete', adminAuth, async (req, res, next) => {
   try {
     const { ids } = req.body;
-    await Product.deleteMany({ _id: { $in: ids } });
+    await Product.updateMany({ _id: { $in: ids } }, { active: false });
     res.json({ deleted: ids.length });
   } catch (err) { next(err); }
 });

@@ -136,6 +136,12 @@ router.get('/admin/all', adminAuth, async (req, res) => {
   res.json({ orders, total, page: +page, pages: Math.ceil(total / +limit) });
 });
 
+// GET /api/orders/admin/phone-history/:phone — order count by phone
+router.get('/admin/phone-history/:phone', adminAuth, async (req, res) => {
+  const count = await Order.countDocuments({ phone: req.params.phone });
+  res.json({ count });
+});
+
 router.get('/admin/:id', adminAuth, async (req, res) => {
   const order = await Order.findById(req.params.id).populate('lines.product', 'name images sku').lean();
   if (!order) return res.status(404).json({ message: 'Not found' });
@@ -150,7 +156,13 @@ router.put('/admin/:id', adminAuth, audit('UPDATED', 'Order', (req) => `Updated 
 
 // PATCH /api/orders/admin/:id/status
 router.patch('/admin/:id/status', adminAuth, audit('UPDATED', 'Order', (req) => `Status → ${req.body.status} for order ${req.params.id}`), async (req, res) => {
-  const order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+  const { status, paymentStatus, trackingNo, staffNote } = req.body;
+  const updates = {};
+  if (status) updates.status = status;
+  if (paymentStatus) updates.paymentStatus = paymentStatus;
+  if (trackingNo !== undefined) updates.trackingNo = trackingNo;
+  if (staffNote !== undefined) updates.staffNote = staffNote;
+  const order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true });
   if (!order) return res.status(404).json({ message: 'Not found' });
   res.json(order);
 });

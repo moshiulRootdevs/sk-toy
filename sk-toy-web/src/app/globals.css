@@ -95,9 +95,9 @@ select:focus-visible {
   box-shadow: 0 0 0 2px #EC5D4A;
 }
 
-/* Scrollbar hiding utility */
-.scrollbar-none::-webkit-scrollbar { display: none; }
-.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+/* Hide all scrollbars globally */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; }
 
 /* Logo animations */
 @keyframes logoDotBounce {
