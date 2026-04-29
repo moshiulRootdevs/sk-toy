@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { Product, Category } from '@/types';
 import { imgUrl } from '@/lib/utils';
 import Card from '@/components/ui/Card';
+import Tooltip from '@/components/ui/Tooltip';
 import Button from '@/components/ui/Button';
 import Toggle from '@/components/ui/Toggle';
 import Select from '@/components/ui/Select';
@@ -788,7 +789,6 @@ function CategoryMultiSelect({
               padding: '3px 4px 3px 9px', borderRadius: 14, background: '#EC5D4A',
               color: '#FFF', fontSize: 12, fontWeight: 500,
             }}
-            title="Click to remove"
           >
             {o.label}
             <span style={{
