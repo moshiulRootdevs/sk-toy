@@ -35,7 +35,11 @@ const PAGE_META: Record<string, { label: string; icon: string }> = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen]     = useState(false);
-  const [collapsed, setCollapsed]         = useState(false);
+  const [collapsed, setCollapsed]         = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('sk_sidebar_collapsed') === '1';
+    return false;
+  });
+  const toggleCollapsed = () => setCollapsed((c) => { const next = !c; localStorage.setItem('sk_sidebar_collapsed', next ? '1' : '0'); return next; });
   const [searchQ, setSearchQ]             = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const segment = pathname.split('/')[2] || 'dashboard';
   const meta = PAGE_META[segment] || { label: segment.charAt(0).toUpperCase() + segment.slice(1), icon: 'dashboard' };
-  const sidebarW = collapsed ? 60 : 232;
+  const sidebarW = collapsed ? 64 : 244;
 
   return (
     <AdminGuard>
@@ -78,7 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           open={sidebarOpen}
           collapsed={collapsed}
           onClose={() => setSidebarOpen(false)}
-          onToggleCollapse={() => setCollapsed((c) => !c)}
+          onToggleCollapse={toggleCollapsed}
         />
 
         {/* Right column */}

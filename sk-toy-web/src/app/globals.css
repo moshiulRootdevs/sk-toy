@@ -166,3 +166,85 @@ select:focus-visible {
   from { opacity: 0; transform: scaleY(0.92) translateY(-6px); }
   to   { opacity: 1; transform: scaleY(1)    translateY(0); }
 }
+
+/* Sidebar active menu animations */
+/* Sidebar active: pulsing dot */
+@keyframes sidebarDotPulse {
+  0%, 100% { box-shadow: 0 0 4px var(--dot-color); transform: scale(1); }
+  50%      { box-shadow: 0 0 12px var(--dot-color); transform: scale(1.4); }
+}
+/* Sidebar active: icon entrance bounce */
+@keyframes sidebarIconBounce {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.2) rotate(-8deg); }
+  60%  { transform: scale(0.95) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+/* Sidebar active: left bar slide in */
+@keyframes sidebarBarGrow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+/* Sidebar active: background flash */
+@keyframes sidebarBgFlash {
+  0%   { opacity: 0.5; }
+  50%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+/* Sidebar active: breathing glow on the active item background */
+@keyframes sidebarBreathe {
+  0%, 100% { box-shadow: inset 0 0 12px var(--accent-glow, rgba(255,255,255,.05)); }
+  50%      { box-shadow: inset 0 0 20px var(--accent-glow, rgba(255,255,255,.1)); }
+}
+/* Sidebar active: shimmer sweep across the item */
+@keyframes sidebarShimmer {
+  0%   { left: -100%; }
+  100% { left: 200%; }
+}
+/* Sidebar active: bar glow pulse */
+@keyframes sidebarBarPulse {
+  0%, 100% { opacity: 0.7; box-shadow: 0 0 6px var(--bar-color); }
+  50%      { opacity: 1;   box-shadow: 0 0 14px var(--bar-color); }
+}
+/* Sidebar active: icon float */
+@keyframes sidebarIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+
+.sidebar-active-dot  { animation: sidebarDotPulse 2s ease-in-out infinite; }
+.sidebar-active-icon { animation: sidebarIconBounce .4s cubic-bezier(.36,.07,.19,.97), sidebarIconFloat 3s ease-in-out .4s infinite; }
+.sidebar-active-bar  { animation: sidebarBarGrow .3s ease-out, sidebarBarPulse 2.5s ease-in-out .3s infinite; transform-origin: center; }
+.sidebar-active-bg   { animation: sidebarBgFlash .3s ease-out, sidebarBreathe 3s ease-in-out .3s infinite; }
+
+/* Sidebar active shimmer overlay */
+.sidebar-active-bg::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent);
+  animation: sidebarShimmer 4s ease-in-out 1s infinite;
+  pointer-events: none;
+}
+
+/* Sidebar nav link click ripple */
+.sidebar-nav-link { position: relative; overflow: hidden; }
+.sidebar-nav-link:active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,.15) 0%, transparent 60%);
+  animation: sidebarRipple .4s ease-out;
+  pointer-events: none;
+}
+@keyframes sidebarRipple {
+  from { transform: scale(0); opacity: 1; }
+  to   { transform: scale(2.5); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-active-dot, .sidebar-active-icon, .sidebar-active-bar,
+  .sidebar-active-bg, .sidebar-active-bg::before,
+  .sidebar-nav-link:active::after { animation: none; }
+}
