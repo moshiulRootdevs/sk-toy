@@ -221,7 +221,7 @@ function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackin
             <div>
               <div style={{ fontWeight: 600, color: '#2A2420', fontSize: 13, marginBottom: 10 }}>Items</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {selected.lines.map((line, i) => {
+                {selected.lines.map((line: any, i: number) => {
                   const productId = typeof line.product === 'object' ? (line.product as any)?._id : line.product;
                   const hasLink = !!productId;
                   return (
