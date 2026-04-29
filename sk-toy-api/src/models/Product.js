@@ -45,7 +45,6 @@ const productSchema = new mongoose.Schema({
   dimensions:  { l: Number, w: Number, h: Number },
 }, { timestamps: true });
 
-productSchema.index({ slug: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ categories: 1 });
 

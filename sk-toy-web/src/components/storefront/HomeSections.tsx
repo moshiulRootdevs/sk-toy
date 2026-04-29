@@ -92,7 +92,7 @@ function HeroSection({ section }: { section: HomeSection }) {
             </div>
 
             <h1 className="text-[clamp(52px,7vw,88px)] font-semibold leading-[0.92] tracking-tight text-[#FFFBF2] mb-6"
-                style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>
+                style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>
               {title}
             </h1>
 
@@ -114,7 +114,7 @@ function HeroSection({ section }: { section: HomeSection }) {
               {stats.map((s, i) => (
                 <div key={i}>
                   <div className="text-[34px] font-semibold leading-none text-[#FFFBF2] mb-1.5"
-                       style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>{s.num}</div>
+                       style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>{s.num}</div>
                   <div className="text-[11px] uppercase tracking-[0.1em] text-[#FFFBF2]/70 font-semibold"
                        style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>{s.label}</div>
                 </div>
@@ -142,7 +142,7 @@ function HeroSection({ section }: { section: HomeSection }) {
               <span className="text-[9px] font-bold tracking-[.15em] text-[#1F2F4A] uppercase"
                     style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>{badgeTopLine}</span>
               <span className="text-[36px] font-bold leading-none text-[#EC5D4A]"
-                    style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>{badgeValue}</span>
+                    style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>{badgeValue}</span>
               <span className="text-[11px] text-[#344463] font-semibold">{badgeBottomLine}</span>
             </div>
           </div>
@@ -243,7 +243,7 @@ function AgesSection({ section }: { section: HomeSection }) {
               className="group rounded-[24px] p-7 text-left hover:-translate-y-1 hover:rotate-[-1deg] hover:shadow-[0_14px_28px_-12px_rgba(0,0,0,.22)] transition-all duration-200 overflow-hidden"
               style={{ background: tile.bg, color: tile.ink }}>
               <div className="text-[72px] font-semibold leading-[0.85] tracking-tighter mb-3.5"
-                   style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>
+                   style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>
                 {tile.range}
               </div>
               <div className="text-[10px] uppercase tracking-[.12em] opacity-60 font-bold mb-1"
@@ -362,7 +362,7 @@ function EditorialBand({ section }: { section: HomeSection }) {
             </p>
           )}
           <h2 className="text-[52px] lg:text-[56px] font-semibold leading-[0.95] tracking-tight mb-4"
-              style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>
+              style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>
             {section.title}
           </h2>
           {section.bandText && (
@@ -405,7 +405,7 @@ function EditorialBand({ section }: { section: HomeSection }) {
                style={{ background: '#4FA36A' }} />
           {/* Center sticker */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90px] h-[90px] rounded-full bg-[#FFFBF2] flex items-center justify-center shadow-lg border-4 border-dashed border-[#EC5D4A]/30 -rotate-12"
-               style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>
+               style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>
             <svg className="w-8 h-8 text-[#EC5D4A]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M12 2 14.5 9.5 22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" />
             </svg>
@@ -437,7 +437,7 @@ function JournalSection({ section }: { section: HomeSection }) {
                 {post.readTime}
               </p>
               <h3 className="text-[24px] font-semibold leading-snug tracking-tight group-hover:text-[#EC5D4A] transition-colors mb-2"
-                  style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>
+                  style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>
                 {post.title}
               </h3>
               {post.excerpt && (
@@ -478,7 +478,7 @@ function SectionHead({ section }: { section: HomeSection }) {
         )}
         {section.title && (
           <h2 className="text-[44px] font-semibold leading-none tracking-tight text-[#1F2F4A]"
-              style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>
+              style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>
             {section.title}
           </h2>
         )}

@@ -18,7 +18,7 @@ export default function TrendingSection({ products }: Props) {
           <div>
             <p className="eyebrow mb-2">What's hot right now</p>
             <h2 className="text-[32px] sm:text-[40px] font-semibold leading-tight tracking-tight text-[#1F2F4A]"
-                style={{ fontFamily: 'var(--font-fredoka, system-ui)' }}>
+                style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>
               Trending Products
             </h2>
             <p className="text-sm text-[#7A8299] mt-2 max-w-[480px]">

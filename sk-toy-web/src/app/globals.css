@@ -21,9 +21,9 @@
   --color-butter-soft: #FBE7A8;
   --color-border:      #E6D9BD;
 
-  --font-display: var(--font-fredoka), 'Inter', system-ui, sans-serif;
+  --font-display: var(--font-inter), system-ui, sans-serif;
   --font-sans:    var(--font-inter), system-ui, sans-serif;
-  --font-mono:    var(--font-mono-var), ui-monospace, monospace;
+  --font-mono:    ui-monospace, 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
 
   --radius-sm: 10px;
   --radius:    18px;
@@ -67,21 +67,21 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-fredoka), var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.015em;
 }
 
 .font-display {
-  font-family: var(--font-fredoka), var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
 }
 
 .font-mono-sk {
-  font-family: var(--font-mono-var), ui-monospace, monospace;
+  font-family: ui-monospace, 'SFMono-Regular', 'Consolas', monospace;
 }
 
 .eyebrow {
-  font-family: var(--font-mono-var), ui-monospace, monospace;
+  font-family: ui-monospace, 'SFMono-Regular', 'Consolas', monospace;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -130,7 +130,7 @@ select:focus-visible {
 /* Mega menu link arrow */
 .mega-link { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; text-decoration: none; color: #1F2F4A; transition: color .15s; }
 .mega-link:hover { color: #EC5D4A; }
-.mega-link .arrow { opacity: 0; transform: none; font-family: var(--font-mono-var, monospace); transition: opacity .15s, transform .15s; }
+.mega-link .arrow { opacity: 0; transform: none; font-family: ui-monospace, monospace; transition: opacity .15s, transform .15s; }
 .mega-link:hover .arrow { opacity: 1; transform: translateX(2px); }
 
 /* Product description rich text */

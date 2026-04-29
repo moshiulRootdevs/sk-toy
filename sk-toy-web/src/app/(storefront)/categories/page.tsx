@@ -38,7 +38,7 @@ export default function CategoriesPage() {
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: '#EC5D4A', fontFamily: 'var(--font-mono-var, monospace)', marginBottom: 8 }}>
           Browse · {roots.length} categories
         </div>
-        <h1 style={{ fontFamily: 'var(--font-fredoka, Fredoka, sans-serif)', fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.05, color: '#1F2F4A', margin: 0 }}>
+        <h1 style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.05, color: '#1F2F4A', margin: 0 }}>
           Shop by <span style={{ color: '#EC5D4A' }}>Category</span>
         </h1>
       </div>

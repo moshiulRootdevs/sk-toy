@@ -85,7 +85,7 @@ function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
               <span style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#7A8299' }}>
                 Shop the collection
               </span>
-              <h3 style={{ fontFamily: 'var(--font-fredoka, system-ui)', fontSize: '24px', fontWeight: 600, margin: '8px 0 6px', lineHeight: 1.15, color: '#1F2F4A' }}>
+              <h3 style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontSize: '24px', fontWeight: 600, margin: '8px 0 6px', lineHeight: 1.15, color: '#1F2F4A' }}>
                 {cat.name}
               </h3>
               <p style={{ color: '#5A5048', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
@@ -455,7 +455,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
                   priority
                 />
               ) : (
-                <span className="flex items-end leading-none select-none" style={{ fontSize: '30px', fontFamily: 'var(--font-fredoka, system-ui)', fontWeight: 600 }}>
+                <span className="flex items-end leading-none select-none" style={{ fontSize: '30px', fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontWeight: 600 }}>
                   <span className="logo-letter" style={{ color: '#EC5D4A', animationDelay: '0s' }}>S</span>
                   <span className="logo-letter" style={{ color: '#F5C443', animationDelay: '.08s' }}>K</span>
                   <span className="logo-dot" />

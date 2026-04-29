@@ -54,7 +54,6 @@ orderSchema.pre('save', async function (next) {
   next();
 });
 
-orderSchema.index({ orderNo: 1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ customer: 1 });
 orderSchema.index({ createdAt: -1 });

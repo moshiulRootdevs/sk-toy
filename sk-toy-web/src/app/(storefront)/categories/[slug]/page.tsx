@@ -288,7 +288,7 @@ export default function CategoryPage() {
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: '#EC5D4A', fontFamily: 'var(--font-mono-var, monospace)', marginBottom: 6 }}>
           Category · {productsData?.total ?? 0} products
         </div>
-        <h1 style={{ fontFamily: 'var(--font-fredoka, Fredoka, sans-serif)', fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.05, color: '#1F2F4A', margin: '0 0 8px' }}>
+        <h1 style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.05, color: '#1F2F4A', margin: '0 0 8px' }}>
           {headRest && <>{headRest} </>}
           <span style={{ color: '#EC5D4A' }}>{headLast}</span>
         </h1>
@@ -373,7 +373,7 @@ export default function CategoryPage() {
             ) : products.length === 0 ? (
               <div style={{ textAlign: 'center', paddingTop: 80, paddingBottom: 80 }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>∅</div>
-                <div style={{ fontSize: 20, fontWeight: 600, color: '#1F2F4A', fontFamily: 'var(--font-fredoka, Fredoka, sans-serif)' }}>Nothing matches</div>
+                <div style={{ fontSize: 20, fontWeight: 600, color: '#1F2F4A', fontFamily: 'var(--font-inter, system-ui, sans-serif)' }}>Nothing matches</div>
                 <p style={{ color: '#8B8176', marginTop: 8 }}>Try loosening a filter or check back soon.</p>
                 {activeFilterCount > 0 && (
                   <button onClick={() => setFilters(EMPTY_FILTERS)} style={{ marginTop: 16, padding: '8px 20px', borderRadius: 8, border: 'none', background: '#EC5D4A', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>

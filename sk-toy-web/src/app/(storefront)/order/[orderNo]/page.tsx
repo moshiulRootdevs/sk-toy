@@ -73,7 +73,7 @@ export default function OrderConfirmPage() {
               <path d="M20 6 9 17l-5-5" />
             </svg>
           </div>
-          <h1 style={{ fontFamily: 'var(--font-fredoka, system-ui)', fontSize: 32, fontWeight: 700, color: '#1F2F4A', margin: '0 0 8px' }}>
+          <h1 style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontSize: 32, fontWeight: 700, color: '#1F2F4A', margin: '0 0 8px' }}>
             Thank you, {order.customerName?.split(' ')[0]}!
           </h1>
           <p style={{ color: '#5A5048', fontSize: 15, margin: '0 0 12px' }}>

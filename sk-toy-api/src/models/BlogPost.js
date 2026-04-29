@@ -15,7 +15,6 @@ const blogPostSchema = new mongoose.Schema({
   metaDescription: String,
 }, { timestamps: true });
 
-blogPostSchema.index({ slug: 1 });
 blogPostSchema.index({ status: 1 });
 
 module.exports = mongoose.model('BlogPost', blogPostSchema);
