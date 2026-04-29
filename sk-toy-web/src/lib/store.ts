@@ -81,6 +81,7 @@ interface AuthStore {
   adminUser: { id: string; name: string; email: string; role: string } | null;
   customer: { id: string; name: string; email: string; tier?: string } | null;
   setAdmin: (user: AuthStore['adminUser'], token: string) => void;
+  updateAdminUser: (user: AuthStore['adminUser']) => void;
   setCustomer: (customer: AuthStore['customer'], token: string) => void;
   logoutAdmin: () => void;
   logoutCustomer: () => void;
@@ -91,6 +92,9 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   customer: null,
   setAdmin: (user, token) => {
     if (typeof window !== 'undefined') localStorage.setItem('sk_admin_token', token);
+    set({ adminUser: user });
+  },
+  updateAdminUser: (user) => {
     set({ adminUser: user });
   },
   setCustomer: (customer, token) => {

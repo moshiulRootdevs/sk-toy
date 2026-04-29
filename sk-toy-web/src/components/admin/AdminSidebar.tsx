@@ -243,16 +243,22 @@ export default function AdminSidebar({ open, collapsed, onClose, onToggleCollaps
         <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', flexShrink: 0, padding: collapsed ? '8px 0' : '8px 10px' }}>
           {adminUser && collapsed ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <Tooltip label={`${adminUser.name} · ${adminUser.role?.replace('_', ' ')}`} position="right">
-                <div style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  background: 'linear-gradient(135deg, #F5C443 0%, #F39436 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 700, color: '#1F2F4A',
-                  boxShadow: '0 2px 6px rgba(245,196,67,.3)',
-                }}>
-                  {adminUser.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
-                </div>
+              <Tooltip label="My Profile" position="right">
+                <Link href="/admin/profile" style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: 'linear-gradient(135deg, #F5C443 0%, #F39436 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700, color: '#1F2F4A',
+                    boxShadow: '0 2px 6px rgba(245,196,67,.3)',
+                    cursor: 'pointer', transition: 'transform .15s',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.08)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ''; }}
+                  >
+                    {adminUser.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                </Link>
               </Tooltip>
               <Tooltip label="Logout" position="right">
                 <button onClick={logout}
@@ -270,23 +276,28 @@ export default function AdminSidebar({ open, collapsed, onClose, onToggleCollaps
               background: 'linear-gradient(135deg, rgba(245,196,67,.08) 0%, rgba(236,93,74,.06) 100%)',
               borderRadius: 10, border: '1px solid rgba(245,196,67,.1)',
             }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 10,
-                background: 'linear-gradient(135deg, #F5C443 0%, #F39436 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 700, color: '#1F2F4A', flexShrink: 0,
-                boxShadow: '0 2px 6px rgba(245,196,67,.3)',
-              }}>
-                {adminUser.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {adminUser.name}
+              <Link href="/admin/profile" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.8'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+              >
+                <div style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: 'linear-gradient(135deg, #F5C443 0%, #F39436 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, color: '#1F2F4A', flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(245,196,67,.3)',
+                }}>
+                  {adminUser.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
-                <div style={{ fontSize: 10, color: '#F5C443', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                  {adminUser.role?.replace('_', ' ')}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {adminUser.name}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#F5C443', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                    {adminUser.role?.replace('_', ' ')}
+                  </div>
                 </div>
-              </div>
+              </Link>
               <Tooltip label="Logout" position="top">
                 <button onClick={logout}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, background: 'rgba(236,93,74,.1)', color: '#EC5D4A', border: 0, cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit', flexShrink: 0 }}

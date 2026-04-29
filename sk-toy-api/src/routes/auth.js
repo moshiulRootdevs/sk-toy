@@ -23,6 +23,13 @@ router.get('/admin/me', adminAuth, (req, res) => {
   res.json({ user: { id: req.user._id, name: req.user.name, email: req.user.email, role: req.user.role } });
 });
 
+router.put('/admin/profile', adminAuth, async (req, res) => {
+  const { name } = req.body;
+  if (!name?.trim()) return res.status(400).json({ message: 'Name is required' });
+  const user = await User.findByIdAndUpdate(req.user._id, { name: name.trim() }, { new: true });
+  res.json({ user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+});
+
 router.put('/admin/password', adminAuth, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const user = await User.findById(req.user._id).select('+password');

@@ -30,6 +30,7 @@ const PAGE_META: Record<string, { label: string; icon: string }> = {
   shipping:   { label: 'Shipping',    icon: 'shipping' },
   audit:      { label: 'Audit Log',   icon: 'audit' },
   settings:   { label: 'Settings',    icon: 'settings' },
+  profile:    { label: 'My Profile',  icon: 'customer' },
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -169,10 +170,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }} />
               </button>
 
-              <div style={{
+              <Link href="/admin/profile" style={{
                 display: 'flex', alignItems: 'center', gap: 9,
                 paddingLeft: 12, borderLeft: '1px solid #E8DFD2',
-              }}>
+                textDecoration: 'none', color: 'inherit', cursor: 'pointer',
+                transition: 'opacity .15s',
+              }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.7'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+              >
                 <div style={{
                   width: 30, height: 30, borderRadius: '50%', background: '#F5C443',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -191,7 +197,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {adminUser?.role?.replace('_', ' ') || 'Owner'}
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
           </header>
 
