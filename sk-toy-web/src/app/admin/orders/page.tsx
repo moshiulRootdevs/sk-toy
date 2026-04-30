@@ -164,7 +164,7 @@ function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackin
 
   return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
+            <div className="adm-grid-4">
               <div>
                 <div style={{ fontSize: 11, color: '#8B8176', marginBottom: 3 }}>Customer</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminGuard from '@/components/admin/AdminGuard';
 import AdminIcon from '@/components/admin/AdminIcon';
@@ -18,7 +18,6 @@ const PAGE_META: Record<string, { label: string; icon: string }> = {
   reviews:    { label: 'Reviews & Q&A', icon: 'review' },
   coupons:    { label: 'Coupons',     icon: 'coupon' },
   categories: { label: 'Categories',  icon: 'category' },
-
   cms:        { label: 'Pages',       icon: 'cms' },
   hero:       { label: 'Hero Section', icon: 'flag' },
   homepage:   { label: 'Homepage',    icon: 'home' },
@@ -35,8 +34,8 @@ const PAGE_META: Record<string, { label: string; icon: string }> = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen]     = useState(false);
-  const [collapsed, setCollapsed]         = useState(() => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('sk_sidebar_collapsed') === '1';
     return false;
   });
@@ -52,17 +51,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminGuard>
       <div
+        className="adm-shell"
         style={{
-          display: 'grid',
-          gridTemplateColumns: `${sidebarW}px 1fr`,
-          height: '100vh',
-          width: '100vw',
-          overflow: 'hidden',
           background: '#FAF6EF',
           color: '#2A2420',
           fontFamily: 'var(--font-inter, Inter, system-ui, sans-serif)',
           fontSize: 13,
-          transition: 'grid-template-columns .2s',
+          ['--sk-sidebar-w' as any]: `${sidebarW}px`,
         }}
       >
         <AdminSidebar
@@ -73,58 +68,59 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
 
         {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: '100vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: '100dvh' }}>
 
           {/* Topbar */}
-          <header style={{
-            background: '#FFFBF2',
-            borderBottom: '1px solid #E8DFD2',
-            padding: '0 24px',
-            height: 58,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-            flexShrink: 0,
-          }}>
+          <header
+            className="px-4 sm:px-6 gap-3 sm:gap-4"
+            style={{
+              background: '#FFFBF2',
+              borderBottom: '1px solid #E8DFD2',
+              minHeight: 56,
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0,
+            }}
+          >
             {/* Mobile hamburger */}
             <button
-              className="lg:hidden"
+              className="lg:hidden flex items-center justify-center"
               onClick={() => setSidebarOpen(true)}
               style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, color: '#5A5048' }}
+              aria-label="Open menu"
             >
-              <AdminIcon name="menu" size={18} />
+              <AdminIcon name="menu" size={20} />
             </button>
 
             {/* Current page */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: '#2A2420' }}>
+            <div className="flex items-center gap-2 min-w-0" style={{ fontSize: 14, fontWeight: 600, color: '#2A2420' }}>
               <AdminIcon name={meta.icon} size={16} color="#EC5D4A" />
-              <span>{meta.label}</span>
+              <span className="truncate">{meta.label}</span>
             </div>
 
             <div style={{ flex: 1 }} />
 
-            {/* Right: storefront link + notifications + user */}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Right cluster — adapts on small screens */}
+            <div className="flex items-center gap-2 sm:gap-2.5 ml-auto">
+              {/* Storefront link — icon only on mobile */}
               <Link
                 href="/"
                 target="_blank"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#D8CFBF] hover:bg-[#F2EEE6] transition-colors"
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  border: '1px solid #D8CFBF', borderRadius: 8, padding: '5px 10px',
+                  padding: '6px 10px',
                   fontSize: 12, fontWeight: 500, color: '#5A5048', textDecoration: 'none',
-                  background: 'transparent',
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F2EEE6'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
               >
                 <AdminIcon name="external" size={13} />
-                Storefront
+                <span className="hidden sm:inline">Storefront</span>
               </Link>
 
-              <button style={{
-                position: 'relative', border: 0, background: 'transparent',
-                cursor: 'pointer', padding: 8, color: '#5A5048',
-              }}>
+              <button
+                className="relative hidden sm:inline-flex"
+                style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 8, color: '#5A5048' }}
+                aria-label="Notifications"
+              >
                 <AdminIcon name="bell" size={16} />
                 <span style={{
                   position: 'absolute', top: 6, right: 6,
@@ -132,14 +128,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }} />
               </button>
 
-              <Link href="/admin/profile" style={{
-                display: 'flex', alignItems: 'center', gap: 9,
-                paddingLeft: 12, borderLeft: '1px solid #E8DFD2',
-                textDecoration: 'none', color: 'inherit', cursor: 'pointer',
-                transition: 'opacity .15s',
-              }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.7'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+              <Link
+                href="/admin/profile"
+                className="flex items-center gap-2.5 sm:gap-2.5 sm:pl-3 sm:border-l sm:border-[#E8DFD2] hover:opacity-70 transition-opacity"
+                style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
               >
                 <div style={{
                   width: 30, height: 30, borderRadius: '50%', background: '#F5C443',
@@ -148,7 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }}>
                   {adminUser?.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'AD'}
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2 }}>
                     {adminUser?.name?.split(' ')[0] || 'Admin'}
                   </div>
@@ -164,11 +156,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </header>
 
           {/* Scrollable content */}
-          <main style={{
-            flex: 1, overflowY: 'auto',
-            padding: '24px 28px 60px',
-            background: '#FAF6EF',
-          }}>
+          <main
+            className="px-4 sm:px-6 lg:px-7 py-5 sm:py-6 pb-16"
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              background: '#FAF6EF',
+              minWidth: 0,
+            }}
+          >
             {children}
           </main>
         </div>

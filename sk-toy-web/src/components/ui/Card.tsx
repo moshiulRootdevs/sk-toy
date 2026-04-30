@@ -27,9 +27,9 @@ export default function Card({
     <div
       className={cls(paddings[padding] === '' ? '' : '', className)}
       style={{
-        background: isAdmin ? '#FFF' : '#FFFBF2',
+        background: isAdmin ? '#FFF' : '#FFFFFF',
         borderRadius: isAdmin ? 12 : 18,
-        border: isAdmin ? '1px solid #E8DFD2' : '1px solid #E6D9BD',
+        border: isAdmin ? '1px solid #E8DFD2' : '1px solid #FFE0EC',
         boxShadow: isAdmin ? '0 1px 3px rgba(0,0,0,.04)' : '0 1px 2px rgba(45,45,45,.06)',
         overflow: 'hidden',
       }}

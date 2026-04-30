@@ -82,7 +82,7 @@ export default function CustomersPage() {
       {selected && (
         <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.name} size="md">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="adm-grid-2">
               <div>
                 <div style={{ fontSize: 11, color: '#8B8176', marginBottom: 2 }}>Email</div>
                 <div style={{ fontSize: 13, color: '#2A2420' }}>{selected.email}</div>

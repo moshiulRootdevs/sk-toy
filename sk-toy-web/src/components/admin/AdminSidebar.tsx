@@ -153,15 +153,17 @@ export default function AdminSidebar({ open, collapsed, onClose, onToggleCollaps
 
   return (
     <>
-      {open && <div className="fixed inset-0 bg-black/40 z-20 lg:hidden" onClick={onClose} />}
+      {open && <div className="fixed inset-0 bg-black/50 z-20 lg:hidden" onClick={onClose} />}
 
       <aside
-        className="fixed top-0 left-0 z-30 flex flex-col transition-all duration-200 lg:relative lg:translate-x-0"
+        className={`adm-sb fixed top-0 left-0 z-30 flex flex-col transition-transform duration-200 lg:relative lg:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
         style={{
-          width: w, height: '100vh',
+          height: '100dvh',
           background: '#0F1B2D',
           color: '#F5F1EA',
-          transform: open ? 'translateX(0)' : undefined,
+          ['--sk-sidebar-w' as any]: `${w}px`,
         }}
       >
         {/* Logo + Collapse/Expand */}

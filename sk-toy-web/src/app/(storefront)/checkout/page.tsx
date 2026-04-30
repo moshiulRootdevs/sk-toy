@@ -194,23 +194,29 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center">
-        <p className="text-gray-500">Your cart is empty.</p>
-        <Button className="mt-4" onClick={() => router.push('/products')}>Shop Now</Button>
+        <div className="inline-flex w-20 h-20 rounded-full bg-[#FFE0EC] items-center justify-center mb-4 border-4 border-dashed border-[#FF6FB1]">
+          <span className="text-3xl">🛒</span>
+        </div>
+        <p className="text-[#7A8299] font-semibold mb-4">Your cart is empty.</p>
+        <Button className="mt-2" onClick={() => router.push('/products')}>Shop Now</Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="mb-8">
+        <p className="eyebrow mb-2">🎁 One last step</p>
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-[#1F2F4A]">Checkout</h1>
+      </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left: form */}
         <div className="flex-1 space-y-6">
 
           {/* Contact */}
-          <section className="bg-white border border-gray-100 rounded-2xl p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Contact Information</h2>
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+            <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Contact Information</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Full Name *" value={form.name} onChange={set('name')} placeholder="Moshiul Islam" />
               <Input label="Phone *" value={form.phone} onChange={set('phone')} placeholder="01XXXXXXXXX" type="tel" />
@@ -219,8 +225,8 @@ export default function CheckoutPage() {
           </section>
 
           {/* Shipping address */}
-          <section className="bg-white border border-gray-100 rounded-2xl p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Shipping Address</h2>
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+            <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#4FC081]" /> Shipping Address</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Address Line 1 *" value={form.line1} onChange={set('line1')} placeholder="House, Road, Area" className="sm:col-span-2" />
               <Input label="City / Thana *" value={form.city} onChange={set('city')} placeholder="Gulshan" />
@@ -236,10 +242,10 @@ export default function CheckoutPage() {
           </section>
 
           {/* Delivery zone */}
-          <section className="bg-white border border-gray-100 rounded-2xl p-6">
-            <h2 className="font-bold text-gray-900 mb-1">Delivery Option</h2>
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+            <h2 className="font-display font-bold text-[#1F2F4A] mb-1 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FF9A4D]" /> Delivery Option</h2>
             {form.district === DHAKA_DISTRICT && (
-              <p className="text-xs text-[#4FA36A] mb-3">
+              <p className="text-xs text-[#4FC081] mb-3 font-bold">
                 ✓ Inside Dhaka automatically selected based on your district
               </p>
             )}
@@ -279,8 +285,8 @@ export default function CheckoutPage() {
                     key={zone}
                     className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
                       deliveryZone === zone
-                        ? 'border-[#EC5D4A] bg-[#EC5D4A]/5'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#FF6FB1] bg-[#FFF5F8]'
+                        : 'border-[#FFE0EC] hover:border-[#FFD4E6]'
                     }`}
                   >
                     <input
@@ -289,7 +295,7 @@ export default function CheckoutPage() {
                       value={zone}
                       checked={deliveryZone === zone}
                       onChange={() => setDeliveryZone(zone)}
-                      className="accent-[#EC5D4A] mt-0.5"
+                      className="accent-[#FF6FB1] mt-0.5"
                     />
                     <div className="flex-1">
                       <div className="font-semibold text-sm text-gray-900">{title}</div>
@@ -298,12 +304,12 @@ export default function CheckoutPage() {
                       )}
                       {/* free-delivery threshold hint */}
                       {freeOver > 0 && !isFree && (
-                        <div className="text-xs text-[#4FA36A] font-medium mt-1">
+                        <div className="text-xs text-[#4FC081] font-medium mt-1">
                           Add {fmtTk(amountUntilFree)} more for free delivery
                         </div>
                       )}
                       {isFree && (
-                        <div className="text-xs text-[#4FA36A] font-medium mt-1">
+                        <div className="text-xs text-[#4FC081] font-medium mt-1">
                           ✓ Free delivery applied on this order
                         </div>
                       )}
@@ -316,11 +322,11 @@ export default function CheckoutPage() {
                     <div className="text-right shrink-0">
                       {isFree ? (
                         <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-sm font-bold text-[#4FA36A]">FREE</span>
+                          <span className="text-sm font-extrabold text-[#4FC081]">FREE</span>
                           <span className="text-xs text-gray-400 line-through">{fmtTk(baseAmount)}</span>
                         </div>
                       ) : (
-                        <span className="text-sm font-bold text-[#EC5D4A]">{fmtTk(amount)}</span>
+                        <span className="text-sm font-extrabold text-[#FF5B6E]">{fmtTk(amount)}</span>
                       )}
                     </div>
                   </label>
@@ -330,8 +336,8 @@ export default function CheckoutPage() {
           </section>
 
           {/* Coupon */}
-          <section className="bg-white border border-gray-100 rounded-2xl p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Coupon Code</h2>
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+            <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FFCB47]" /> Coupon Code</h2>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -339,7 +345,7 @@ export default function CheckoutPage() {
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                 disabled={couponApplied}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#EC5D4A] disabled:bg-gray-50"
+                className="flex-1 border-2 border-[#FFE0EC] rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-[#FF6FB1] disabled:bg-[#FFF5F8] font-medium"
               />
               {couponApplied ? (
                 <Button variant="outline" size="sm" onClick={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(''); }}>
@@ -354,8 +360,8 @@ export default function CheckoutPage() {
           </section>
 
           {/* Payment */}
-          <section className="bg-white border border-gray-100 rounded-2xl p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Payment Method</h2>
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+            <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#6BC8E6]" /> Payment Method</h2>
             {availablePaymentMethods.length === 0 ? (
               <p className="text-sm text-gray-400">No payment methods are currently available. Please contact support.</p>
             ) : (
@@ -364,7 +370,7 @@ export default function CheckoutPage() {
                   <label
                     key={m.value}
                     className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                      paymentMethod === m.value ? 'border-[#EC5D4A] bg-[#EC5D4A]/5' : 'border-gray-200 hover:border-gray-300'
+                      paymentMethod === m.value ? 'border-[#FF6FB1] bg-[#FFF5F8]' : 'border-[#FFE0EC] hover:border-[#FFD4E6]'
                     }`}
                   >
                     <input
@@ -373,7 +379,7 @@ export default function CheckoutPage() {
                       value={m.value}
                       checked={paymentMethod === m.value}
                       onChange={() => setPaymentMethod(m.value)}
-                      className="mt-0.5 accent-[#EC5D4A]"
+                      className="mt-0.5 accent-[#FF6FB1]"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -392,22 +398,22 @@ export default function CheckoutPage() {
           </section>
 
           {/* Note */}
-          <section className="bg-white border border-gray-100 rounded-2xl p-6">
-            <h2 className="font-bold text-gray-900 mb-4">Order Note (Optional)</h2>
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+            <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#B093E8]" /> Order Note (Optional)</h2>
             <textarea
               value={form.note}
               onChange={set('note')}
               rows={3}
               placeholder="Any special instructions..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#EC5D4A] resize-none"
+              className="w-full border-2 border-[#FFE0EC] rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#FF6FB1] resize-none font-medium"
             />
           </section>
         </div>
 
         {/* Right: order summary */}
         <div className="lg:w-80 shrink-0">
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 sticky top-24">
-            <h2 className="font-bold text-gray-900 mb-4">Order Summary</h2>
+          <div className="bg-white border-2 border-[#FFE0EC] rounded-[28px] p-6 sticky top-32 shadow-soft">
+            <h2 className="font-display font-bold text-[#1F2F4A] mb-4 text-lg flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Order Summary</h2>
             <div className="space-y-3 mb-4">
               {items.map((item) => (
                 <div key={item.productId + (item.variant || '')} className="flex items-center gap-3">
@@ -434,7 +440,7 @@ export default function CheckoutPage() {
                   Delivery ({deliveryZone === 'inside' ? insideTitle : outsideTitle})
                 </span>
                 {shippingCost === 0 && (deliveryZone === 'inside' ? insideBaseAmount : outsideBaseAmount) > 0 ? (
-                  <span className="text-[#4FA36A] font-semibold">FREE</span>
+                  <span className="text-[#4FC081] font-semibold">FREE</span>
                 ) : (
                   <span>{fmtTk(shippingCost)}</span>
                 )}

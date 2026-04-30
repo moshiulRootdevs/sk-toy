@@ -48,7 +48,7 @@ function PageBtn({ children, onClick, active, disabled }: {
       style={{
         width: 32, height: 32, borderRadius: 8, fontSize: 13,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: active ? '#EC5D4A' : 'transparent',
+        background: active ? '#FF5B6E' : 'transparent',
         color: active ? '#FFF' : '#5A5048',
         fontWeight: active ? 600 : 400,
         border: 0, cursor: disabled ? 'default' : 'pointer',

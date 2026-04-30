@@ -8,7 +8,17 @@ import { Category } from '@/types';
 import { imgUrl } from '@/lib/utils';
 import Spinner from '@/components/ui/Spinner';
 
-const CAT_COLORS = ['#EC5D4A','#F5C443','#F39436','#4FA36A','#6FB8D9','#9C7BC9','#F28BA8','#EC5D4A','#4FA36A','#F39436','#6FB8D9','#F5C443'];
+const CAT_TINTS = [
+  { bg: '#FFE0EC', dot: '#FF6FB1' },
+  { bg: '#FFEDB6', dot: '#FFCB47' },
+  { bg: '#FFE0CB', dot: '#FF9A4D' },
+  { bg: '#D7F5E2', dot: '#4FC081' },
+  { bg: '#D4EEF7', dot: '#6BC8E6' },
+  { bg: '#E5D9F8', dot: '#B093E8' },
+  { bg: '#FFD4E6', dot: '#E5539B' },
+  { bg: '#FFE0EC', dot: '#FF6FB1' },
+];
+
 const CAT_ICONS: Record<string, string> = {
   'shop-by-age': '👶', 'cars-vehicles': '🚗', 'baby-toddler': '🧸', 'educational': '🧠',
   'electronic-entertainment': '🎮', 'dolls-figures': '🪆', 'books-learning': '📚', 'combo-gift-sets': '🎁',
@@ -24,73 +34,54 @@ export default function CategoriesPage() {
   const roots = (categories || []).filter((c) => !c.parent);
 
   return (
-    <div style={{ background: '#FBF4E8', minHeight: '60vh' }}>
+    <div className="min-h-[60vh]">
       {/* Page header */}
-      <div className="max-w-[1360px] mx-auto px-8 pt-12 pb-6">
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#8B8176', marginBottom: 16 }}>
-          <Link href="/" style={{ color: '#8B8176', textDecoration: 'none' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#EC5D4A'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#8B8176'; }}
-          >Home</Link>
-          <span>/</span>
-          <span style={{ color: '#2A2420', fontWeight: 500 }}>All Categories</span>
+      <div className="max-w-[1360px] mx-auto px-6 sm:px-8 pt-10 pb-6">
+        <nav className="flex items-center gap-2 text-xs font-bold text-[#7A8299] mb-4">
+          <Link href="/" className="hover:text-[#FF6FB1]">Home</Link>
+          <span>›</span>
+          <span className="text-[#1F2F4A]">All Categories</span>
         </nav>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: '#EC5D4A', fontFamily: 'var(--font-mono-var, monospace)', marginBottom: 8 }}>
-          Browse · {roots.length} categories
-        </div>
-        <h1 style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.05, color: '#1F2F4A', margin: 0 }}>
-          Shop by <span style={{ color: '#EC5D4A' }}>Category</span>
+        <p className="eyebrow mb-2">🌈 Browse · {roots.length} categories</p>
+        <h1 className="font-display text-[clamp(36px,5vw,56px)] font-bold leading-[1.05] tracking-tight text-[#1F2F4A]">
+          Shop by <span className="text-gradient-rainbow">Category</span>
         </h1>
       </div>
 
       {/* Grid */}
-      <div className="max-w-[1360px] mx-auto px-8 pb-24">
+      <div className="max-w-[1360px] mx-auto px-6 sm:px-8 pb-20">
         {isLoading ? (
           <div className="flex justify-center py-24"><Spinner size="lg" /></div>
         ) : roots.length === 0 ? (
-          <div style={{ textAlign: 'center', paddingTop: 80, color: '#A89E92' }}>No categories found.</div>
+          <div className="text-center py-20 text-[#7A8299] font-semibold">No categories found.</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
             {roots.map((cat, i) => {
-              const color = CAT_COLORS[i % CAT_COLORS.length];
+              const tint = CAT_TINTS[i % CAT_TINTS.length];
               const icon = cat.icon || CAT_ICONS[cat.slug] || '🧸';
               const subNames = (cat.children || []).slice(0, 3).map((c: any) => c.name || c).join(', ');
               return (
                 <Link
                   key={cat._id}
                   href={`/categories/${cat.slug}`}
-                  style={{ textDecoration: 'none' }}
-                  className="group flex flex-col items-center text-center p-5 bg-[#FFFBF2] border-2 border-[#E9DAB9] rounded-[18px] transition-all duration-200"
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget;
-                    el.style.transform = 'translateY(-4px) rotate(-1deg)';
-                    el.style.borderColor = color;
-                    el.style.boxShadow = `0 12px 28px -12px ${color}`;
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget;
-                    el.style.transform = '';
-                    el.style.borderColor = '';
-                    el.style.boxShadow = '';
-                  }}
+                  className="group flex flex-col items-center text-center p-5 bg-white border-2 border-[#FFE0EC] rounded-[22px] transition-all duration-200 hover:-translate-y-1 hover:rotate-[-1deg] hover:shadow-[0_20px_40px_-18px_rgba(255,111,177,.5)] hover:border-[#FFD4E6]"
                 >
                   <div
-                    className="w-[80px] h-[80px] rounded-full flex items-center justify-center text-[32px] mb-3 group-hover:rotate-6 group-hover:scale-105 transition-transform duration-300"
-                    style={{ background: color + '22' }}
+                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center text-[34px] mb-3 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300"
+                    style={{ background: tint.bg, boxShadow: `0 8px 18px -10px ${tint.dot}80` }}
                   >
                     {cat.image
-                      ? <Image src={imgUrl(cat.image)} alt={cat.name} width={48} height={48} className="object-contain" />
+                      ? <Image src={imgUrl(cat.image)} alt={cat.name} width={56} height={56} className="object-contain" />
                       : <span>{icon}</span>}
                   </div>
-                  <p className="text-[13px] font-[500] text-[#1F2F4A] leading-tight">{cat.name}</p>
+                  <p className="text-[14px] font-bold text-[#1F2F4A] leading-tight">{cat.name}</p>
                   {(cat.tag || subNames) && (
-                    <p className="mt-1 text-[11px] text-[#8B8176] leading-tight line-clamp-2">
+                    <p className="mt-1 text-[11px] text-[#8B8176] leading-tight line-clamp-2 font-medium">
                       {cat.tag || subNames}
                     </p>
                   )}
-                  {/* Subcategory count badge */}
                   {cat.children && cat.children.length > 0 && (
-                    <span className="mt-2 text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: color + '18', color }}>
+                    <span className="mt-2 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider text-white" style={{ background: tint.dot }}>
                       {cat.children.length} sub
                     </span>
                   )}
@@ -104,40 +95,40 @@ export default function CategoriesPage() {
         {!isLoading && roots.filter((c) => c.children && c.children.length > 0).length > 0 && (
           <div className="mt-16 space-y-10">
             {roots.filter((c) => c.children && c.children.length > 0).map((cat, i) => {
-              const color = CAT_COLORS[i % CAT_COLORS.length];
+              const tint = CAT_TINTS[i % CAT_TINTS.length];
               return (
                 <div key={cat._id}>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-[11px] font-bold uppercase tracking-[.1em] px-3 py-1 rounded-full" style={{ background: color + '18', color }}>
+                    <span className="text-[11px] font-extrabold uppercase tracking-[.14em] px-3 py-1.5 rounded-full text-white" style={{ background: tint.dot }}>
                       {cat.name}
                     </span>
-                    <div className="h-px flex-1" style={{ background: '#E9DAB9' }} />
-                    <Link href={`/categories/${cat.slug}`} style={{ fontSize: 12, color, textDecoration: 'none', fontWeight: 500 }}>
+                    <div className="h-0.5 flex-1 bg-[#FFE0EC] rounded-full" />
+                    <Link href={`/categories/${cat.slug}`} className="text-xs font-bold text-[#FF6FB1] hover:underline">
                       View all →
                     </Link>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                    {(cat.children as Category[]).map((sub: any) => (
-                      <Link
-                        key={sub._id}
-                        href={`/categories/${sub.slug}`}
-                        style={{ textDecoration: 'none' }}
-                        className="flex flex-col items-center text-center p-3 bg-[#FFFBF2] border border-[#E9DAB9] rounded-2xl hover:border-current transition-colors"
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = color; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; }}
-                      >
-                        {sub.image ? (
-                          <div className="w-10 h-10 relative mb-2">
-                            <Image src={imgUrl(sub.image)} alt={sub.name} fill className="object-contain" />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl mb-2" style={{ background: color + '18' }}>
-                            {sub.icon || CAT_ICONS[sub.slug] || '🧸'}
-                          </div>
-                        )}
-                        <p className="text-[12px] font-medium text-[#1F2F4A] leading-tight">{sub.name}</p>
-                      </Link>
-                    ))}
+                    {(cat.children as Category[]).map((sub: any, j: number) => {
+                      const subTint = CAT_TINTS[(i + j + 1) % CAT_TINTS.length];
+                      return (
+                        <Link
+                          key={sub._id}
+                          href={`/categories/${sub.slug}`}
+                          className="flex flex-col items-center text-center p-3 bg-white border-2 border-[#FFE0EC] rounded-2xl hover:border-[#FFD4E6] hover:-translate-y-0.5 transition-all"
+                        >
+                          {sub.image ? (
+                            <div className="w-10 h-10 relative mb-2">
+                              <Image src={imgUrl(sub.image)} alt={sub.name} fill className="object-contain" />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl mb-2" style={{ background: subTint.bg }}>
+                              {sub.icon || CAT_ICONS[sub.slug] || '🧸'}
+                            </div>
+                          )}
+                          <p className="text-[12px] font-bold text-[#1F2F4A] leading-tight">{sub.name}</p>
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               );

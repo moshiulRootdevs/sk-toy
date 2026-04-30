@@ -106,10 +106,10 @@ export default function Select({
   }
 
   const triggerBase: React.CSSProperties = pill ? {
-    border: '1px solid #E6D9BD',
+    border: '1px solid #FFE0EC',
     borderRadius: 999,
     padding: '6px 36px 6px 14px',
-    background: '#FFFBF2',
+    background: '#FFFFFF',
     color: hasValue ? '#1F2F4A' : '#8B8176',
     fontSize: 13,
     fontWeight: 500,
@@ -212,7 +212,7 @@ export default function Select({
                   fontSize: 13,
                   fontFamily: 'inherit',
                   fontWeight: active ? 600 : 400,
-                  color: active ? '#EC5D4A' : '#2A2420',
+                  color: active ? '#FF5B6E' : '#2A2420',
                   background: active ? '#FEF3F1' : isHighlighted ? '#FAF6EF' : 'transparent',
                   border: 0,
                   cursor: 'pointer',
@@ -222,7 +222,7 @@ export default function Select({
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.label}</span>
                 {active && (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EC5D4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF5B6E" strokeWidth="2.5" style={{ flexShrink: 0 }}>
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 )}
@@ -264,8 +264,8 @@ export default function Select({
             transition: 'border-color .15s, box-shadow .15s',
             position: 'relative',
           }}
-          onFocus={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px rgba(236,93,74,.25)'; (e.currentTarget as HTMLElement).style.borderColor = '#EC5D4A'; }}
-          onBlur={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = error ? '#F2A89B' : pill ? '#E6D9BD' : '#E8DFD2'; }}
+          onFocus={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px rgba(236,93,74,.25)'; (e.currentTarget as HTMLElement).style.borderColor = '#FF5B6E'; }}
+          onBlur={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = error ? '#F2A89B' : pill ? '#FFE0EC' : '#E8DFD2'; }}
         >
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {selected?.label ?? placeholder ?? '— Select —'}

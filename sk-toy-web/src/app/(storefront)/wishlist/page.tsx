@@ -25,25 +25,30 @@ export default function WishlistPage() {
   if (ids.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <svg className="w-20 h-20 mx-auto text-gray-200 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-        </svg>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Your Wishlist is Empty</h1>
-        <p className="text-gray-500 mb-6">Save products you love to buy them later.</p>
+        <div className="inline-flex w-24 h-24 rounded-full bg-[#FFE0EC] items-center justify-center mb-5 border-4 border-dashed border-[#FF6FB1]">
+          <svg className="w-12 h-12 text-[#FF6FB1]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </div>
+        <h1 className="font-display text-3xl font-bold text-[#1F2F4A] mb-2">Your Wishlist is Empty 💔</h1>
+        <p className="text-[#7A8299] mb-6 font-medium">Save products you love to buy them later.</p>
         <Link href="/products">
-          <Button size="lg">Browse Products</Button>
+          <Button size="lg">Browse Products ✨</Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Wishlist ({ids.length})</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="mb-6">
+        <p className="eyebrow mb-1">💖 Saved for later</p>
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-[#1F2F4A]">My Wishlist <span className="text-[#FF6FB1]">({ids.length})</span></h1>
+      </div>
       {isLoading ? (
         <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
           {(products || []).map((p) => <ProductCard key={p._id} product={p} />)}
         </div>
       )}

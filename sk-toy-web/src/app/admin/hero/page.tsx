@@ -221,7 +221,7 @@ export default function HeroAdminPage() {
       <Section title="Stats Bar" subtitle="Three numbers shown below the CTA buttons">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {form.stats.map((s: { num: string; label: string }, i: number) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, alignItems: 'center' }}>
+            <div key={i} className="adm-grid-1-2" style={{ alignItems: 'center' }}>
               <div>
                 <label style={lbl}>Stat {i + 1} — Number</label>
                 <input style={inp} value={s.num} onChange={(e) => setStat(i, 'num', e.target.value)} placeholder="64+" />

@@ -29,8 +29,7 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
     <div className="relative group/tip">
       {children}
       <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50 whitespace-nowrap">
-        <div className="bg-[#1F2F4A] text-[#FFFBF2] px-2.5 py-1 rounded-lg text-[11px] font-medium leading-none"
-             style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+        <div className="bg-[#1F2F4A] text-white px-2.5 py-1 rounded-lg text-[11px] font-semibold leading-none">
           {label}
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-[5px] w-2.5 h-2.5 bg-[#1F2F4A] rotate-45 rounded-[2px]" />
@@ -42,7 +41,7 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
 function MegaLink({ href, onClose, children, muted }: { href: string; onClose: () => void; children: React.ReactNode; muted?: boolean }) {
   return (
     <li style={{ marginBottom: '6px' }}>
-      <Link href={href} onClick={onClose} className="mega-link" style={{ fontSize: muted ? '13px' : '14px', color: muted ? '#7A8299' : '#1F2F4A' }}>
+      <Link href={href} onClick={onClose} className="mega-link" style={{ fontSize: muted ? '13px' : '14px', color: muted ? '#7A8299' : '#1F2F4A', fontWeight: muted ? 400 : 500 }}>
         <span>{children}</span>
         <span className="arrow">→</span>
       </Link>
@@ -50,15 +49,13 @@ function MegaLink({ href, onClose, children, muted }: { href: string; onClose: (
   );
 }
 
+const MEGA_ACCENT = ['#FF6FB1', '#FFCB47', '#4FC081', '#6BC8E6'];
+
 function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
   const cols = (cat.children || []).slice(0, 4);
   if (!cols.length) return null;
 
-  // Top-level category link — single-segment slug always works for top-level
   const catPageHref = `/categories/${cat.slug}`;
-
-  // For sub/leaf categories, use products page with category filter
-  // (avoids multi-segment slug routing issues; backend already resolves descendants)
   function subHref(sub: Category) {
     return `/products?category=${sub._id}`;
   }
@@ -66,9 +63,9 @@ function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
   return (
     <div style={{
       position: 'absolute', top: '100%', left: 0, right: 0,
-      background: '#FFFBF2',
-      borderTop: '2px solid #E6D9BD',
-      boxShadow: '0 12px 40px -8px rgba(31,47,74,0.18)',
+      background: '#FFFFFF',
+      borderTop: '2px solid #FFD4E6',
+      boxShadow: '0 22px 50px -16px rgba(31,47,74,0.18)',
       padding: '28px 0 32px',
       zIndex: 50,
     }}>
@@ -77,15 +74,18 @@ function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
 
           {/* Feature card */}
           <div style={{
-            background: 'linear-gradient(140deg, #F5E9D2 0%, #D8EDD6 100%)',
-            borderRadius: '16px', padding: '22px 20px',
+            background: 'linear-gradient(140deg, #FFE0EC 0%, #FFE9D6 50%, #E5F1FB 100%)',
+            borderRadius: '22px', padding: '24px 22px',
             minHeight: '240px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            position: 'relative', overflow: 'hidden',
           }}>
-            <div>
-              <span style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.16em', color: '#7A8299' }}>
+            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-[#FFCB47]/40 blur-xl pointer-events-none" />
+            <div className="absolute -bottom-8 -left-6 w-28 h-28 rounded-full bg-[#B093E8]/30 blur-2xl pointer-events-none" />
+            <div style={{ position: 'relative' }}>
+              <span className="font-display" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.18em', color: '#FF6FB1', fontWeight: 700 }}>
                 Shop the collection
               </span>
-              <h3 style={{ fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontSize: '24px', fontWeight: 600, margin: '8px 0 6px', lineHeight: 1.15, color: '#1F2F4A' }}>
+              <h3 className="font-display" style={{ fontSize: '26px', fontWeight: 600, margin: '8px 0 6px', lineHeight: 1.15, color: '#1F2F4A' }}>
                 {cat.name}
               </h3>
               <p style={{ color: '#5A5048', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
@@ -95,20 +95,22 @@ function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
             <Link
               href={catPageHref}
               onClick={onClose}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#1F2F4A', color: '#FFFBF2', padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 500, textDecoration: 'none', alignSelf: 'flex-start', marginTop: '16px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#FF5B6E', color: '#FFFFFF', padding: '9px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, textDecoration: 'none', alignSelf: 'flex-start', marginTop: '16px', boxShadow: '0 6px 14px -6px rgba(255,91,110,.6)', position: 'relative' }}
             >
-              See all <span style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>→</span>
+              See all <span>→</span>
             </Link>
           </div>
 
           {/* Subcategory columns */}
-          {cols.map((sub) => (
+          {cols.map((sub, i) => (
             <div key={sub._id}>
               <Link
                 href={subHref(sub)}
                 onClick={onClose}
-                style={{ display: 'block', fontFamily: 'var(--font-mono-var, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#1F2F4A', fontWeight: 700, marginBottom: '12px', textDecoration: 'none' }}
+                className="font-display"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.16em', color: MEGA_ACCENT[i % 4], fontWeight: 700, marginBottom: '12px', textDecoration: 'none' }}
               >
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: MEGA_ACCENT[i % 4], display: 'inline-block' }} />
                 {sub.name}
               </Link>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -281,15 +283,12 @@ export default function Header({ initialSettings, initialCategories }: { initial
         if (!running) return;
         idx++;
         if (idx < stripMessages.length) {
-          // Still cycling — show next message
           setStripIdx(idx);
           setStripVisible(true);
           setTimeout(next, 3500);
         } else {
-          // Full cycle done — show all messages together
           setStripShowAll(true);
           setStripVisible(true);
-          // After 3s showing all, collapse back and restart
           setTimeout(() => {
             if (!running) return;
             setStripVisible(false);
@@ -323,9 +322,9 @@ export default function Header({ initialSettings, initialCategories }: { initial
 
   return (
     <>
-      {/* Top strip */}
-      <div className="bg-[#1F2F4A] text-[#FFFBF2] py-2 px-4 text-center hidden sm:block"
-           style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: '12px', letterSpacing: '0.04em', overflow: 'hidden' }}>
+      {/* Top strip — playful gradient */}
+      <div className="text-white py-2 px-4 text-center hidden sm:block relative overflow-hidden"
+           style={{ background: 'linear-gradient(90deg, #FF6FB1 0%, #FF9A4D 35%, #FFCB47 60%, #4FC081 80%, #6BC8E6 100%)', fontSize: '12.5px', letterSpacing: '0.04em', fontWeight: 600 }}>
         <div className="max-w-[1360px] mx-auto" style={{ overflow: 'hidden' }}>
           <span
             className="block text-center w-full"
@@ -335,25 +334,31 @@ export default function Header({ initialSettings, initialCategories }: { initial
               <span style={{ display: 'inline-flex', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
                 {stripMessages.map((msg, i) => (
                   <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                    {i > 0 && <span style={{ margin: '0 14px', opacity: 0.3 }}>·</span>}
+                    {i > 0 && <span style={{ margin: '0 14px', opacity: 0.55 }}>·</span>}
                     {msg}
                   </span>
                 ))}
               </span>
             ) : (
-              stripMessages[stripIdx]
+              <>
+                <span className="mr-2">✨</span>
+                {stripMessages[stripIdx]}
+                <span className="ml-2">✨</span>
+              </>
             )}
           </span>
         </div>
       </div>
 
       {/* Main header */}
-      <header className="bg-[#FFFBF2] border-b border-[#E6D9BD] sticky top-0 z-40">
-        <div className="max-w-[1360px] mx-auto px-8">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-6 py-5">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#FFE0EC]"
+              style={{ boxShadow: '0 6px 24px -16px rgba(255,111,177,.35)' }}>
+        <div className="max-w-[1360px] mx-auto px-4 sm:px-8">
+          {/* Mobile: hamburger + logo + cart on top, search below. Desktop: 3-col grid with search. */}
+          <div className="flex sm:grid sm:grid-cols-[1fr_auto_1fr] items-center justify-between gap-3 sm:gap-6 py-3 sm:py-5">
 
-            {/* Search */}
-            <div ref={searchRef} className="relative max-w-[380px] w-full">
+            {/* Search (desktop only here; mobile has it below) */}
+            <div ref={searchRef} className="relative max-w-[400px] w-full hidden sm:block">
               <form
                 ref={formRef}
                 onSubmit={(e) => {
@@ -363,9 +368,9 @@ export default function Header({ initialSettings, initialCategories }: { initial
                     router.push(`/products?search=${encodeURIComponent(searchQ.trim())}`);
                   }
                 }}
-                className="flex items-center bg-[#FBF4E8] border border-[#E6D9BD] px-4 py-2 gap-3 rounded-full focus-within:border-[#1F2F4A] focus-within:bg-[#FFFBF2] transition-colors"
+                className="flex items-center bg-[#FFF5F8] border-2 border-[#FFD4E6] px-4 py-2.5 gap-3 rounded-full focus-within:border-[#FF6FB1] focus-within:bg-white transition-colors"
               >
-                <svg className="w-4 h-4 text-[#7A8299] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="w-4 h-4 text-[#FF6FB1] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
                   <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
@@ -374,30 +379,28 @@ export default function Header({ initialSettings, initialCategories }: { initial
                   onChange={(e) => setSearchQ(e.target.value)}
                   onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
                   placeholder="Search dinosaurs, diecast, drones…"
-                  className="flex-1 bg-transparent text-sm text-[#1F2F4A] placeholder-[#7A8299] outline-none min-w-0"
+                  className="flex-1 bg-transparent text-sm text-[#1F2F4A] placeholder-[#B591A8] outline-none min-w-0 font-medium"
                 />
                 {suggestLoading
-                  ? <svg className="w-3.5 h-3.5 text-[#7A8299] animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
-                  : <kbd className="hidden sm:inline-block text-[10px] text-[#7A8299] border border-[#E6D9BD] px-1.5 py-0.5 rounded shrink-0"
-                         style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>/</kbd>
+                  ? <svg className="w-3.5 h-3.5 text-[#FF6FB1] animate-spin shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                  : <kbd className="hidden sm:inline-block text-[10px] text-[#FF6FB1] border border-[#FFD4E6] px-1.5 py-0.5 rounded shrink-0 font-bold">/</kbd>
                 }
               </form>
 
-              {/* Suggestions — rendered in a portal to escape header stacking context */}
+              {/* Suggestions */}
               {showSuggestions && suggestions.length > 0 && dropPos && typeof window !== 'undefined' && createPortal(
                 <div
                   data-search-panel=""
                   style={{
                     position: 'absolute',
-                    top: dropPos.top,
+                    top: dropPos.top + 6,
                     left: dropPos.left,
                     width: dropPos.width,
                     zIndex: 99999,
-                    background: '#FFFBF2',
-                    border: '1px solid #1F2F4A',
-                    borderTop: '1px solid #E6D9BD',
-                    borderRadius: '0 0 16px 16px',
-                    boxShadow: '0 12px 32px -8px rgba(31,47,74,0.18)',
+                    background: '#FFFFFF',
+                    border: '2px solid #FFD4E6',
+                    borderRadius: '20px',
+                    boxShadow: '0 22px 48px -14px rgba(255,111,177,.35)',
                     overflow: 'hidden',
                   }}
                 >
@@ -407,36 +410,36 @@ export default function Header({ initialSettings, initialCategories }: { initial
                         <Link
                           href={`/products/${product.slug}`}
                           onClick={() => { setShowSuggestions(false); setSearchQ(''); }}
-                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#FBF4E8] transition-colors group"
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#FFF5F8] transition-colors group"
                         >
-                          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 relative bg-[#F5E9D2]">
+                          <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 relative bg-[#FFE0EC]">
                             {product.images?.[0] && (
                               <Image src={imgUrl(product.images[0])} alt={product.name} fill className="object-cover" sizes="40px" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#1F2F4A] truncate group-hover:text-[#EC5D4A] transition-colors">
+                            <p className="text-sm font-semibold text-[#1F2F4A] truncate group-hover:text-[#FF6FB1] transition-colors">
                               {product.name}
                             </p>
                             {product.category && typeof product.category === 'object' && (
-                              <p className="text-[11px] text-[#A89E92]" style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+                              <p className="text-[11px] text-[#B591A8] font-semibold uppercase tracking-wider">
                                 {(product.category as any).name}
                               </p>
                             )}
                           </div>
-                          <span className="text-sm font-semibold text-[#EC5D4A] shrink-0">{fmtTk(product.price)}</span>
+                          <span className="text-sm font-bold text-[#FF5B6E] shrink-0">{fmtTk(product.price)}</span>
                         </Link>
                       </li>
                     ))}
                   </ul>
-                  <div className="border-t border-[#E6D9BD] px-4 py-2.5">
+                  <div className="border-t border-[#FFE0EC] px-4 py-2.5 bg-[#FFF5F8]">
                     <Link
                       href={`/products?search=${encodeURIComponent(searchQ.trim())}`}
                       onClick={() => { setShowSuggestions(false); setSearchQ(''); }}
-                      className="flex items-center justify-between text-sm text-[#5A5048] hover:text-[#EC5D4A] transition-colors"
+                      className="flex items-center justify-between text-sm text-[#5A5048] hover:text-[#FF6FB1] transition-colors font-medium"
                     >
                       <span>See all results for <strong className="text-[#1F2F4A]">"{searchQ}"</strong></span>
-                      <span style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>→</span>
+                      <span>→</span>
                     </Link>
                   </div>
                 </div>,
@@ -455,25 +458,25 @@ export default function Header({ initialSettings, initialCategories }: { initial
                   priority
                 />
               ) : (
-                <span className="flex items-end leading-none select-none" style={{ fontSize: '30px', fontFamily: 'var(--font-inter, system-ui, sans-serif)', fontWeight: 600 }}>
-                  <span className="logo-letter" style={{ color: '#EC5D4A', animationDelay: '0s' }}>S</span>
-                  <span className="logo-letter" style={{ color: '#F5C443', animationDelay: '.08s' }}>K</span>
+                <span className="font-display flex items-end leading-none select-none" style={{ fontSize: '34px', fontWeight: 700 }}>
+                  <span className="logo-letter" style={{ color: '#4FC081', animationDelay: '0s' }}>S</span>
+                  <span className="logo-letter" style={{ color: '#FF5B6E', animationDelay: '.08s' }}>K</span>
                   <span className="logo-dot" />
-                  <span className="logo-letter" style={{ color: '#F39436', animationDelay: '.24s' }}>T</span>
-                  <span className="logo-letter" style={{ color: '#4FA36A', animationDelay: '.32s' }}>O</span>
-                  <span className="logo-letter" style={{ color: '#6FB8D9', animationDelay: '.40s' }}>Y</span>
+                  <span className="logo-letter" style={{ color: '#FF9A4D', animationDelay: '.24s' }}>T</span>
+                  <span className="logo-letter" style={{ color: '#6BC8E6', animationDelay: '.32s' }}>O</span>
+                  <span className="logo-letter" style={{ color: '#B093E8', animationDelay: '.40s' }}>Y</span>
                 </span>
               )}
             </Link>
 
-            {/* Icons */}
-            <div className="flex items-center gap-1 justify-end">
+            {/* Right cluster: icons + Login pill */}
+            <div className="flex items-center gap-1.5 justify-end">
               <button
-                className="lg:hidden p-2 rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors"
+                className="lg:hidden p-2 rounded-full hover:bg-[#FFE0EC] text-[#1F2F4A] transition-colors"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Menu"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <line x1="4" y1="6" x2="20" y2="6" />
                   <line x1="4" y1="12" x2="20" y2="12" />
                   <line x1="4" y1="18" x2="20" y2="18" />
@@ -481,8 +484,8 @@ export default function Header({ initialSettings, initialCategories }: { initial
               </button>
 
               <Tooltip label="Track Order">
-                <Link href="/track" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors" aria-label="Track order">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <Link href="/track" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#D4EEF7] text-[#3FA1C5] hover:scale-110 hover:bg-[#6BC8E6] hover:text-white transition-all" aria-label="Track order">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <rect x="1" y="3" width="15" height="13" rx="2" />
                     <path d="M16 8h4l3 5v3h-7V8z" />
                     <circle cx="5.5" cy="18.5" r="2.5" />
@@ -491,18 +494,9 @@ export default function Header({ initialSettings, initialCategories }: { initial
                 </Link>
               </Tooltip>
 
-              <Tooltip label={customer ? 'My Account' : 'Sign In'}>
-                <Link href={customer ? '/account' : '/login'} className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors" aria-label="Account">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </Link>
-              </Tooltip>
-
               <Tooltip label="Wishlist">
-                <Link href="/wishlist" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors" aria-label="Wishlist">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <Link href="/wishlist" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#FFD4E6] text-[#E5539B] hover:scale-110 hover:bg-[#FF6FB1] hover:text-white transition-all" aria-label="Wishlist">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
                 </Link>
@@ -511,38 +505,79 @@ export default function Header({ initialSettings, initialCategories }: { initial
               <Tooltip label={count > 0 ? `Cart (${count})` : 'Cart'}>
                 <button
                   onClick={() => setCartOpen(true)}
-                  className={`relative inline-flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#FBF4E8] text-[#1F2F4A] transition-colors${cartShaking ? ' cart-shake' : ''}`}
+                  className={`relative inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#FFE0CB] text-[#E5783A] hover:scale-110 hover:bg-[#FF9A4D] hover:text-white transition-all${cartShaking ? ' cart-shake' : ''}`}
                   aria-label="Cart"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
                     <line x1="3" y1="6" x2="21" y2="6" />
                     <path d="M16 10a4 4 0 0 1-8 0" />
                   </svg>
                   {count > 0 && (
-                    <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] bg-[#EC5D4A] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-[#FFFBF2]"
-                          style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+                    <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-[#FF5B6E] text-white text-[10px] font-extrabold rounded-full flex items-center justify-center px-1 border-2 border-white">
                       {count > 9 ? '9+' : count}
                     </span>
                   )}
                 </button>
               </Tooltip>
+
+              {/* Login / Account pill */}
+              <Link
+                href={customer ? '/account' : '/login'}
+                className="hidden sm:inline-flex items-center gap-2 ml-1.5 pl-2.5 pr-4 py-2 rounded-full text-white text-[13px] font-bold transition-all hover:scale-[1.03] active:scale-95"
+                style={{
+                  background: 'linear-gradient(135deg, #FF6FB1 0%, #FF5B6E 100%)',
+                  boxShadow: '0 8px 18px -8px rgba(255,91,110,.6)',
+                }}
+              >
+                <span className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <span className="whitespace-nowrap">{customer ? customer.name?.split(' ')[0] || 'Account' : 'Login / Sign Up'}</span>
+              </Link>
             </div>
+          </div>
+
+          {/* Mobile-only search bar (below the main header row) */}
+          <div className="sm:hidden pb-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchQ.trim()) {
+                  router.push(`/products?search=${encodeURIComponent(searchQ.trim())}`);
+                }
+              }}
+              className="flex items-center bg-[#FFF5F8] border-2 border-[#FFD4E6] px-4 py-2.5 gap-3 rounded-full focus-within:border-[#FF6FB1] focus-within:bg-white transition-colors"
+            >
+              <svg className="w-4 h-4 text-[#FF6FB1] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+                placeholder="Search toys, brands, ages…"
+                className="flex-1 bg-transparent text-sm text-[#1F2F4A] placeholder-[#B591A8] outline-none min-w-0 font-medium"
+              />
+            </form>
           </div>
         </div>
 
         {/* Nav bar */}
         <nav
           ref={navRef}
-          className="hidden lg:block border-t border-[#E6D9BD] bg-[#FFFBF2] relative"
+          className="hidden lg:block border-t border-[#FFE0EC] bg-white relative"
           onMouseLeave={closeMega}
         >
           <div className="max-w-[1360px] mx-auto px-8">
-            <ul className="flex items-center justify-center gap-0.5">
+            <ul className="flex items-center justify-center gap-1">
               {(nav || []).map((item) => {
                 const slug = catSlug(item.link);
                 const cat = slug && catMap ? catMap.get(slug) : null;
                 const hasMega = (cat?.children?.length ?? 0) > 0;
+                const isOpen = megaOpen === item._id;
 
                 return (
                   <li key={item._id}
@@ -550,18 +585,20 @@ export default function Header({ initialSettings, initialCategories }: { initial
                     <Link
                       href={item.link}
                       onClick={() => setMegaOpen(null)}
-                      className="flex items-center gap-1.5 px-[18px] py-3.5 text-sm font-medium text-[#1F2F4A] hover:text-[#EC5D4A] border-b-2 border-transparent hover:border-[#EC5D4A] transition-colors whitespace-nowrap"
-                      style={{ borderBottomColor: megaOpen === item._id ? '#EC5D4A' : undefined, color: megaOpen === item._id ? '#1F2F4A' : undefined }}
+                      className="flex items-center gap-1.5 px-4 py-3.5 text-[14px] font-semibold transition-all whitespace-nowrap rounded-full mx-0.5 my-1"
+                      style={{
+                        color: isOpen ? '#FF6FB1' : '#1F2F4A',
+                        background: isOpen ? '#FFE0EC' : 'transparent',
+                      }}
                     >
                       {item.label}
                       {item.badge && (
-                        <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-sm font-bold tracking-wider uppercase ${item.badge === 'SALE' ? 'bg-[#4FA36A]' : 'bg-[#EC5D4A]'}`}
-                              style={{ fontFamily: 'var(--font-mono-var, monospace)' }}>
+                        <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-md font-extrabold tracking-wider uppercase ${item.badge === 'SALE' ? 'bg-[#FF6FB1]' : 'bg-[#FF5B6E]'}`}>
                           {item.badge}
                         </span>
                       )}
                       {hasMega && (
-                        <svg className="w-2 h-2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg className="w-2.5 h-2.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="m6 9 6 6 6-6" />
                         </svg>
                       )}
@@ -572,7 +609,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
             </ul>
           </div>
 
-          {/* Mega panel — full-width, positioned at bottom of nav */}
+          {/* Mega panel */}
           {megaOpen && megaCat && megaCat.children?.length ? (
             <div onMouseEnter={() => closeTimer.current && clearTimeout(closeTimer.current)} onMouseLeave={closeMega}>
               <MegaMenu cat={megaCat} onClose={() => setMegaOpen(null)} />

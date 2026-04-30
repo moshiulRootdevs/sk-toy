@@ -1,14 +1,21 @@
 import type { Metadata } from 'next';
-import { Poppins } from 'next/font/google';
+import { Fredoka, Nunito } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '@/providers/QueryProvider';
 import StoreHydration from '@/providers/StoreHydration';
 import { Toaster } from 'react-hot-toast';
 
-const poppins = Poppins({
+const nunito = Nunito({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-inter',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-nunito',
+  display: 'swap',
+});
+
+const fredoka = Fredoka({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-fredoka',
   display: 'swap',
 });
 
@@ -19,8 +26,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${poppins.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#FBF4E8] text-[#1F2F4A]" suppressHydrationWarning>
+    <html lang="en" className={`${nunito.variable} ${fredoka.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col text-[#1F2F4A]" suppressHydrationWarning>
         <QueryProvider>
           <StoreHydration />
           {children}
@@ -30,9 +37,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               duration: 3500,
               style: {
                 background: '#1F2F4A',
-                color: '#FFFBF2',
-                borderRadius: '10px',
+                color: '#FFFFFF',
+                borderRadius: '14px',
                 fontSize: '13px',
+                fontWeight: 600,
+                padding: '12px 16px',
+                boxShadow: '0 12px 28px -14px rgba(31,47,74,.45)',
+              },
+              success: {
+                iconTheme: { primary: '#FF6FB1', secondary: '#FFFFFF' },
               },
             }}
           />

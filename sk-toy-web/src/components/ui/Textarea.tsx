@@ -23,7 +23,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           rows={rows}
           className={cls(
-            'w-full rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#EC5D4A] focus:border-transparent disabled:opacity-60 resize-y',
+            'w-full rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF5B6E] focus:border-transparent disabled:opacity-60 resize-y',
             className
           )}
           style={{

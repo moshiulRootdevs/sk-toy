@@ -71,19 +71,20 @@ function ProductsContent() {
   const title = q ? `Results for "${q}"` : category ? (categories?.find((c) => c._id === category)?.name || 'Products') : 'All Products';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Top bar */}
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-          {!isLoading && <p className="text-sm text-gray-500">{total} products</p>}
+          <p className="eyebrow mb-1">🛍️ Browse our shelves</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#1F2F4A]">{title}</h1>
+          {!isLoading && <p className="text-sm text-[#7A8299] mt-1 font-semibold">{total} happy toys waiting</p>}
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center gap-2 text-sm border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 lg:hidden"
+            className="flex items-center gap-2 text-sm font-bold border-2 border-[#FFD4E6] bg-white text-[#FF6FB1] rounded-full px-4 py-2 hover:bg-[#FFE0EC] lg:hidden"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="9" y1="12" x2="21" y2="12" /><line x1="15" y1="18" x2="21" y2="18" />
             </svg>
             Filters
@@ -199,8 +200,10 @@ function ProductsContent() {
 
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{title}</h3>
+    <div className="bg-white border-2 border-[#FFE0EC] rounded-2xl p-4">
+      <h3 className="text-[10px] font-extrabold text-[#FF6FB1] uppercase tracking-[.16em] mb-3 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#FF6FB1]" /> {title}
+      </h3>
       <div className="space-y-1">{children}</div>
     </div>
   );
@@ -211,12 +214,12 @@ function FilterItem({ label, active, onClick }: { label: string; active: boolean
     <button
       onClick={onClick}
       className={cls(
-        'w-full text-left text-sm px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2',
-        active ? 'bg-[#EC5D4A]/10 text-[#EC5D4A] font-semibold' : 'text-gray-700 hover:bg-gray-100'
+        'w-full text-left text-sm px-3 py-1.5 rounded-xl transition-colors flex items-center gap-2 font-semibold',
+        active ? 'bg-[#FFE0EC] text-[#FF6FB1]' : 'text-[#1F2F4A] hover:bg-[#FFF5F8]'
       )}
     >
-      <span className={cls('w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center',
-        active ? 'bg-[#EC5D4A] border-[#EC5D4A]' : 'border-gray-300'
+      <span className={cls('w-4 h-4 rounded-md border-2 flex-shrink-0 flex items-center justify-center',
+        active ? 'bg-[#FF6FB1] border-[#FF6FB1]' : 'border-[#FFD4E6] bg-white'
       )}>
         {active && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M20 6 9 17l-5-5" /></svg>}
       </span>

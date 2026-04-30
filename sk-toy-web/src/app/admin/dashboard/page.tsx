@@ -81,7 +81,7 @@ export default function DashboardPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+      <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <div style={{ fontSize: 11, color: '#8B8176', letterSpacing: '.08em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 6 }}>
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -116,7 +116,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="adm-grid-4">
         <Kpi label="Revenue (today)"   value={fmtTk(kpis.todayRevenue || 0)}   sub={`${kpis.todayOrders || 0} orders today`}      accent="#EC5D4A"  icon="report" />
         <Kpi label="Revenue (month)"   value={fmtTk(kpis.monthRevenue || 0)}   sub={`${kpis.monthOrders || 0} orders this month`}  accent="#4FA36A"  icon="payment" />
         <Kpi label="Total customers"   value={(kpis.totalCustomers || 0).toLocaleString()} sub={`${kpis.newCustomers || 0} new this month`} accent="#6FB8D9" icon="customer" />
@@ -124,7 +124,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue chart + low stock */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+      <div className="adm-grid-2-1">
         <div style={{ background: '#FFF', borderRadius: 12, border: '1px solid #E8DFD2', padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
       </div>
 
       {/* New orders + recent customers */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="adm-grid-2">
 
         <div style={{ background: '#FFF', borderRadius: 12, border: '1px solid #E8DFD2', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 12px', borderBottom: '1px solid #F4EEE3' }}>

@@ -79,7 +79,7 @@ export default function Tooltip({ label, children, position = 'top' }: TooltipPr
           left: coords.left,
           transform: transformMap[position],
           background: '#1F2F4A',
-          color: '#FFFBF2',
+          color: '#FFFFFF',
           fontSize: 11,
           fontWeight: 500,
           padding: '4px 10px',

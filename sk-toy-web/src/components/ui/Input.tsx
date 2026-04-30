@@ -14,43 +14,42 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
 
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} style={{ fontSize: 12, fontWeight: 500, color: '#2A2420' }}>
+          <label htmlFor={inputId} className="text-[13px] font-bold text-[#1F2F4A]">
             {label}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#A89E92' }}>{leftIcon}</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#FF6FB1]">{leftIcon}</span>
           )}
           <input
             ref={ref}
             id={inputId}
             className={cls(
-              'w-full rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#EC5D4A] focus:border-transparent disabled:opacity-60',
-              leftIcon ? 'pl-9 pr-3' : 'px-3',
-              rightIcon ? 'pr-9' : '',
+              'w-full rounded-2xl transition-colors focus:outline-none focus:border-[#FF6FB1] focus:bg-white disabled:opacity-60 font-medium text-[14px]',
+              leftIcon ? 'pl-10 pr-4' : 'px-4',
+              rightIcon ? 'pr-10' : '',
               className
             )}
             style={{
-              border: error ? '1px solid #F2A89B' : '1px solid #E8DFD2',
-              background: '#FAF6EF',
-              color: '#2A2420',
-              fontSize: 13,
-              padding: '8px 12px',
-              paddingLeft: leftIcon ? 36 : undefined,
-              paddingRight: rightIcon ? 36 : undefined,
+              border: error ? '2px solid #FF8FA0' : '2px solid #FFE0EC',
+              background: '#FFF8FB',
+              color: '#1F2F4A',
+              padding: '11px 16px',
+              paddingLeft: leftIcon ? 40 : undefined,
+              paddingRight: rightIcon ? 40 : undefined,
               ...style,
             }}
             {...props}
           />
           {rightIcon && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#A89E92' }}>{rightIcon}</span>
+            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#FF6FB1]">{rightIcon}</span>
           )}
         </div>
-        {error && <p style={{ fontSize: 11, color: '#9B2914' }}>{error}</p>}
-        {hint && !error && <p style={{ fontSize: 11, color: '#8B8176' }}>{hint}</p>}
+        {error && <p className="text-[11px] text-[#E5455A] font-bold">{error}</p>}
+        {hint && !error && <p className="text-[11px] text-[#7A8299] font-medium">{hint}</p>}
       </div>
     );
   }

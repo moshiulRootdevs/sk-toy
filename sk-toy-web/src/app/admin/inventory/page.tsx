@@ -57,7 +57,7 @@ export default function InventoryPage() {
         <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}><Spinner size="lg" /></div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+          <div className="adm-grid-4">
             <KpiCard label="Total Products" value={summary?.totalProducts || 0} />
             <KpiCard label="Total Units" value={(summary?.totalUnits || 0).toLocaleString()} />
             <KpiCard label="Inventory Value" value={fmtTk(summary?.totalValue || 0)} />

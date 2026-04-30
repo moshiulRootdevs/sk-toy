@@ -55,7 +55,7 @@ export default function OrderConfirmPage() {
     <div className="max-w-xl mx-auto px-4 py-24 text-center">
       <p className="text-5xl mb-4">∅</p>
       <h1 className="text-xl font-bold text-[#1F2F4A] mb-2">Order not found</h1>
-      <Link href="/track" className="text-[#EC5D4A] text-sm hover:underline">Track your order →</Link>
+      <Link href="/track" className="text-[#FF5B6E] text-sm hover:underline">Track your order →</Link>
     </div>
   );
 
@@ -80,8 +80,8 @@ export default function OrderConfirmPage() {
             Your order has been placed and is being processed.
             {order.customerEmail && <> A confirmation has been sent to <strong>{order.customerEmail}</strong>.</>}
           </p>
-          <div style={{ display: 'inline-block', background: '#FFFBF2', border: '2px solid #F5C443', borderRadius: 10, padding: '8px 24px' }}>
-            <span style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 20, fontWeight: 700, color: '#EC5D4A', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'inline-block', background: '#FFFFFF', border: '2px solid #FFCB47', borderRadius: 10, padding: '8px 24px' }}>
+            <span style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 20, fontWeight: 700, color: '#FF5B6E', letterSpacing: '0.04em' }}>
               #{order.orderNo}
             </span>
           </div>
@@ -89,7 +89,7 @@ export default function OrderConfirmPage() {
 
         {/* Order status tracker */}
         {!isFinal && (
-          <div style={{ background: '#FFFBF2', border: '1px solid #E6D9BD', borderRadius: 16, padding: '20px 24px', marginBottom: 16 }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #FFE0EC', borderRadius: 16, padding: '20px 24px', marginBottom: 16 }}>
             <p style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em', color: '#7A8299', margin: '0 0 16px' }}>Order Status</p>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               {STEPS.map((step, i) => (
@@ -97,7 +97,7 @@ export default function OrderConfirmPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                     <div style={{
                       width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: i <= stepIdx ? '#EC5D4A' : '#F0E8D8',
+                      background: i <= stepIdx ? '#FF5B6E' : '#F0E8D8',
                       color: i <= stepIdx ? '#fff' : '#A89E92',
                       fontSize: 11, fontWeight: 700, flexShrink: 0,
                     }}>
@@ -110,7 +110,7 @@ export default function OrderConfirmPage() {
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div style={{ flex: 1, height: 2, background: i < stepIdx ? '#EC5D4A' : '#E6D9BD', margin: '0 4px', marginBottom: 22 }} />
+                    <div style={{ flex: 1, height: 2, background: i < stepIdx ? '#FF5B6E' : '#FFE0EC', margin: '0 4px', marginBottom: 22 }} />
                   )}
                 </div>
               ))}
@@ -121,7 +121,7 @@ export default function OrderConfirmPage() {
         {/* Two-col info */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
           {/* Order details */}
-          <div style={{ background: '#FFFBF2', border: '1px solid #E6D9BD', borderRadius: 16, padding: '20px 20px' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #FFE0EC', borderRadius: 16, padding: '20px 20px' }}>
             <p style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em', color: '#7A8299', margin: '0 0 12px' }}>Order Details</p>
             <Row label="Order No" value={`#${order.orderNo}`} />
             <Row label="Date" value={fmtDate(order.createdAt)} />
@@ -130,7 +130,7 @@ export default function OrderConfirmPage() {
           </div>
 
           {/* Delivery */}
-          <div style={{ background: '#FFFBF2', border: '1px solid #E6D9BD', borderRadius: 16, padding: '20px 20px' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #FFE0EC', borderRadius: 16, padding: '20px 20px' }}>
             <p style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em', color: '#7A8299', margin: '0 0 12px' }}>Delivery Address</p>
             <p style={{ fontSize: 14, fontWeight: 600, color: '#1F2F4A', margin: '0 0 4px' }}>{order.customerName}</p>
             <p style={{ fontSize: 13, color: '#5A5048', margin: '0 0 2px' }}>{order.address}</p>
@@ -142,7 +142,7 @@ export default function OrderConfirmPage() {
         </div>
 
         {/* Items */}
-        <div style={{ background: '#FFFBF2', border: '1px solid #E6D9BD', borderRadius: 16, padding: '20px 20px', marginBottom: 16 }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #FFE0EC', borderRadius: 16, padding: '20px 20px', marginBottom: 16 }}>
           <p style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em', color: '#7A8299', margin: '0 0 16px' }}>
             Items Ordered ({order.lines?.length})
           </p>
@@ -151,7 +151,7 @@ export default function OrderConfirmPage() {
             {order.lines?.map((line, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 {line.image && (
-                  <div style={{ width: 52, height: 52, borderRadius: 10, overflow: 'hidden', background: '#F5E9D2', flexShrink: 0, position: 'relative' }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 10, overflow: 'hidden', background: '#FFE0CB', flexShrink: 0, position: 'relative' }}>
                     <Image src={imgUrl(line.image)} alt={line.name} fill style={{ objectFit: 'cover' }} />
                   </div>
                 )}
@@ -166,14 +166,14 @@ export default function OrderConfirmPage() {
           </div>
 
           {/* Totals */}
-          <div style={{ borderTop: '1px solid #E6D9BD', marginTop: 16, paddingTop: 16 }}>
+          <div style={{ borderTop: '1px solid #FFE0EC', marginTop: 16, paddingTop: 16 }}>
             <TotalRow label="Subtotal" value={fmtTk(order.subtotal)} />
             <TotalRow label="Shipping" value={order.shipping === 0 ? 'Free' : fmtTk(order.shipping)} green={order.shipping === 0} />
             {order.discount > 0 && <TotalRow label="Discount" value={`-${fmtTk(order.discount)}`} green />}
             {(order.giftWrapCost ?? 0) > 0 && <TotalRow label="Gift Wrap" value={fmtTk(order.giftWrapCost!)} />}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #E6D9BD', marginTop: 10, paddingTop: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #FFE0EC', marginTop: 10, paddingTop: 10 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#1F2F4A' }}>Total</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: '#EC5D4A' }}>{fmtTk(order.total)}</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#FF5B6E' }}>{fmtTk(order.total)}</span>
             </div>
           </div>
         </div>
@@ -181,12 +181,12 @@ export default function OrderConfirmPage() {
         {/* Actions */}
         <div style={{ display: 'flex', gap: 12 }}>
           <Link href="/products" style={{ flex: 1 }}>
-            <button style={{ width: '100%', padding: '14px', border: '1.5px solid #E6D9BD', borderRadius: 12, background: '#FFFBF2', fontSize: 14, fontWeight: 600, color: '#1F2F4A', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button style={{ width: '100%', padding: '14px', border: '1.5px solid #FFE0EC', borderRadius: 12, background: '#FFFFFF', fontSize: 14, fontWeight: 600, color: '#1F2F4A', cursor: 'pointer', fontFamily: 'inherit' }}>
               Continue Shopping
             </button>
           </Link>
           <Link href="/track" style={{ flex: 1 }}>
-            <button style={{ width: '100%', padding: '14px', border: 'none', borderRadius: 12, background: '#EC5D4A', fontSize: 14, fontWeight: 600, color: '#FFFBF2', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button style={{ width: '100%', padding: '14px', border: 'none', borderRadius: 12, background: '#FF5B6E', fontSize: 14, fontWeight: 600, color: '#FFFFFF', cursor: 'pointer', fontFamily: 'inherit' }}>
               Track Order
             </button>
           </Link>
@@ -201,7 +201,7 @@ function Row({ label, value, accent }: { label: string; value: string; accent?: 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #F0E8D8' }}>
       <span style={{ fontSize: 12, color: '#7A8299' }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: accent ? '#EC5D4A' : '#1F2F4A', textTransform: accent ? 'capitalize' : undefined }}>{value}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: accent ? '#FF5B6E' : '#1F2F4A', textTransform: accent ? 'capitalize' : undefined }}>{value}</span>
     </div>
   );
 }

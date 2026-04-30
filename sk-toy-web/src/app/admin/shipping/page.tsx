@@ -51,7 +51,7 @@ function OptionCard({ zoneKey, title, form, onChange }: {
         <span style={{ fontSize: 13, fontWeight: 700, color: '#2A2420' }}>{title}</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="adm-grid-2">
         <div>
           <label style={lbl}>Label / Title</label>
           <input style={inp} value={form.title} onChange={(e) => onChange('title', e.target.value)}

@@ -22,10 +22,10 @@ export default function Toggle({ checked, onChange, label, disabled, size = 'md'
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cls(
-          'relative shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC5D4A] focus-visible:ring-offset-2',
+          'relative shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5B6E] focus-visible:ring-offset-2',
           isSmall ? 'w-8 h-4' : 'w-11 h-6',
         )}
-        style={{ background: checked ? '#EC5D4A' : '#D8CFBF' }}
+        style={{ background: checked ? '#FF5B6E' : '#D8CFBF' }}
       >
         <span
           className={cls(

@@ -22,7 +22,7 @@ export default function BlogPostPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-      <Link href="/blog" className="text-sm text-[#EC5D4A] hover:underline flex items-center gap-1 mb-6">
+      <Link href="/blog" className="text-sm text-[#FF5B6E] hover:underline flex items-center gap-1 mb-6">
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="m15 18-6-6 6-6" />
         </svg>
@@ -36,7 +36,7 @@ export default function BlogPostPage() {
       )}
 
       {post.category && (
-        <span className="text-xs font-semibold text-[#EC5D4A] uppercase">{post.category}</span>
+        <span className="text-xs font-semibold text-[#FF5B6E] uppercase">{post.category}</span>
       )}
       <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3">{post.title}</h1>
 
