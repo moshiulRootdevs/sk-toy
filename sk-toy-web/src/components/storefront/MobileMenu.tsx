@@ -69,7 +69,7 @@ export default function MobileMenu() {
 
           {/* Navigation */}
           <div className="py-2">
-            {(nav || []).map((item) => (
+            {(nav || []).filter((item) => item.label?.trim().toLowerCase() !== 'brands').map((item) => (
               <div key={item._id}>
                 <Link
                   href={item.link}

@@ -38,6 +38,12 @@ function ProductsContent() {
   const filter = searchParams.get('filter') || '';
   const page = Number(searchParams.get('page') || 1);
 
+  // Comma-separated filter params parsed into Sets for O(1) lookup.
+  const csvToSet = (v: string) => new Set(v.split(',').map((s) => s.trim()).filter(Boolean));
+  const selectedCategories = csvToSet(category);
+  const selectedAges = csvToSet(age);
+  const selectedFilters = csvToSet(filter);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['products', { q, category, sort, age, filter, page }],
     queryFn: () => {
@@ -56,11 +62,31 @@ function ProductsContent() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Read query params directly from window.location to avoid stale-closure bugs
+  // when clicks happen faster than React can re-render the new searchParams.
+  function getLiveParams(): URLSearchParams {
+    if (typeof window === 'undefined') return new URLSearchParams(searchParams.toString());
+    return new URLSearchParams(window.location.search);
+  }
+
   function setParam(key: string, val: string) {
-    const p = new URLSearchParams(searchParams.toString());
+    const p = getLiveParams();
     if (val) p.set(key, val);
     else p.delete(key);
     if (key !== 'page') p.delete('page');
+    router.push(`/products?${p.toString()}`);
+  }
+
+  // Toggle a single value in/out of a comma-separated URL param.
+  function toggleParam(key: string, value: string) {
+    const p = getLiveParams();
+    const current = csvToSet(p.get(key) || '');
+    if (current.has(value)) current.delete(value);
+    else current.add(value);
+    const joined = [...current].join(',');
+    if (joined) p.set(key, joined);
+    else p.delete(key);
+    p.delete('page');
     router.push(`/products?${p.toString()}`);
   }
 
@@ -68,7 +94,15 @@ function ProductsContent() {
   const total: number = data?.total || 0;
   const pages: number = data?.pages || 1;
 
-  const title = q ? `Results for "${q}"` : category ? (categories?.find((c) => c._id === category)?.name || 'Products') : 'All Products';
+  const title = (() => {
+    if (q) return `Results for "${q}"`;
+    if (selectedCategories.size === 1) {
+      const id = [...selectedCategories][0];
+      return categories?.find((c) => c._id === id)?.name || 'Products';
+    }
+    if (selectedCategories.size > 1) return `${selectedCategories.size} categories`;
+    return 'All Products';
+  })();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -117,7 +151,10 @@ function ProductsContent() {
           )}
 
           {/* Quick filters */}
-          <FilterGroup title="Quick Filter">
+          <FilterGroup
+            title="Quick Filter"
+            onClear={selectedFilters.size > 0 ? () => setParam('filter', '') : undefined}
+          >
             {[
               { label: 'New Arrivals', value: 'new' },
               { label: 'On Sale', value: 'sale' },
@@ -127,34 +164,40 @@ function ProductsContent() {
               <FilterItem
                 key={f.value}
                 label={f.label}
-                active={filter === f.value}
-                onClick={() => setParam('filter', filter === f.value ? '' : f.value)}
+                active={selectedFilters.has(f.value)}
+                onClick={() => toggleParam('filter', f.value)}
               />
             ))}
           </FilterGroup>
 
           {/* Categories */}
           {categories && categories.length > 0 && (
-            <FilterGroup title="Category">
+            <FilterGroup
+              title="Category"
+              onClear={selectedCategories.size > 0 ? () => setParam('category', '') : undefined}
+            >
               {categories.map((cat) => (
                 <FilterItem
                   key={cat._id}
                   label={cat.name}
-                  active={category === cat._id}
-                  onClick={() => setParam('category', category === cat._id ? '' : cat._id)}
+                  active={selectedCategories.has(cat._id)}
+                  onClick={() => toggleParam('category', cat._id)}
                 />
               ))}
             </FilterGroup>
           )}
 
           {/* Age group */}
-          <FilterGroup title="Age Group">
+          <FilterGroup
+            title="Age Group"
+            onClear={selectedAges.size > 0 ? () => setParam('age', '') : undefined}
+          >
             {['0-2', '3-5', '6-8', '9-12', '12+'].map((a) => (
               <FilterItem
                 key={a}
                 label={`${a} Years`}
-                active={age === a}
-                onClick={() => setParam('age', age === a ? '' : a)}
+                active={selectedAges.has(a)}
+                onClick={() => toggleParam('age', a)}
               />
             ))}
           </FilterGroup>
@@ -198,12 +241,22 @@ function ProductsContent() {
   );
 }
 
-function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function FilterGroup({ title, children, onClear }: { title: string; children: React.ReactNode; onClear?: () => void }) {
   return (
     <div className="bg-white border-2 border-[#FFE0EC] rounded-2xl p-4">
-      <h3 className="text-[10px] font-extrabold text-[#FF6FB1] uppercase tracking-[.16em] mb-3 flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#FF6FB1]" /> {title}
-      </h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[10px] font-extrabold text-[#FF6FB1] uppercase tracking-[.16em] flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6FB1]" /> {title}
+        </h3>
+        {onClear && (
+          <button
+            onClick={onClear}
+            className="text-[10px] font-bold text-[#7A8299] hover:text-[#FF6FB1] uppercase tracking-wider transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
       <div className="space-y-1">{children}</div>
     </div>
   );

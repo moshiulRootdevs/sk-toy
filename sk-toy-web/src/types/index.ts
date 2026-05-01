@@ -63,12 +63,15 @@ export interface Review {
 }
 
 export interface Address {
+  _id?: string;
   label?: string;
   line1: string;
   line2?: string;
-  city: string;
-  district: string;
+  city?: string;
+  area?: string;
+  district?: string;
   zip?: string;
+  isDefault?: boolean;
 }
 
 export interface Customer {
@@ -76,11 +79,13 @@ export interface Customer {
   name: string;
   email: string;
   phone?: string;
-  tier: 'Bronze' | 'Silver' | 'Gold' | 'VIP';
   addresses: Address[];
-  wishlist: string[];
-  totalOrders: number;
+  /** Live count from the Order collection (computed by the admin endpoint) */
+  orderCount: number;
+  /** Live sum of order totals (computed by the admin endpoint) */
   totalSpend: number;
+  /** Most recent order date (computed by the admin endpoint) */
+  lastOrder?: string;
   isGuest: boolean;
   active: boolean;
   createdAt: string;
@@ -103,6 +108,7 @@ export interface Order {
   customerName: string;
   customerEmail?: string;
   phone: string;
+  altPhone?: string;
   address: string;
   area?: string;
   district?: string;
@@ -313,6 +319,18 @@ export interface Settings {
     cod?:   { enabled: boolean; label: string; description: string };
     bkash?: { enabled: boolean; label: string; description: string };
   };
+  paymentBadges?: Array<{
+    label: string;
+    bg: string;
+    textColor: string;
+    enabled: boolean;
+  }>;
+  productTrustBadges?: Array<{
+    icon: string;
+    label: string;
+    color: string;
+    enabled: boolean;
+  }>;
 }
 
 export interface AdminUser {

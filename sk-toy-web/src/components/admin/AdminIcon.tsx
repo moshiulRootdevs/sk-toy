@@ -19,6 +19,7 @@ const PATHS: Record<string, string> = {
   search:    'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4.35-4.35',
   plus:      'M12 5v14M5 12h14',
   edit:      'M4 20l4-1 11-11-3-3L5 16zM14 7l3 3',
+  eye:       'M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
   trash:     'M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
   check:     'M5 12l5 5L20 7',
   x:         'M6 6l12 12M18 6L6 18',

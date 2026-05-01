@@ -204,6 +204,18 @@ export default function AdminProductsPage() {
             key: 'actions', header: '',
             render: (p: any) => (
               <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                <Tooltip label="View on storefront">
+                <a
+                  href={`/products/${p.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#8B8176', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = '#E8F1FA'; el.style.color = '#3F8FBF'; }}
+                  onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'none'; el.style.color = '#8B8176'; }}
+                >
+                  <AdminIcon name="eye" size={14} />
+                </a>
+                </Tooltip>
                 <Tooltip label="Edit">
                 <button
                   onClick={() => router.push(`/admin/products/${p._id}`)}

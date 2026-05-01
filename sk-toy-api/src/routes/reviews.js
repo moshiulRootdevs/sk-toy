@@ -29,7 +29,7 @@ router.post('/', customerAuth, async (req, res) => {
   const review = await Review.create({
     product,
     who: req.customer.name,
-    email: req.customer.email,
+    email: req.customer.email || undefined,
     stars, title, text,
     customer: req.customer._id,
     verified: true,

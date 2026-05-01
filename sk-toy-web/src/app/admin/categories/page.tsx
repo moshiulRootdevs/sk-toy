@@ -224,7 +224,7 @@ export default function CategoriesPage() {
               ...flat.filter((c) => c._id !== editCat?._id).map((c) => ({ value: c._id, label: c.name })),
             ]}
           />
-          <Input label="Order" type="number" value={form.order} onChange={set('order')} />
+          <Input label="Order" type="number" value={form.order || ''} onChange={set('order')} placeholder="0" />
           <Toggle checked={form.hidden} onChange={(v) => setForm((f: any) => ({ ...f, hidden: v }))} label="Hide from storefront" />
         </div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>

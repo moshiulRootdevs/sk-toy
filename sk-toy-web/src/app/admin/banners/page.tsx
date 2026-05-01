@@ -100,7 +100,7 @@ export default function BannersPage() {
           <Input label="Image URL" value={form.image} onChange={set('image')} placeholder="https://..." />
           <div className="flex items-center gap-4">
             <Input label="Background Color" type="color" value={form.bgColor} onChange={set('bgColor')} className="w-20" />
-            <Input label="Order" type="number" value={form.order} onChange={set('order')} />
+            <Input label="Order" type="number" value={form.order || ''} onChange={set('order')} placeholder="0" />
           </div>
           <Toggle checked={form.active} onChange={(v) => setForm((f: any) => ({ ...f, active: v }))} label="Active" />
         </div>

@@ -12,7 +12,7 @@ import Button from '@/components/ui/Button';
 export default function LoginPage() {
   const router = useRouter();
   const { setCustomer } = useAuthStore();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ phone: '', password: '' });
   const [loading, setLoading] = useState(false);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -20,14 +20,18 @@ export default function LoginPage() {
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.phone.trim() || !form.password) {
+      toast.error('Enter your phone and password');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await api.post('/auth/customer/login', form);
+      const res = await api.post('/auth/login', form);
       setCustomer(res.data.customer, res.data.token);
       toast.success(`Welcome back, ${res.data.customer.name}!`);
       router.push('/account');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Invalid credentials');
+      toast.error(err.response?.data?.message || 'Invalid phone or password');
     } finally {
       setLoading(false);
     }
@@ -48,8 +52,29 @@ export default function LoginPage() {
           <p className="text-[#7A8299] mt-1.5 text-sm font-medium">Sign in to your toy adventure</p>
         </div>
         <form onSubmit={login} className="bg-white border-2 border-[#FFE0EC] rounded-[28px] p-8 shadow-soft space-y-4">
-          <Input label="Email" type="email" value={form.email} onChange={set('email')} placeholder="you@email.com" required />
-          <Input label="Password" type="password" value={form.password} onChange={set('password')} placeholder="••••••••" required />
+          <Input
+            label="Phone Number"
+            type="tel"
+            value={form.phone}
+            onChange={set('phone')}
+            placeholder="01XXXXXXXXX"
+            autoComplete="tel"
+            required
+          />
+          <Input
+            label="Password"
+            type="password"
+            value={form.password}
+            onChange={set('password')}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            required
+          />
+          <div className="flex justify-end -mt-2">
+            <Link href="/forgot-password" className="text-xs text-[#FF6FB1] font-bold hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <Button type="submit" fullWidth size="lg" loading={loading}>Sign In ✨</Button>
           <p className="text-center text-sm text-[#7A8299] font-medium">
             New to SK Toy?{' '}

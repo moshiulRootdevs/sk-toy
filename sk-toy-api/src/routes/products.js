@@ -7,22 +7,32 @@ const { uploadProduct } = require('../middleware/upload');
 const audit = require('../middleware/audit');
 const slugify = require('../utils/slugify');
 
-// Returns the given category ID plus all descendant IDs (one DB query)
+// Returns the given category ID plus all descendant IDs (one DB query).
 async function getCategoryAndDescendants(categoryId) {
+  return getDescendantsForMany([categoryId]);
+}
+
+// Bulk variant — given N category IDs, returns the union of each + all
+// descendants in a single DB read. Replaces N×getCategoryAndDescendants() calls
+// (each of which used to hit the full Category collection).
+async function getDescendantsForMany(categoryIds) {
   const all = await Category.find().select('_id parent').lean();
-  const childMap = {};
-  all.forEach((c) => {
+  const childMap = new Map();
+  for (const c of all) {
     const p = String(c.parent || '');
-    if (!childMap[p]) childMap[p] = [];
-    childMap[p].push(String(c._id));
-  });
-  const ids = [];
-  function collect(id) {
-    ids.push(id);
-    (childMap[id] || []).forEach(collect);
+    if (!childMap.has(p)) childMap.set(p, []);
+    childMap.get(p).push(String(c._id));
   }
-  collect(String(categoryId));
-  return ids;
+  const out = new Set();
+  const stack = categoryIds.map(String);
+  while (stack.length) {
+    const id = stack.pop();
+    if (out.has(id)) continue;
+    out.add(id);
+    const kids = childMap.get(id);
+    if (kids) for (const k of kids) stack.push(k);
+  }
+  return [...out];
 }
 
 // ── Public endpoints ─────────────────────────────────────────────────────
@@ -41,13 +51,26 @@ router.get('/', async (req, res, next) => {
     const { search, category, ageGroup, gender, badge, minPrice, maxPrice, sort, page = 1, limit = 20 } = req.query;
     const q = { active: true };
 
+    // Helper: split comma-separated filter param into a clean array of unique non-empty values.
+    const splitCsv = (v) => (v == null ? [] : String(v).split(',').map((s) => s.trim()).filter(Boolean));
+
     if (search)   q.$text = { $search: search };
     if (category) {
-      const ids = await getCategoryAndDescendants(category);
-      q.categories = { $in: ids };
+      const cats = splitCsv(category);
+      const allIds = new Set();
+      for (const c of cats) {
+        const ids = await getCategoryAndDescendants(c);
+        ids.forEach((id) => allIds.add(String(id)));
+      }
+      if (allIds.size) q.categories = { $in: [...allIds] };
     }
-    if (ageGroup) q.ageGroup = ageGroup;
-    if (gender)   q.gender = gender;
+    const ages = splitCsv(ageGroup);
+    if (ages.length === 1) q.ageGroup = ages[0];
+    else if (ages.length > 1) q.ageGroup = { $in: ages };
+
+    const genders = splitCsv(gender);
+    if (genders.length === 1) q.gender = genders[0];
+    else if (genders.length > 1) q.gender = { $in: genders };
     if (minPrice || maxPrice) {
       q.price = {};
       if (minPrice) q.price.$gte = +minPrice;
@@ -61,13 +84,11 @@ router.get('/', async (req, res, next) => {
       rating:       { rating: -1 },
     };
 
-    if (badge === 'featured') {
-      // "Featured" is not a badge value — show all active products sorted by top rating
-    } else if (badge) {
-      q.badge = badge;
-    }
+    const badges = splitCsv(badge);
+    if (badges.length === 1) q.badge = badges[0];
+    else if (badges.length > 1) q.badge = { $in: badges };
 
-    const sortBy = badge === 'featured'
+    const sortBy = badges.includes('featured')
       ? { rating: -1, reviewCount: -1 }
       : (sortMap[sort] || { createdAt: -1 });
 

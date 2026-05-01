@@ -87,15 +87,15 @@ function HeroSection({ section }: { section: HomeSection }) {
       </div>
 
       <div className="relative max-w-[1360px] mx-auto px-6 sm:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 py-16 lg:py-24 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-6 lg:gap-10 py-4 lg:py-6 items-center">
           {/* Left */}
           <div>
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm text-[#FF6FB1] px-4 py-1.5 rounded-full text-xs font-bold mb-6 border border-[#FFD4E6] shadow-soft">
+            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm text-[#FF6FB1] px-4 py-1.5 rounded-full text-xs font-bold mb-4 border border-[#FFD4E6] shadow-soft">
               <span className="w-2 h-2 rounded-full bg-[#FF6FB1] inline-block animate-pulse" />
               {eyebrow}
             </div>
 
-            <h1 className="font-display text-[clamp(30px,8vw,84px)] font-bold leading-[1.05] tracking-tight mb-5 sm:mb-6 text-[#1F2F4A] break-words">
+            <h1 className="font-display text-[clamp(26px,5.5vw,56px)] font-bold leading-[1.05] tracking-tight mb-3 sm:mb-4 text-[#1F2F4A] break-words">
               {title.split(',').map((part: string, i: number, arr: string[]) => (
                 <span key={i}>
                   {i === arr.length - 1 ? (
@@ -108,28 +108,28 @@ function HeroSection({ section }: { section: HomeSection }) {
               ))}
             </h1>
 
-            <p className="text-[14px] sm:text-[16px] md:text-[17px] leading-relaxed text-[#5A5048] max-w-[500px] mb-7 sm:mb-9 font-medium">{subtitle}</p>
+            <p className="text-[13px] sm:text-[15px] leading-relaxed text-[#5A5048] max-w-[500px] mb-5 sm:mb-6 font-medium">{subtitle}</p>
 
             <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
               <Link href={ctaLink}
-                className="inline-flex items-center gap-2 text-white font-bold px-5 sm:px-7 py-3 sm:py-3.5 rounded-full text-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                className="inline-flex items-center gap-2 text-white font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
                 style={{ background: 'linear-gradient(135deg, #FF5B6E 0%, #FF6FB1 100%)', boxShadow: '0 12px 24px -10px rgba(255,91,110,.6)' }}>
                 {cta}
                 <span className="text-base">→</span>
               </Link>
               <Link href={secondaryCtaLink}
-                className="inline-flex items-center gap-2 text-[#1F2F4A] bg-white border-2 border-[#FFD4E6] hover:border-[#FF6FB1] font-bold px-5 sm:px-7 py-3 sm:py-3.5 rounded-full text-sm transition-all">
+                className="inline-flex items-center gap-2 text-[#1F2F4A] bg-white border-2 border-[#FFD4E6] hover:border-[#FF6FB1] font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-sm transition-all">
                 {secondaryCta}
               </Link>
             </div>
 
             {/* Stats */}
-            <div className="flex gap-6 sm:gap-9 mt-10 pt-6 border-t-2 border-dashed border-[#FFD4E6] max-w-[520px]">
+            <div className="flex gap-6 sm:gap-8 mt-4 pt-3 border-t-2 border-dashed border-[#FFD4E6] max-w-[520px]">
               {stats.map((s, i) => {
                 const colors = ['#FF6FB1', '#4FC081', '#6BC8E6'];
                 return (
                   <div key={i}>
-                    <div className="font-display text-[28px] sm:text-[34px] font-bold leading-none mb-1.5"
+                    <div className="font-display text-[22px] sm:text-[26px] font-bold leading-none mb-1"
                          style={{ color: colors[i % colors.length] }}>{s.num}</div>
                     <div className="text-[10px] uppercase tracking-[0.14em] text-[#7A8299] font-bold">{s.label}</div>
                   </div>
@@ -139,7 +139,7 @@ function HeroSection({ section }: { section: HomeSection }) {
           </div>
 
           {/* Right — stacked image cards */}
-          <div className="relative aspect-square hidden lg:block overflow-hidden">
+          <div className="relative aspect-[5/4] hidden lg:block overflow-hidden max-w-[460px] w-full mx-auto">
             {HERO_CARD_META.map((card, i) => (
               <div key={i}
                 className={`absolute w-[54%] aspect-square rounded-[28px] overflow-hidden shadow-[0_22px_44px_-14px_rgba(31,47,74,0.25)] border-4 border-white animate-float ${card.pos}`}
@@ -154,19 +154,18 @@ function HeroSection({ section }: { section: HomeSection }) {
               </div>
             ))}
             {/* Center sticker */}
-            <div className="absolute top-[42%] left-[42%] -translate-x-1/2 -translate-y-1/2 w-[124px] h-[124px] rounded-full bg-white flex flex-col items-center justify-center text-center z-10 shadow-[0_18px_36px_-10px_rgba(255,91,110,.4)] border-4 border-dashed border-[#FF6FB1] -rotate-12">
-              <span className="font-display text-[10px] font-bold tracking-[.16em] text-[#7A8299] uppercase">{badgeTopLine}</span>
-              <span className="font-display text-[40px] font-bold leading-none text-gradient-rainbow">{badgeValue}</span>
-              <span className="text-[11px] text-[#1F2F4A] font-bold uppercase tracking-wider">{badgeBottomLine}</span>
+            <div className="absolute top-[42%] left-[42%] -translate-x-1/2 -translate-y-1/2 w-[100px] h-[100px] rounded-full bg-white flex flex-col items-center justify-center text-center z-10 shadow-[0_18px_36px_-10px_rgba(255,91,110,.4)] border-4 border-dashed border-[#FF6FB1] -rotate-12">
+              <span className="font-display text-[9px] font-bold tracking-[.16em] text-[#7A8299] uppercase">{badgeTopLine}</span>
+              <span className="font-display text-[32px] font-bold leading-none text-gradient-rainbow">{badgeValue}</span>
+              <span className="text-[10px] text-[#1F2F4A] font-bold uppercase tracking-wider">{badgeBottomLine}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Wavy bottom edge */}
-      <svg className="absolute bottom-0 left-0 right-0 w-full h-14 text-[#FFF8F2]" viewBox="0 0 1440 60" fill="currentColor" preserveAspectRatio="none" aria-hidden>
-        <path d="M0 30 Q 120 60 240 30 T 480 30 T 720 30 T 960 30 T 1200 30 T 1440 30 V60 H0 Z" />
-      </svg>
+      {/* Soft fade-out to blend with the page background (no hard seam) */}
+      <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
+           style={{ background: 'linear-gradient(180deg, rgba(255,248,242,0) 0%, rgba(255,248,242,0.6) 60%, rgba(255,248,242,0.95) 100%)' }} />
     </section>
   );
 }
@@ -205,7 +204,7 @@ function CategoriesSection({ section }: { section: HomeSection }) {
       : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5';
 
   return (
-    <section className="py-14 sm:py-16 relative overflow-hidden">
+    <section className="pt-4 sm:pt-6 pb-14 sm:pb-16 relative overflow-hidden">
       {/* Soft background blobs to add visual energy when the row is short */}
       {len > 0 && len <= 3 && (
         <>
@@ -340,10 +339,10 @@ function ProductsSection({ section }: { section: HomeSection }) {
   const bandClass = PRODUCT_BG_BANDS[Math.abs(h) % PRODUCT_BG_BANDS.length];
 
   return (
-    <section className={`py-14 sm:py-16 relative ${bandClass}`}>
+    <section className={`pt-4 sm:pt-6 pb-14 sm:pb-16 relative ${bandClass}`}>
       <div className="max-w-[1360px] mx-auto px-6 sm:px-8">
         <SectionHead section={section} />
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-5 mt-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-5 mt-6">
           {products.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}
@@ -375,16 +374,16 @@ const BAND_STYLES: Record<string, BandStyleConfig> = {
     rightCardBg: 'rgba(255,255,255,.55)',
   },
   dark: {
-    bg: 'linear-gradient(135deg, #2A1F4A 0%, #1F2F4A 50%, #243556 100%)',
+    bg: 'linear-gradient(120deg, #6B2BB5 0%, #B93BA8 35%, #FF5B6E 70%, #FF9A4D 100%)',
     ink: '#FFFFFF',
-    eyebrowInk: '#FFCB47',
+    eyebrowInk: '#FFEDB6',
     blobs: [
-      { color: '#FF6FB1', opacity: 0.30 },
-      { color: '#FFCB47', opacity: 0.20 },
-      { color: '#6BC8E6', opacity: 0.22 },
-      { color: '#B093E8', opacity: 0.20 },
+      { color: '#FFCB47', opacity: 0.55 },
+      { color: '#6BC8E6', opacity: 0.50 },
+      { color: '#4FC081', opacity: 0.45 },
+      { color: '#FFFFFF', opacity: 0.30 },
     ],
-    rightCardBg: 'rgba(255,255,255,.10)',
+    rightCardBg: 'rgba(255,255,255,.18)',
   },
   coral: {
     bg: 'linear-gradient(135deg, #FFD4E6 0%, #FF6FB1 50%, #FF5B6E 100%)',
@@ -417,12 +416,29 @@ const BLOB_POSITIONS = [
   { className: 'absolute top-[10%] right-[30%] w-[160px] h-[160px] rounded-full blur-2xl' },
 ];
 
+const BAND_CONFETTI = [
+  { top: '12%',  left: '34%', size: 8,  color: '#FFCB47', shape: 'dot' },
+  { top: '22%',  left: '6%',  size: 10, color: '#FFFFFF', shape: 'star' },
+  { top: '70%',  left: '14%', size: 7,  color: '#6BC8E6', shape: 'dot' },
+  { top: '40%',  left: '46%', size: 6,  color: '#FFFFFF', shape: 'dot' },
+  { top: '82%',  left: '38%', size: 9,  color: '#4FC081', shape: 'star' },
+  { top: '18%',  left: '52%', size: 5,  color: '#FFEDB6', shape: 'dot' },
+  { top: '54%',  left: '4%',  size: 11, color: '#FFFFFF', shape: 'star' },
+];
+
 function EditorialBand({ section }: { section: HomeSection }) {
   const style = BAND_STYLES[section.bandStyle || 'coral'] || BAND_STYLES.coral;
+  const cardPalette = ['#FFCB47', '#FF6FB1', '#6BC8E6', '#4FC081'];
+  const cardPatterns = [
+    'repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 6px, transparent 6px 14px)',
+    'radial-gradient(circle at 30% 30%, rgba(255,255,255,.45) 4px, transparent 5px), radial-gradient(circle at 70% 70%, rgba(255,255,255,.45) 4px, transparent 5px)',
+    'repeating-linear-gradient(0deg, rgba(255,255,255,.35) 0 5px, transparent 5px 12px)',
+    'radial-gradient(circle at 50% 50%, rgba(255,255,255,.45) 5px, transparent 6px)',
+  ];
 
   return (
     <section className="py-6 px-4 sm:px-8 max-w-[1360px] mx-auto">
-      <div className="rounded-[24px] sm:rounded-[36px] p-7 sm:p-10 lg:p-14 grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 items-center relative overflow-hidden"
+      <div className="rounded-[24px] sm:rounded-[36px] p-7 sm:p-10 lg:p-14 grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 items-center relative overflow-hidden shadow-[0_20px_60px_-20px_rgba(31,47,74,0.35)]"
            style={{ background: style.bg, color: style.ink }}>
         {/* Color blob layer */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
@@ -431,20 +447,34 @@ function EditorialBand({ section }: { section: HomeSection }) {
                  className={BLOB_POSITIONS[i % BLOB_POSITIONS.length].className}
                  style={{ background: b.color, opacity: b.opacity }} />
           ))}
+          {/* Confetti / sparkle scatter */}
+          {BAND_CONFETTI.map((c, i) => (
+            c.shape === 'star' ? (
+              <svg key={i} viewBox="0 0 24 24" fill={c.color}
+                   className="absolute animate-float drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]"
+                   style={{ top: c.top, left: c.left, width: c.size * 2, height: c.size * 2, animationDelay: `${i * 0.3}s` }}>
+                <path d="M12 2 14.5 9.5 22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" />
+              </svg>
+            ) : (
+              <span key={i}
+                    className="absolute rounded-full animate-float"
+                    style={{ top: c.top, left: c.left, width: c.size, height: c.size, background: c.color, opacity: 0.85, animationDelay: `${i * 0.4}s` }} />
+            )
+          ))}
         </div>
 
         <div className="relative">
           {section.eyebrow && (
-            <p className="font-display text-[12px] uppercase tracking-[.18em] font-bold mb-3"
-               style={{ color: style.eyebrowInk }}>
-              ✨ {section.eyebrow}
+            <p className="font-display text-[12px] uppercase tracking-[.18em] font-bold mb-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full"
+               style={{ color: style.eyebrowInk, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
+              <span aria-hidden>✨</span> {section.eyebrow}
             </p>
           )}
-          <h2 className="font-display text-[32px] sm:text-[48px] lg:text-[60px] font-bold leading-[0.95] tracking-tight mb-4">
+          <h2 className="font-display text-[32px] sm:text-[48px] lg:text-[60px] font-bold leading-[0.95] tracking-tight mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]">
             {section.title}
           </h2>
           {section.bandText && (
-            <p className="text-[16px] opacity-90 max-w-[500px] mb-6 font-medium">{section.bandText}</p>
+            <p className="text-[16px] opacity-95 max-w-[500px] mb-6 font-medium">{section.bandText}</p>
           )}
           {section.bandButtons && section.bandButtons.length > 0 && (
             <div className="flex flex-wrap gap-3">
@@ -454,13 +484,13 @@ function EditorialBand({ section }: { section: HomeSection }) {
                 const isOutline = btn.style === 'outline';
                 return (
                   <Link key={i} href={btn.link}
-                    className={`px-6 py-3 rounded-full font-bold text-sm transition-all hover:-translate-y-0.5 ${
-                      isDark   ? 'bg-[#1F2F4A] text-white hover:bg-black' :
+                    className={`px-6 py-3 rounded-full font-bold text-sm transition-all hover:-translate-y-0.5 hover:scale-[1.03] ${
+                      isDark   ? 'bg-[#1F2F4A] text-white hover:bg-black shadow-lg' :
                       isCoral  ? 'text-white shadow-soft-coral' :
-                      isOutline ? 'bg-transparent border-2 border-current opacity-90 hover:opacity-100' :
+                      isOutline ? 'bg-white/15 backdrop-blur-sm border-2 border-white/70 text-white hover:bg-white/25' :
                       'bg-white text-[#1F2F4A] hover:bg-white shadow-soft'
                     }`}
-                    style={isCoral ? { background: 'linear-gradient(135deg,#FF5B6E,#FF6FB1)' } : undefined}>
+                    style={isCoral ? { background: 'linear-gradient(135deg,#FF5B6E,#FF6FB1)', boxShadow: '0 10px 24px -8px rgba(255,91,110,0.6)' } : undefined}>
                     {btn.label}
                   </Link>
                 );
@@ -472,20 +502,35 @@ function EditorialBand({ section }: { section: HomeSection }) {
         {/* Right — playful colored card cluster */}
         <div className="relative aspect-[16/10] hidden lg:block">
           <div className="absolute inset-3 rounded-[24px] backdrop-blur-sm"
-               style={{ background: style.rightCardBg, border: '1px solid rgba(255,255,255,.25)' }} />
-          <div className="absolute top-[12%] left-[10%] w-[28%] h-[36%] rounded-2xl rotate-[-6deg] shadow-lg animate-float border-4 border-white"
-               style={{ background: '#FFCB47', animationDelay: '0s', ['--r' as any]: '-6deg' }} />
-          <div className="absolute top-[8%] right-[12%] w-[32%] h-[42%] rounded-2xl rotate-[5deg] shadow-lg animate-float border-4 border-white"
-               style={{ background: '#FF6FB1', animationDelay: '0.5s', ['--r' as any]: '5deg' }} />
-          <div className="absolute bottom-[10%] left-[22%] w-[34%] h-[38%] rounded-2xl rotate-[3deg] shadow-lg animate-float border-4 border-white"
-               style={{ background: '#6BC8E6', animationDelay: '1s', ['--r' as any]: '3deg' }} />
-          <div className="absolute bottom-[14%] right-[8%] w-[24%] h-[32%] rounded-2xl rotate-[-4deg] shadow-lg animate-float border-4 border-white"
-               style={{ background: '#4FC081', animationDelay: '1.5s', ['--r' as any]: '-4deg' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100px] h-[100px] rounded-full bg-white flex items-center justify-center shadow-lg border-4 border-dashed border-[#FF6FB1] -rotate-12">
-            <svg className="w-9 h-9 text-[#FF6FB1]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+               style={{ background: style.rightCardBg, border: '1px solid rgba(255,255,255,.35)' }} />
+
+          {/* Floating cards with playful patterns */}
+          {[
+            { pos: 'top-[10%] left-[8%]',     w: '30%', h: '38%', rot: '-7deg', delay: '0s' },
+            { pos: 'top-[6%] right-[10%]',    w: '34%', h: '44%', rot: '6deg',  delay: '0.5s' },
+            { pos: 'bottom-[8%] left-[20%]',  w: '36%', h: '40%', rot: '4deg',  delay: '1s' },
+            { pos: 'bottom-[12%] right-[6%]', w: '26%', h: '34%', rot: '-5deg', delay: '1.5s' },
+          ].map((card, i) => (
+            <div key={i}
+                 className={`absolute ${card.pos} rounded-2xl shadow-xl animate-float border-4 border-white overflow-hidden`}
+                 style={{ width: card.w, height: card.h, transform: `rotate(${card.rot})`, background: cardPalette[i], animationDelay: card.delay, ['--r' as any]: card.rot }}>
+              <div className="absolute inset-0 mix-blend-overlay" style={{ backgroundImage: cardPatterns[i], backgroundSize: i === 1 ? '24px 24px' : i === 3 ? '20px 20px' : 'auto' }} />
+              <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white/80 shadow-md" />
+            </div>
+          ))}
+
+          {/* Center sparkle medallion */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-full bg-white flex items-center justify-center shadow-2xl border-4 border-dashed border-[#FF6FB1] -rotate-12 animate-spin-slow">
+            <div className="absolute inset-2 rounded-full" style={{ background: 'conic-gradient(from 0deg, #FFEDB6, #FFD4E6, #D4EEF7, #D7F5E2, #FFEDB6)', opacity: 0.5 }} />
+            <svg className="relative w-10 h-10 text-[#FF5B6E]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M12 2 14.5 9.5 22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" />
             </svg>
           </div>
+
+          {/* Mini orbiting dots */}
+          <span className="absolute top-[18%] left-[44%] w-3 h-3 rounded-full bg-[#FFCB47] shadow-md animate-float" style={{ animationDelay: '0.2s' }} />
+          <span className="absolute bottom-[22%] right-[36%] w-2.5 h-2.5 rounded-full bg-[#6BC8E6] shadow-md animate-float" style={{ animationDelay: '0.9s' }} />
+          <span className="absolute top-[46%] right-[18%] w-2 h-2 rounded-full bg-white shadow-md animate-float" style={{ animationDelay: '1.4s' }} />
         </div>
       </div>
     </section>
@@ -545,25 +590,44 @@ function BannerSection({ section }: { section: HomeSection }) {
 /* ─── Section header ─────────────────────────────────────────────────────── */
 function SectionHead({ section }: { section: HomeSection }) {
   if (!section.title && !section.eyebrow) return null;
+
+  // Highlight the last word of the title with the rainbow gradient
+  const titleWords = (section.title || '').trim().split(/\s+/);
+  const titleLead = titleWords.slice(0, -1).join(' ');
+  const titleAccent = titleWords[titleWords.length - 1] || '';
+
   return (
     <div className="flex items-end justify-between gap-6 flex-wrap">
-      <div>
+      <div className="min-w-0 flex-1">
         {section.eyebrow && (
-          <p className="eyebrow mb-2">✨ {section.eyebrow}</p>
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10.5px] font-extrabold uppercase tracking-[.16em] text-[#E0539B] mb-3"
+                style={{ background: 'linear-gradient(135deg, #FFE0EC 0%, #FFEDB6 100%)', border: '1px solid #FFD4E6' }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF6FB1] animate-pulse" />
+            {section.eyebrow}
+          </span>
         )}
         {section.title && (
-          <h2 className="font-display text-[36px] sm:text-[44px] font-bold leading-tight tracking-tight text-[#1F2F4A]">
-            {section.title}
+          <h2 className="font-display text-[28px] sm:text-[36px] font-bold leading-[1.1] tracking-tight text-[#1F2F4A]">
+            {titleWords.length > 1 && <>{titleLead} </>}
+            <span className="relative inline-block">
+              <span className="text-[#FF5B6E]">{titleAccent}</span>
+              {/* Subtle single-color underline accent */}
+              <span aria-hidden
+                    className="absolute left-0 right-0 -bottom-1 h-[3px] rounded-full"
+                    style={{ background: '#FF5B6E', opacity: 0.35 }} />
+            </span>
           </h2>
         )}
         {section.subtitle && (
-          <p className="text-[14px] text-[#7A8299] mt-2 max-w-[420px] font-medium">{section.subtitle}</p>
+          <p className="text-[14px] text-[#5A5048] mt-3 max-w-[460px] font-medium leading-relaxed">{section.subtitle}</p>
         )}
       </div>
       {section.ctaLink && (
         <Link href={section.ctaLink}
-          className="shrink-0 inline-flex items-center gap-2 bg-white border-2 border-[#FFD4E6] text-[#FF6FB1] text-sm font-bold px-5 py-2.5 rounded-full hover:border-[#FF6FB1] hover:bg-[#FFF5F8] transition-all">
-          {section.ctaLabel || 'See all'} <span>→</span>
+          className="shrink-0 inline-flex items-center gap-2 text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 hover:scale-[1.03] active:scale-95"
+          style={{ background: 'linear-gradient(135deg, #FF5B6E 0%, #FF6FB1 100%)', boxShadow: '0 10px 22px -10px rgba(255,91,110,.55)' }}>
+          {section.ctaLabel || 'See all'}
+          <span className="inline-flex w-5 h-5 rounded-full bg-white/25 items-center justify-center text-xs leading-none">→</span>
         </Link>
       )}
     </div>

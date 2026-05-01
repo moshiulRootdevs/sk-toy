@@ -2,6 +2,7 @@ import Header from '@/components/storefront/Header';
 import Footer from '@/components/storefront/Footer';
 import CartDrawer from '@/components/storefront/CartDrawer';
 import MobileMenu from '@/components/storefront/MobileMenu';
+import ConfirmHost from '@/components/ui/ConfirmHost';
 import { Settings, Category } from '@/types';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -35,6 +36,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <CartDrawer />
       <main className="flex-1">{children}</main>
       <Footer />
+      <ConfirmHost />
     </>
   );
 }

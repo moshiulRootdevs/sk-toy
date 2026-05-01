@@ -37,14 +37,19 @@ const AGE_OPTS = [
 ];
 
 interface Filters {
-  ageGroup: string;
-  gender: string;
+  ageGroup: string[];
+  gender: string[];
   minPrice: number;
   maxPrice: number;
-  badge: string;
+  badge: string[];
 }
 
-const EMPTY_FILTERS: Filters = { ageGroup: '', gender: '', minPrice: 0, maxPrice: 10000, badge: '' };
+const EMPTY_FILTERS: Filters = { ageGroup: [], gender: [], minPrice: 0, maxPrice: 10000, badge: [] };
+
+// Toggle a value in/out of a string[] (returns a new array; preserves order).
+function toggleIn(arr: string[], value: string): string[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+}
 
 /* ─── Filter sidebar ─────────────────────────────────────────────────────── */
 function FilterSidebar({
@@ -55,10 +60,9 @@ function FilterSidebar({
 }) {
   const [priceMax, setPriceMax] = useState(filters.maxPrice);
 
-  const activeCount = [
-    filters.ageGroup, filters.gender, filters.badge,
-    filters.maxPrice < 10000 ? 'price' : '',
-  ].filter(Boolean).length;
+  const activeCount =
+    filters.ageGroup.length + filters.gender.length + filters.badge.length +
+    (filters.maxPrice < 10000 ? 1 : 0);
 
   const clear = () => {
     setPriceMax(10000);
@@ -78,7 +82,7 @@ function FilterSidebar({
   };
 
   return (
-    <aside style={{ width: 220, flexShrink: 0 }}>
+    <aside style={{ width: 180, flexShrink: 0 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: '#2A2420' }}>
@@ -99,14 +103,19 @@ function FilterSidebar({
       {/* Availability */}
       <div style={sectionStyle}>
         <div style={headStyle}>Availability</div>
-        <label style={checkRow}>
-          <input type="checkbox" checked={filters.badge === 'sale'} onChange={(e) => onChange({ badge: e.target.checked ? 'sale' : '' })} />
-          On sale
-        </label>
-        <label style={checkRow}>
-          <input type="checkbox" checked={filters.badge === 'new'} onChange={(e) => onChange({ badge: e.target.checked ? 'new' : '' })} />
-          New arrivals
-        </label>
+        {[
+          { value: 'sale', label: 'On sale' },
+          { value: 'new',  label: 'New arrivals' },
+        ].map((b) => (
+          <label key={b.value} style={checkRow}>
+            <input
+              type="checkbox"
+              checked={filters.badge.includes(b.value)}
+              onChange={() => onChange({ badge: toggleIn(filters.badge, b.value) })}
+            />
+            {b.label}
+          </label>
+        ))}
       </div>
 
       {/* Age */}
@@ -115,11 +124,9 @@ function FilterSidebar({
         {AGE_OPTS.map((a) => (
           <label key={a.value} style={checkRow}>
             <input
-              type="radio"
-              name="ageGroup"
-              checked={filters.ageGroup === a.value}
-              onChange={() => onChange({ ageGroup: filters.ageGroup === a.value ? '' : a.value })}
-              onClick={() => { if (filters.ageGroup === a.value) onChange({ ageGroup: '' }); }}
+              type="checkbox"
+              checked={filters.ageGroup.includes(a.value)}
+              onChange={() => onChange({ ageGroup: toggleIn(filters.ageGroup, a.value) })}
             />
             {a.label}
           </label>
@@ -130,19 +137,22 @@ function FilterSidebar({
       <div style={sectionStyle}>
         <div style={headStyle}>Gender</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {[['boys', 'Boys'], ['girls', 'Girls'], ['neutral', 'Unisex']].map(([v, l]) => (
-            <button
-              key={v}
-              onClick={() => onChange({ gender: filters.gender === v ? '' : v })}
-              style={{
-                padding: '4px 12px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
-                border: `1px solid ${filters.gender === v ? '#1F2F4A' : '#FFE0EC'}`,
-                background: filters.gender === v ? '#1F2F4A' : '#FFFFFF',
-                color: filters.gender === v ? '#FFFFFF' : '#2A2420',
-                fontFamily: 'inherit',
-              }}
-            >{l}</button>
-          ))}
+          {[['boys', 'Boys'], ['girls', 'Girls'], ['neutral', 'Unisex']].map(([v, l]) => {
+            const active = filters.gender.includes(v);
+            return (
+              <button
+                key={v}
+                onClick={() => onChange({ gender: toggleIn(filters.gender, v) })}
+                style={{
+                  padding: '4px 12px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
+                  border: `1px solid ${active ? '#1F2F4A' : '#FFE0EC'}`,
+                  background: active ? '#1F2F4A' : '#FFFFFF',
+                  color: active ? '#FFFFFF' : '#2A2420',
+                  fontFamily: 'inherit',
+                }}
+              >{l}</button>
+            );
+          })}
         </div>
       </div>
 
@@ -204,27 +214,28 @@ export default function CategoryPage() {
     queryFn: () => {
       const params: Record<string, string | number> = { limit: 24 };
       if (sort && sort !== 'featured') params.sort = sort;
-      if (filters.badge)              params.badge    = filters.badge;
+      if (filters.badge.length)       params.badge    = filters.badge.join(',');
       if (filters.maxPrice < 10000)   params.maxPrice = filters.maxPrice;
 
       if (virtual) {
-        const badge = filters.badge || virtual.badge;
-        if (badge) params.badge = badge;
+        // Virtual collection forces its own badge unless the user has picked their own.
+        if (filters.badge.length)     params.badge = filters.badge.join(',');
+        else if (virtual.badge)       params.badge = virtual.badge;
       } else if (isAgeParent) {
         // Subcategory pill slug like "age/6-8" → ageGroup "age-6-8"
         if (activeSubSlug?.startsWith('age/')) params.ageGroup = `age-${activeSubSlug.slice(4)}`;
-        else if (filters.ageGroup) params.ageGroup = filters.ageGroup;
-        if (filters.gender) params.gender = filters.gender;
+        else if (filters.ageGroup.length) params.ageGroup = filters.ageGroup.join(',');
+        if (filters.gender.length) params.gender = filters.gender.join(',');
       } else if (isGenderParent) {
         // Subcategory pill slug like "gender/boys" → gender "boys"
         if (activeSubSlug?.startsWith('gender/')) params.gender = activeSubSlug.slice(7);
-        else if (filters.gender) params.gender = filters.gender;
-        if (filters.ageGroup) params.ageGroup = filters.ageGroup;
+        else if (filters.gender.length) params.gender = filters.gender.join(',');
+        if (filters.ageGroup.length) params.ageGroup = filters.ageGroup.join(',');
       } else {
         // Normal product category — category filter (includes all descendants via backend)
         params.category = activeSub || (category?._id ?? '');
-        if (filters.ageGroup) params.ageGroup = filters.ageGroup;
-        if (filters.gender)   params.gender   = filters.gender;
+        if (filters.ageGroup.length) params.ageGroup = filters.ageGroup.join(',');
+        if (filters.gender.length)   params.gender   = filters.gender.join(',');
       }
 
       return api.get('/products', { params }).then((r) => r.data);
@@ -249,10 +260,9 @@ export default function CategoryPage() {
   const headRest = words.slice(0, -1).join(' ');
   const headLast = words[words.length - 1];
 
-  const activeFilterCount = [
-    filters.ageGroup, filters.gender, filters.badge,
-    filters.maxPrice < 10000 ? 'price' : '',
-  ].filter(Boolean).length;
+  const activeFilterCount =
+    filters.ageGroup.length + filters.gender.length + filters.badge.length +
+    (filters.maxPrice < 10000 ? 1 : 0);
 
   return (
     <div style={{ background: 'transparent', minHeight: '60vh' }}>
@@ -305,7 +315,7 @@ export default function CategoryPage() {
                 padding: '5px 14px', borderRadius: 999, fontSize: 12,
                 border: `1px solid ${activeSub === null ? '#1F2F4A' : '#FFE0EC'}`,
                 background: activeSub === null ? '#1F2F4A' : '#FFFFFF',
-                color: activeSub === null ? 'transparent' : '#2A2420',
+                color: activeSub === null ? '#FFFFFF' : '#2A2420',
                 cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit',
               }}
             >All {catName.toLowerCase()}</button>
@@ -320,7 +330,7 @@ export default function CategoryPage() {
                   padding: '5px 14px', borderRadius: 999, fontSize: 12,
                   border: `1px solid ${activeSub === sub._id ? '#1F2F4A' : '#FFE0EC'}`,
                   background: activeSub === sub._id ? '#1F2F4A' : '#FFFFFF',
-                  color: activeSub === sub._id ? 'transparent' : '#2A2420',
+                  color: activeSub === sub._id ? '#FFFFFF' : '#2A2420',
                   cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit',
                 }}
               >{sub.name}</button>

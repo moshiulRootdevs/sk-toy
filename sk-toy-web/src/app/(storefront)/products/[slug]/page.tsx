@@ -7,13 +7,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { Product, Review, Benefit } from '@/types';
+import { Product, Review, Benefit, Settings } from '@/types';
 import { fmtTk, imgUrl, cls, isAnimatedImage } from '@/lib/utils';
 import { useCartStore, useWishlistStore, useAuthStore } from '@/lib/store';
 import Stars from '@/components/ui/Stars';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import ProductCard from '@/components/storefront/ProductCard';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -63,6 +64,20 @@ export default function ProductDetailPage() {
     queryFn: () => api.get(`/products/${product!._id}/related`, { params: { limit: 8 } }).then((r) => r.data),
     enabled: !!product?._id,
   });
+
+  const { data: settings } = useQuery<Settings>({
+    queryKey: ['settings'],
+    queryFn: () => api.get('/settings').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const DEFAULT_TRUST_BADGES = [
+    { icon: '🚚',  label: 'Fast delivery',  color: '#FF9A4D', enabled: true },
+    { icon: '🔄',  label: '7-day returns',  color: '#4FC081', enabled: true },
+    { icon: '🛡️',  label: 'Safe & tested',  color: '#6BC8E6', enabled: true },
+  ];
+  const trustBadges = (settings?.productTrustBadges?.length ? settings.productTrustBadges : DEFAULT_TRUST_BADGES)
+    .filter((b) => b.enabled && b.label?.trim());
 
   useEffect(() => {
     if (!product?._id) return;
@@ -281,18 +296,20 @@ export default function ProductDetailPage() {
             >
               Buy Now 🎁
             </Button>
-            <button
-              onClick={() => toggle(product._id)}
-              className={cls(
-                'p-3.5 rounded-full border-2 transition-colors',
-                wishlisted ? 'border-[#FF6FB1] text-white bg-[#FF6FB1]' : 'border-[#FFE0EC] bg-white text-[#FF6FB1] hover:bg-[#FFE0EC]'
-              )}
-              aria-label="Wishlist"
-            >
-              <svg className={cls('w-5 h-5', wishlisted && 'fill-current')} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" fill={wishlisted ? 'currentColor' : 'none'} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
+            <Tooltip label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'} position="top">
+              <button
+                onClick={() => toggle(product._id)}
+                className={cls(
+                  'p-3.5 rounded-full border-2 transition-colors',
+                  wishlisted ? 'border-[#FF6FB1] text-white bg-[#FF6FB1]' : 'border-[#FFE0EC] bg-white text-[#FF6FB1] hover:bg-[#FFE0EC]'
+                )}
+                aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              >
+                <svg className={cls('w-5 h-5', wishlisted && 'fill-current')} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" fill={wishlisted ? 'currentColor' : 'none'} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </button>
+            </Tooltip>
           </div>
 
           {!inStock && (
@@ -300,18 +317,17 @@ export default function ProductDetailPage() {
           )}
 
           {/* Trust strip */}
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            {[
-              { icon: '🚚', label: 'Fast delivery', color: '#FF9A4D' },
-              { icon: '🔄', label: '7-day returns', color: '#4FC081' },
-              { icon: '🛡️', label: 'Safe & tested', color: '#6BC8E6' },
-            ].map((t) => (
-              <div key={t.label} className="bg-white border-2 border-[#FFE0EC] rounded-2xl p-3 text-center">
-                <div className="text-xl mb-1">{t.icon}</div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: t.color }}>{t.label}</div>
-              </div>
-            ))}
-          </div>
+          {trustBadges.length > 0 && (
+            <div className="mt-6 grid gap-3"
+                 style={{ gridTemplateColumns: `repeat(${Math.min(trustBadges.length, 4)}, minmax(0, 1fr))` }}>
+              {trustBadges.map((t, i) => (
+                <div key={`${t.label}-${i}`} className="bg-white border-2 border-[#FFE0EC] rounded-2xl p-3 text-center">
+                  <div className="text-xl mb-1">{t.icon}</div>
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: t.color }}>{t.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Description */}
           {product.description && (
@@ -331,18 +347,6 @@ export default function ProductDetailPage() {
             {product.sku && <p>SKU: <span className="text-[#1F2F4A]">{product.sku}</span></p>}
             {product.ageGroup && <p>Age Group: <span className="text-[#1F2F4A]">{product.ageGroup}</span></p>}
             {product.gender && product.gender !== 'All' && <p>Gender: <span className="text-[#1F2F4A]">{product.gender}</span></p>}
-            {(() => {
-              const cats = Array.isArray(product.categories) && product.categories.length
-                ? product.categories
-                : (product.category ? [product.category] : []);
-              const names = cats
-                .map((c: any) => (typeof c === 'object' ? c?.name : ''))
-                .filter(Boolean);
-              if (!names.length) return null;
-              return (
-                <p>{names.length === 1 ? 'Category' : 'Categories'}: <span className="text-[#1F2F4A]">{names.join(', ')}</span></p>
-              );
-            })()}
           </div>
         </div>
       </div>

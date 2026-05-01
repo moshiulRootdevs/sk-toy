@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminGuard from '@/components/admin/AdminGuard';
 import AdminIcon from '@/components/admin/AdminIcon';
+import ConfirmHost from '@/components/ui/ConfirmHost';
 import { useAuthStore } from '@/lib/store';
 import Link from 'next/link';
 
@@ -56,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           background: '#FAF6EF',
           color: '#2A2420',
           fontFamily: 'var(--font-inter, Inter, system-ui, sans-serif)',
-          fontSize: 13,
+          fontSize: 14,
           ['--sk-sidebar-w' as any]: `${sidebarW}px`,
         }}
       >
@@ -169,6 +170,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </main>
         </div>
       </div>
+      <ConfirmHost />
     </AdminGuard>
   );
 }

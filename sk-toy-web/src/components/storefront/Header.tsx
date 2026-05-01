@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useCartStore, useUIStore, useAuthStore } from '@/lib/store';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -136,6 +136,7 @@ function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
 
 export default function Header({ initialSettings, initialCategories }: { initialSettings?: Settings | null; initialCategories?: Category[] | null }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [searchQ, setSearchQ] = useState('');
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -158,7 +159,24 @@ export default function Header({ initialSettings, initialCategories }: { initial
 
   const count = useCartStore((s) => s.items.reduce((a, i) => a + i.qty, 0));
   const { setCartOpen, setMobileMenuOpen } = useUIStore();
-  const { customer } = useAuthStore();
+  const { customer, logoutCustomer } = useAuthStore();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the account menu on outside click / Escape
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    function onDown(e: MouseEvent) {
+      if (!accountMenuRef.current?.contains(e.target as Node)) setAccountMenuOpen(false);
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setAccountMenuOpen(false); }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [accountMenuOpen]);
 
   const [cartShaking, setCartShaking] = useState(false);
   const prevCount = useRef(count);
@@ -322,9 +340,9 @@ export default function Header({ initialSettings, initialCategories }: { initial
 
   return (
     <>
-      {/* Top strip — playful gradient */}
+      {/* Top strip — solid brand-navy with playful colored dot separators */}
       <div className="text-white py-2 px-4 text-center hidden sm:block relative overflow-hidden"
-           style={{ background: 'linear-gradient(90deg, #FF6FB1 0%, #FF9A4D 35%, #FFCB47 60%, #4FC081 80%, #6BC8E6 100%)', fontSize: '12.5px', letterSpacing: '0.04em', fontWeight: 600 }}>
+           style={{ background: '#1F2F4A', fontSize: '12.5px', letterSpacing: '0.04em', fontWeight: 600 }}>
         <div className="max-w-[1360px] mx-auto" style={{ overflow: 'hidden' }}>
           <span
             className="block text-center w-full"
@@ -332,19 +350,35 @@ export default function Header({ initialSettings, initialCategories }: { initial
           >
             {stripShowAll ? (
               <span style={{ display: 'inline-flex', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
-                {stripMessages.map((msg, i) => (
-                  <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                    {i > 0 && <span style={{ margin: '0 14px', opacity: 0.55 }}>·</span>}
-                    {msg}
-                  </span>
-                ))}
+                {stripMessages.map((msg, i) => {
+                  const dotColors = ['#FFCB47', '#FF6FB1', '#4FC081', '#6BC8E6'];
+                  return (
+                    <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {i > 0 && (
+                        <span style={{
+                          display: 'inline-block',
+                          width: 5, height: 5,
+                          borderRadius: '50%',
+                          background: dotColors[(i - 1) % dotColors.length],
+                          margin: '0 14px',
+                          flexShrink: 0,
+                        }} />
+                      )}
+                      {msg}
+                    </span>
+                  );
+                })}
               </span>
             ) : (
-              <>
-                <span className="mr-2">✨</span>
-                {stripMessages[stripIdx]}
-                <span className="ml-2">✨</span>
-              </>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#FFCB47" aria-hidden>
+                  <path d="M12 2 14.5 9.5 22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" />
+                </svg>
+                <span>{stripMessages[stripIdx]}</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#FFCB47" aria-hidden>
+                  <path d="M12 2 14.5 9.5 22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" />
+                </svg>
+              </span>
             )}
           </span>
         </div>
@@ -355,7 +389,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
               style={{ boxShadow: '0 6px 24px -16px rgba(255,111,177,.35)' }}>
         <div className="max-w-[1360px] mx-auto px-4 sm:px-8">
           {/* Mobile: hamburger + logo + cart on top, search below. Desktop: 3-col grid with search. */}
-          <div className="flex sm:grid sm:grid-cols-[1fr_auto_1fr] items-center justify-between gap-3 sm:gap-6 py-3 sm:py-5">
+          <div className="flex sm:grid sm:grid-cols-[1fr_auto_1fr] items-center justify-between gap-3 sm:gap-6 py-2.5 sm:py-3">
 
             {/* Search (desktop only here; mobile has it below) */}
             <div ref={searchRef} className="relative max-w-[400px] w-full hidden sm:block">
@@ -368,7 +402,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
                     router.push(`/products?search=${encodeURIComponent(searchQ.trim())}`);
                   }
                 }}
-                className="flex items-center bg-[#FFF5F8] border-2 border-[#FFD4E6] px-4 py-2.5 gap-3 rounded-full focus-within:border-[#FF6FB1] focus-within:bg-white transition-colors"
+                className="flex items-center bg-[#FFF5F8] border-2 border-[#FFD4E6] px-4 py-2 gap-3 rounded-full focus-within:border-[#FF6FB1] focus-within:bg-white transition-colors"
               >
                 <svg className="w-4 h-4 text-[#FF6FB1] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
                   <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
@@ -447,8 +481,17 @@ export default function Header({ initialSettings, initialCategories }: { initial
               )}
             </div>
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center">
+            {/* Logo — scrolls to top when already on the homepage */}
+            <Link
+              href="/"
+              className="flex items-center"
+              onClick={(e) => {
+                if (pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+            >
               {settings?.store?.logo ? (
                 <Image
                   src={imgUrl(settings.store.logo)}
@@ -484,7 +527,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
               </button>
 
               <Tooltip label="Track Order">
-                <Link href="/track" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#D4EEF7] text-[#3FA1C5] hover:scale-110 hover:bg-[#6BC8E6] hover:text-white transition-all" aria-label="Track order">
+                <Link href="/track" className="hidden sm:inline-flex w-9 h-9 items-center justify-center rounded-full bg-[#D4EEF7] text-[#3FA1C5] hover:scale-110 hover:bg-[#6BC8E6] hover:text-white transition-all" aria-label="Track order">
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <rect x="1" y="3" width="15" height="13" rx="2" />
                     <path d="M16 8h4l3 5v3h-7V8z" />
@@ -495,7 +538,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
               </Tooltip>
 
               <Tooltip label="Wishlist">
-                <Link href="/wishlist" className="hidden sm:inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#FFD4E6] text-[#E5539B] hover:scale-110 hover:bg-[#FF6FB1] hover:text-white transition-all" aria-label="Wishlist">
+                <Link href="/wishlist" className="hidden sm:inline-flex w-9 h-9 items-center justify-center rounded-full bg-[#FFD4E6] text-[#E5539B] hover:scale-110 hover:bg-[#FF6FB1] hover:text-white transition-all" aria-label="Wishlist">
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
@@ -505,7 +548,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
               <Tooltip label={count > 0 ? `Cart (${count})` : 'Cart'}>
                 <button
                   onClick={() => setCartOpen(true)}
-                  className={`relative inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#FFE0CB] text-[#E5783A] hover:scale-110 hover:bg-[#FF9A4D] hover:text-white transition-all${cartShaking ? ' cart-shake' : ''}`}
+                  className={`relative inline-flex w-9 h-9 items-center justify-center rounded-full bg-[#FFE0CB] text-[#E5783A] hover:scale-110 hover:bg-[#FF9A4D] hover:text-white transition-all${cartShaking ? ' cart-shake' : ''}`}
                   aria-label="Cart"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -522,22 +565,99 @@ export default function Header({ initialSettings, initialCategories }: { initial
               </Tooltip>
 
               {/* Login / Account pill */}
-              <Link
-                href={customer ? '/account' : '/login'}
-                className="hidden sm:inline-flex items-center gap-2 ml-1.5 pl-2.5 pr-4 py-2 rounded-full text-white text-[13px] font-bold transition-all hover:scale-[1.03] active:scale-95"
-                style={{
-                  background: 'linear-gradient(135deg, #FF6FB1 0%, #FF5B6E 100%)',
-                  boxShadow: '0 8px 18px -8px rgba(255,91,110,.6)',
-                }}
-              >
-                <span className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </span>
-                <span className="whitespace-nowrap">{customer ? customer.name?.split(' ')[0] || 'Account' : 'Login / Sign Up'}</span>
-              </Link>
+              {!customer ? (
+                <Link
+                  href="/login"
+                  className="hidden sm:inline-flex items-center gap-2 ml-1.5 pl-2 pr-3.5 py-1.5 rounded-full text-white text-[13px] font-bold transition-all hover:scale-[1.03] active:scale-95"
+                  style={{
+                    background: 'linear-gradient(135deg, #FF6FB1 0%, #FF5B6E 100%)',
+                    boxShadow: '0 8px 18px -8px rgba(255,91,110,.6)',
+                  }}
+                >
+                  <span className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center">
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </span>
+                  <span className="whitespace-nowrap">Login / Sign Up</span>
+                </Link>
+              ) : (
+                <div ref={accountMenuRef} className="hidden sm:block relative ml-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setAccountMenuOpen((o) => !o)}
+                    aria-haspopup="menu"
+                    aria-expanded={accountMenuOpen}
+                    className="inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full text-white text-[13px] font-bold transition-all hover:scale-[1.03] active:scale-95"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF6FB1 0%, #FF5B6E 100%)',
+                      boxShadow: '0 8px 18px -8px rgba(255,91,110,.6)',
+                    }}
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </span>
+                    <span className="whitespace-nowrap">{customer.name?.split(' ')[0] || 'Account'}</span>
+                    <svg className={`w-3 h-3 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+
+                  {accountMenuOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-full mt-2 w-60 rounded-2xl bg-white border-2 border-[#FFE0EC] shadow-[0_18px_36px_-12px_rgba(255,111,177,0.35)] overflow-hidden z-50"
+                    >
+                      {/* Header strip */}
+                      <div className="px-4 py-3 border-b border-[#FFE0EC]" style={{ background: 'linear-gradient(160deg, #FFF5F8 0%, #FFE0EC 100%)' }}>
+                        <div className="text-[11px] font-extrabold text-[#FF6FB1] uppercase tracking-[.12em]">Signed in as</div>
+                        <div className="text-[14px] font-bold text-[#1F2F4A] truncate mt-0.5">{customer.name}</div>
+                        {customer.phone && <div className="text-[11px] text-[#7A8299] font-mono truncate">{customer.phone}</div>}
+                      </div>
+
+                      {/* Menu items */}
+                      <div className="py-1.5">
+                        {[
+                          { href: '/account?tab=profile', icon: 'user',     label: 'Profile' },
+                          { href: '/account?tab=orders',  icon: 'orders',   label: 'My Orders' },
+                          { href: '/account?tab=profile&section=password', icon: 'key', label: 'Change Password' },
+                          { href: '/wishlist',            icon: 'heart',    label: 'Wishlist' },
+                        ].map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#1F2F4A] hover:bg-[#FFF5F8] hover:text-[#FF6FB1] transition-colors"
+                          >
+                            <AccountMenuIcon name={item.icon} />
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+
+                      {/* Logout — separated */}
+                      <div className="border-t border-[#FFE0EC] py-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            logoutCustomer();
+                            router.push('/');
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#9B2914] hover:bg-[#FBDED8] transition-colors"
+                        >
+                          <AccountMenuIcon name="logout" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -573,7 +693,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
         >
           <div className="max-w-[1360px] mx-auto px-8">
             <ul className="flex items-center justify-center gap-1">
-              {(nav || []).map((item) => {
+              {(nav || []).filter((item) => item.label?.trim().toLowerCase() !== 'brands').map((item) => {
                 const slug = catSlug(item.link);
                 const cat = slug && catMap ? catMap.get(slug) : null;
                 const hasMega = (cat?.children?.length ?? 0) > 0;
@@ -585,7 +705,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
                     <Link
                       href={item.link}
                       onClick={() => setMegaOpen(null)}
-                      className="flex items-center gap-1.5 px-4 py-3.5 text-[14px] font-semibold transition-all whitespace-nowrap rounded-full mx-0.5 my-1"
+                      className="flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold transition-all whitespace-nowrap rounded-full mx-0.5 my-1"
                       style={{
                         color: isOpen ? '#FF6FB1' : '#1F2F4A',
                         background: isOpen ? '#FFE0EC' : 'transparent',
@@ -619,4 +739,23 @@ export default function Header({ initialSettings, initialCategories }: { initial
       </header>
     </>
   );
+}
+
+/* ── Small icon set for the account dropdown menu ── */
+function AccountMenuIcon({ name }: { name: string }) {
+  const common = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, className: 'shrink-0' };
+  switch (name) {
+    case 'user':
+      return (<svg {...common}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>);
+    case 'orders':
+      return (<svg {...common}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>);
+    case 'key':
+      return (<svg {...common}><circle cx="8" cy="15" r="4" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" /></svg>);
+    case 'heart':
+      return (<svg {...common}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>);
+    case 'logout':
+      return (<svg {...common}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>);
+    default:
+      return null;
+  }
 }

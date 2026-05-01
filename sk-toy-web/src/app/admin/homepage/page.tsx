@@ -31,13 +31,10 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Spinner from '@/components/ui/Spinner';
 
 const SECTION_TYPES = [
-  { value: 'hero', label: 'Hero Banner' },
   { value: 'categories', label: 'Categories Grid' },
   { value: 'products', label: 'Products Section' },
   { value: 'editorial_band', label: 'Editorial Band' },
-
   { value: 'journal', label: 'Journal / Blog' },
-  { value: 'newsletter', label: 'Newsletter' },
   { value: 'banner', label: 'Promo Banner' },
   { value: 'ages', label: 'Shop by Age' },
 ];
@@ -47,6 +44,7 @@ const FILTER_OPTIONS = [
   { value: 'sale', label: 'On Sale' },
   { value: 'clearance', label: 'Clearance' },
   { value: 'featured', label: 'Featured' },
+  { value: 'trending', label: 'Trending' },
   { value: 'showcase', label: 'Manually Curated' },
 ];
 
@@ -208,6 +206,7 @@ export default function HomepageSectionsPage() {
             onChange={setField('type')}
             options={SECTION_TYPES}
             className="sm:col-span-2"
+            storefront
           />
           <Input label="Title" value={form.title} onChange={setField('title')} placeholder="Just Landed" />
           <Input label="Eyebrow Text" value={form.eyebrow} onChange={setField('eyebrow')} placeholder="New Arrivals" />
@@ -217,19 +216,17 @@ export default function HomepageSectionsPage() {
 
           {form.type === 'products' && (
             <>
-              <Select label="Filter" value={form.filter} onChange={setField('filter')} options={FILTER_OPTIONS} />
+              <Select label="Filter" value={form.filter} onChange={setField('filter')} options={FILTER_OPTIONS} storefront />
               {form.filter !== 'showcase' && (
-                <div>
-                  <label className="text-sm font-medium text-[#5A5048] block mb-1">Limit</label>
-                  <input
-                    type="number"
-                    value={form.limit}
-                    onChange={(e) => setForm((f: any) => ({ ...f, limit: Number(e.target.value) }))}
-                    min={2}
-                    max={20}
-                    className="w-full border border-[#E8DFD2] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#EC5D4A]"
-                  />
-                </div>
+                <Input
+                  label="Limit"
+                  type="number"
+                  value={form.limit || ''}
+                  onChange={(e) => setForm((f: any) => ({ ...f, limit: e.target.value === '' ? 0 : Number(e.target.value) }))}
+                  min={2}
+                  max={20}
+                  placeholder="8"
+                />
               )}
               {form.filter === 'showcase' && (
                 <ShowcaseProductPicker
@@ -243,7 +240,7 @@ export default function HomepageSectionsPage() {
 
           {form.type === 'editorial_band' && (
             <>
-              <Select label="Band Style" value={form.bandStyle} onChange={setField('bandStyle')} options={BAND_STYLES} />
+              <Select label="Band Style" value={form.bandStyle} onChange={setField('bandStyle')} options={BAND_STYLES} storefront />
               <Input label="Band Text" value={form.bandText} onChange={setField('bandText')} placeholder="Big headline" />
               <Input label="Band Image URL" value={form.bandImage} onChange={setField('bandImage')} placeholder="https://..." className="sm:col-span-2" />
             </>

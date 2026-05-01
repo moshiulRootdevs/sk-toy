@@ -73,6 +73,39 @@ const settingsSchema = new mongoose.Schema({
       description: { type: String,  default: 'Pay securely via bKash' },
     },
   },
+  // Display-only "we accept" badges shown in the storefront footer.
+  // Order in the array = order shown to customers.
+  paymentBadges: {
+    type: [
+      new mongoose.Schema({
+        label:     { type: String, required: true },
+        bg:        { type: String, default: '#FFCB47' },
+        textColor: { type: String, default: '#1F2F4A' },
+        enabled:   { type: Boolean, default: true },
+      }, { _id: false }),
+    ],
+    default: () => ([
+      { label: 'bKash', bg: '#E2136E', textColor: '#FFFFFF', enabled: true },
+      { label: 'COD',   bg: '#FFCB47', textColor: '#1F2F4A', enabled: true },
+      { label: 'Nagad', bg: '#FF9A4D', textColor: '#FFFFFF', enabled: true },
+    ]),
+  },
+  // Trust badges shown on the product details page (Fast delivery / Returns / etc).
+  productTrustBadges: {
+    type: [
+      new mongoose.Schema({
+        icon:    { type: String, default: '🚚' },
+        label:   { type: String, required: true },
+        color:   { type: String, default: '#FF9A4D' },
+        enabled: { type: Boolean, default: true },
+      }, { _id: false }),
+    ],
+    default: () => ([
+      { icon: '🚚',  label: 'Fast delivery',  color: '#FF9A4D', enabled: true },
+      { icon: '🔄',  label: '7-day returns',  color: '#4FC081', enabled: true },
+      { icon: '🛡️',  label: 'Safe & tested',  color: '#6BC8E6', enabled: true },
+    ]),
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Settings', settingsSchema);

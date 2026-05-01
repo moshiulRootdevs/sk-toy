@@ -79,7 +79,7 @@ export const useWishlistStore = create<WishlistStore>()(
 
 interface AuthStore {
   adminUser: { id: string; name: string; email: string; role: string } | null;
-  customer: { id: string; name: string; email: string; tier?: string } | null;
+  customer: { id: string; name: string; phone?: string; email?: string } | null;
   setAdmin: (user: AuthStore['adminUser'], token: string) => void;
   updateAdminUser: (user: AuthStore['adminUser']) => void;
   setCustomer: (customer: AuthStore['customer'], token: string) => void;
@@ -87,29 +87,39 @@ interface AuthStore {
   logoutCustomer: () => void;
 }
 
-export const useAuthStore = create<AuthStore>()((set) => ({
-  adminUser: null,
-  customer: null,
-  setAdmin: (user, token) => {
-    if (typeof window !== 'undefined') localStorage.setItem('sk_admin_token', token);
-    set({ adminUser: user });
-  },
-  updateAdminUser: (user) => {
-    set({ adminUser: user });
-  },
-  setCustomer: (customer, token) => {
-    if (typeof window !== 'undefined') localStorage.setItem('sk_customer_token', token);
-    set({ customer });
-  },
-  logoutAdmin: () => {
-    if (typeof window !== 'undefined') localStorage.removeItem('sk_admin_token');
-    set({ adminUser: null });
-  },
-  logoutCustomer: () => {
-    if (typeof window !== 'undefined') localStorage.removeItem('sk_customer_token');
-    set({ customer: null });
-  },
-}));
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      adminUser: null,
+      customer: null,
+      setAdmin: (user, token) => {
+        if (typeof window !== 'undefined') localStorage.setItem('sk_admin_token', token);
+        set({ adminUser: user });
+      },
+      updateAdminUser: (user) => {
+        set({ adminUser: user });
+      },
+      setCustomer: (customer, token) => {
+        if (typeof window !== 'undefined') localStorage.setItem('sk_customer_token', token);
+        set({ customer });
+      },
+      logoutAdmin: () => {
+        if (typeof window !== 'undefined') localStorage.removeItem('sk_admin_token');
+        set({ adminUser: null });
+      },
+      logoutCustomer: () => {
+        if (typeof window !== 'undefined') localStorage.removeItem('sk_customer_token');
+        set({ customer: null });
+      },
+    }),
+    {
+      name: 'sk-auth',
+      skipHydration: true,
+      // Only persist the user objects — not the action functions.
+      partialize: (state) => ({ adminUser: state.adminUser, customer: state.customer }),
+    },
+  ),
+);
 
 interface UIStore {
   cartOpen: boolean;

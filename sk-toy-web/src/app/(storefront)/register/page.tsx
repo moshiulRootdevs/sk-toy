@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -9,25 +9,65 @@ import { useAuthStore } from '@/lib/store';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
+type Step = 'details' | 'otp';
+
 export default function RegisterPage() {
   const router = useRouter();
   const { setCustomer } = useAuthStore();
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
+  const [step, setStep] = useState<Step>('details');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const otpRef = useRef<HTMLInputElement>(null);
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  // Resend countdown
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
-  async function register(e: React.FormEvent) {
-    e.preventDefault();
+  async function requestOtp(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!name.trim()) { toast.error('Enter your name'); return; }
+    if (!phone.trim()) { toast.error('Enter your phone number'); return; }
+    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setLoading(true);
     try {
-      const res = await api.post('/auth/register', form);
+      const res = await api.post('/auth/otp/request', { phone, purpose: 'signup' });
+      toast.success(res.data?.message || 'OTP sent');
+      // Dev convenience while no SMS gateway is wired
+      if (res.data?.devCode) toast.success(`Dev OTP: ${res.data.devCode}`, { duration: 8000 });
+      setStep('otp');
+      setResendIn(30);
+      setTimeout(() => otpRef.current?.focus(), 50);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Could not send OTP');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function verifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(code)) { toast.error('Enter the 6-digit code'); return; }
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/otp/verify', { phone, code, name, password });
       setCustomer(res.data.customer, res.data.token);
-      toast.success('Account created successfully!');
+      toast.success('Welcome to SK Toy! 🎉');
       router.push('/account');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      const data = err.response?.data;
+      if (data?.accountExists) {
+        toast.error(data.message);
+        router.push('/login');
+        return;
+      }
+      toast.error(data?.message || 'Could not verify code');
     } finally {
       setLoading(false);
     }
@@ -45,19 +85,52 @@ export default function RegisterPage() {
             <span className="text-3xl">🎈</span>
           </div>
           <h1 className="font-display text-3xl font-bold text-[#1F2F4A]">Join the Fun!</h1>
-          <p className="text-[#7A8299] mt-1.5 text-sm font-medium">Create your SK Toy account</p>
-        </div>
-        <form onSubmit={register} className="bg-white border-2 border-[#FFE0EC] rounded-[28px] p-8 shadow-soft space-y-4">
-          <Input label="Full Name" value={form.name} onChange={set('name')} placeholder="Your name" required />
-          <Input label="Email" type="email" value={form.email} onChange={set('email')} placeholder="you@email.com" required />
-          <Input label="Phone" type="tel" value={form.phone} onChange={set('phone')} placeholder="01XXXXXXXXX" />
-          <Input label="Password" type="password" value={form.password} onChange={set('password')} placeholder="Min. 8 characters" required />
-          <Button type="submit" fullWidth size="lg" loading={loading} variant="success">Create Account 🎉</Button>
-          <p className="text-center text-sm text-[#7A8299] font-medium">
-            Already a member?{' '}
-            <Link href="/login" className="text-[#FF6FB1] font-extrabold hover:underline">Sign In</Link>
+          <p className="text-[#7A8299] mt-1.5 text-sm font-medium">
+            {step === 'details' ? 'Create your SK Toy account' : `We've sent a code to ${phone}`}
           </p>
-        </form>
+        </div>
+
+        {step === 'details' ? (
+          <form onSubmit={requestOtp} className="bg-white border-2 border-[#FFE0EC] rounded-[28px] p-8 shadow-soft space-y-4">
+            <Input label="Full Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" required />
+            <Input label="Phone Number" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" autoComplete="tel" required />
+            <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" required />
+            <Button type="submit" fullWidth size="lg" loading={loading} variant="success">Send OTP 🎉</Button>
+            <p className="text-center text-sm text-[#7A8299] font-medium">
+              Already a member?{' '}
+              <Link href="/login" className="text-[#FF6FB1] font-extrabold hover:underline">Sign In</Link>
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={verifyOtp} className="bg-white border-2 border-[#FFE0EC] rounded-[28px] p-8 shadow-soft space-y-4">
+            <Input
+              ref={otpRef}
+              label="6-digit code"
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              autoComplete="one-time-code"
+              required
+            />
+            <Button type="submit" fullWidth size="lg" loading={loading} variant="success">Verify & Create Account 🎉</Button>
+            <div className="flex items-center justify-between text-sm">
+              <button type="button" onClick={() => { setStep('details'); setCode(''); }} className="text-[#7A8299] font-medium hover:text-[#FF6FB1]">
+                ← Edit details
+              </button>
+              <button
+                type="button"
+                disabled={resendIn > 0 || loading}
+                onClick={() => requestOtp()}
+                className="text-[#FF6FB1] font-extrabold hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed"
+              >
+                {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

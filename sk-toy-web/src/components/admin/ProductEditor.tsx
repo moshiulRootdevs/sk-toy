@@ -43,6 +43,7 @@ const BADGES = [
   { value: '', label: '— none —' },
   { value: 'new', label: 'NEW' },
   { value: 'sale', label: 'SALE' },
+  { value: 'featured', label: 'FEATURED' },
   { value: 'hot', label: 'HOT' },
   { value: 'clearance', label: 'CLEARANCE' },
 ];

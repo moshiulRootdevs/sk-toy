@@ -22,6 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import api from '@/lib/api';
 import { Settings } from '@/types';
 import { imgUrl } from '@/lib/utils';
+import { confirm as confirmDialog } from '@/lib/confirm';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Toggle from '@/components/ui/Toggle';
@@ -147,6 +148,7 @@ const TABS = [
   { key: 'shipping', label: 'Shipping', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="6" width="14" height="11" rx="1"/><path d="M15 9h4l3 4v4h-7"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg>) },
   { key: 'storefront', label: 'Storefront', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>) },
   { key: 'payments', label: 'Payments', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>) },
+  { key: 'trust', label: 'Trust Badges', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>) },
   { key: 'pages', label: 'Pages', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>) },
   { key: 'benefits', label: 'Benefits', icon: (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>) },
 ] as const;
@@ -174,8 +176,27 @@ export default function SettingsPage() {
       cod:   { enabled: true,  label: 'Cash on Delivery', description: 'Pay when you receive the parcel' },
       bkash: { enabled: true,  label: 'bKash',            description: 'Pay securely via bKash' },
     },
+    paymentBadges: [
+      { label: 'bKash', bg: '#E2136E', textColor: '#FFFFFF', enabled: true },
+      { label: 'COD',   bg: '#FFCB47', textColor: '#1F2F4A', enabled: true },
+      { label: 'Nagad', bg: '#FF9A4D', textColor: '#FFFFFF', enabled: true },
+    ],
+    productTrustBadges: [
+      { icon: '🚚',  label: 'Fast delivery',  color: '#FF9A4D', enabled: true },
+      { icon: '🔄',  label: '7-day returns',  color: '#4FC081', enabled: true },
+      { icon: '🛡️',  label: 'Safe & tested',  color: '#6BC8E6', enabled: true },
+    ],
   });
-  useEffect(() => { if (data) setForm(data); }, [data]);
+  useEffect(() => {
+    if (!data) return;
+    setForm((prev: any) => ({
+      ...prev,
+      ...data,
+      // Preserve defaults for fields that may be missing on legacy settings docs
+      paymentBadges: data.paymentBadges?.length ? data.paymentBadges : prev.paymentBadges,
+      productTrustBadges: data.productTrustBadges?.length ? data.productTrustBadges : prev.productTrustBadges,
+    }));
+  }, [data]);
 
   const saveMutation = useMutation({
     mutationFn: () => api.put('/settings', form),
@@ -457,10 +478,10 @@ export default function SettingsPage() {
         {activeTab === 'policies' && (<>
           <Card title="Order Policies" subtitle="These values appear on product pages, checkout, and confirmation emails">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Input label="Return Window (days)" type="number" value={form.policies?.returnDays ?? 7} onChange={snNum('policies', 'returnDays')} hint="e.g. 7 means 7-day returns" />
+              <Input label="Return Window (days)" type="number" value={form.policies?.returnDays || ''} onChange={snNum('policies', 'returnDays')} placeholder="7" hint="e.g. 7 means 7-day returns" />
               <Input label="Free Shipping Over (৳)" type="number" value={form.policies?.freeShippingOver || ''} onChange={snNum('policies', 'freeShippingOver')} hint="Leave blank to disable" />
-              <Input label="COD Charge (৳)" type="number" value={form.policies?.codChargeBdt ?? 0} onChange={snNum('policies', 'codChargeBdt')} hint="Extra charge for cash on delivery" />
-              <Input label="Gift Wrap Cost (৳)" type="number" value={form.policies?.giftWrapCost ?? 50} onChange={snNum('policies', 'giftWrapCost')} />
+              <Input label="COD Charge (৳)" type="number" value={form.policies?.codChargeBdt || ''} onChange={snNum('policies', 'codChargeBdt')} placeholder="0" hint="Extra charge for cash on delivery" />
+              <Input label="Gift Wrap Cost (৳)" type="number" value={form.policies?.giftWrapCost || ''} onChange={snNum('policies', 'giftWrapCost')} placeholder="50" />
             </div>
           </Card>
           <Card title="Tax" subtitle="VAT settings applied to product prices">
@@ -470,7 +491,7 @@ export default function SettingsPage() {
                 <Toggle checked={form.tax?.vatEnabled || false} onChange={(v) => setForm((f: any) => ({ ...f, tax: { ...f.tax, vatEnabled: v } }))} />
               </div>
               {form.tax?.vatEnabled && (<>
-                <Input label="VAT Rate (%)" type="number" value={form.tax?.vatRate ?? 0} onChange={snNum('tax', 'vatRate')} />
+                <Input label="VAT Rate (%)" type="number" value={form.tax?.vatRate || ''} onChange={snNum('tax', 'vatRate')} placeholder="0" />
                 <Input label="VAT Registration No." value={form.tax?.vatNumber || ''} onChange={sn('tax', 'vatNumber')} />
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div><div style={{ fontSize: 13, fontWeight: 500, color: '#2A2420' }}>VAT Inclusive</div><div style={{ fontSize: 11, color: '#8B8176' }}>Prices already include VAT</div></div>
@@ -504,8 +525,8 @@ export default function SettingsPage() {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, shipping: { ...f.shipping, [key]: { ...f.shipping?.[key], description: e.target.value } } }))}
                       placeholder={defaults.desc} />
                     <Input label="Delivery Fee (৳)" type="number"
-                      value={form.shipping?.[key]?.amount ?? defaults.amount}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, shipping: { ...f.shipping, [key]: { ...f.shipping?.[key], amount: Number(e.target.value) } } }))}
+                      value={form.shipping?.[key]?.amount || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((f: any) => ({ ...f, shipping: { ...f.shipping, [key]: { ...f.shipping?.[key], amount: e.target.value === '' ? 0 : Number(e.target.value) } } }))}
                       placeholder={String(defaults.amount)} />
                     <Input label="Free Delivery Over (৳)" type="number"
                       value={form.shipping?.[key]?.freeOver || ''}
@@ -542,8 +563,94 @@ export default function SettingsPage() {
           </Card>
         )}
 
+        {/* ── Trust Badges ── */}
+        {activeTab === 'trust' && (
+          <Card title="Product Trust Badges" subtitle='Small reassurance pills shown on every product details page (e.g. "Fast delivery", "7-day returns")'>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(form.productTrustBadges || []).map((badge: any, i: number) => {
+                const setBadge = (field: string, val: any) => setForm((f: any) => {
+                  const arr = [...(f.productTrustBadges || [])];
+                  arr[i] = { ...arr[i], [field]: val };
+                  return { ...f, productTrustBadges: arr };
+                });
+                const remove = () => setForm((f: any) => ({ ...f, productTrustBadges: (f.productTrustBadges || []).filter((_: any, j: number) => j !== i) }));
+                const move = (dir: -1 | 1) => setForm((f: any) => {
+                  const arr = [...(f.productTrustBadges || [])];
+                  const j = i + dir;
+                  if (j < 0 || j >= arr.length) return f;
+                  [arr[i], arr[j]] = [arr[j], arr[i]];
+                  return { ...f, productTrustBadges: arr };
+                });
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: '1px solid #E8DFD2', borderRadius: 10, background: badge.enabled ? '#FFFBF2' : '#FAF6EF', opacity: badge.enabled ? 1 : 0.6 }}>
+                    {/* Reorder controls */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <button onClick={() => move(-1)} disabled={i === 0} style={{ border: 0, background: 'none', cursor: i === 0 ? 'not-allowed' : 'pointer', color: i === 0 ? '#D8CFBF' : '#8B8176', padding: 0, lineHeight: 1, fontSize: 11 }} aria-label="Move up">▲</button>
+                      <button onClick={() => move(1)} disabled={i === (form.productTrustBadges?.length || 0) - 1} style={{ border: 0, background: 'none', cursor: i === (form.productTrustBadges?.length || 0) - 1 ? 'not-allowed' : 'pointer', color: i === (form.productTrustBadges?.length || 0) - 1 ? '#D8CFBF' : '#8B8176', padding: 0, lineHeight: 1, fontSize: 11 }} aria-label="Move down">▼</button>
+                    </div>
+
+                    {/* Live preview tile */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 64, padding: '6px 4px', borderRadius: 10, background: '#FFFFFF', border: '2px solid #FFE0EC', flexShrink: 0 }}>
+                      <span style={{ fontSize: 18, lineHeight: 1 }}>{badge.icon || '🎁'}</span>
+                      <span style={{ fontSize: 8, fontWeight: 800, marginTop: 2, color: badge.color, textTransform: 'uppercase', letterSpacing: '.05em', lineHeight: 1.1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{badge.label || '—'}</span>
+                    </div>
+
+                    {/* Icon (emoji) */}
+                    <input
+                      value={badge.icon || ''}
+                      onChange={(e) => setBadge('icon', e.target.value)}
+                      placeholder="🚚"
+                      style={{ ...inp, width: 56, textAlign: 'center', flexShrink: 0 }}
+                      maxLength={4}
+                    />
+
+                    {/* Label */}
+                    <input
+                      value={badge.label || ''}
+                      onChange={(e) => setBadge('label', e.target.value)}
+                      placeholder="e.g. Fast delivery"
+                      style={{ ...inp, flex: '1 1 140px', minWidth: 0 }}
+                    />
+
+                    {/* Color */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#8B8176', flexShrink: 0 }}>
+                      Color
+                      <input
+                        type="color"
+                        value={badge.color || '#FF9A4D'}
+                        onChange={(e) => setBadge('color', e.target.value)}
+                        style={{ width: 32, height: 28, border: '1px solid #E8DFD2', borderRadius: 6, padding: 0, cursor: 'pointer', background: 'none' }}
+                      />
+                    </label>
+
+                    <Toggle checked={badge.enabled ?? true} onChange={(v) => setBadge('enabled', v)} />
+
+                    <button
+                      onClick={remove}
+                      aria-label="Remove badge"
+                      style={{ border: 0, background: 'none', cursor: 'pointer', padding: '4px 6px', color: '#A89E92', fontSize: 18, borderRadius: 6, lineHeight: 1, flexShrink: 0 }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#9B2914'; (e.currentTarget as HTMLElement).style.background = '#FBDED8'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#A89E92'; (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                    >×</button>
+                  </div>
+                );
+              })}
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setForm((f: any) => ({
+                  ...f,
+                  productTrustBadges: [...(f.productTrustBadges || []), { icon: '🎁', label: '', color: '#FF6FB1', enabled: true }],
+                }))}
+              >
+                + Add Badge
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* ── Payments ── */}
-        {activeTab === 'payments' && (
+        {activeTab === 'payments' && (<>
           <Card title="Payment Methods" subtitle="Enable or disable payment options shown to customers at checkout">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {(['cod', 'bkash'] as const).map((key) => {
@@ -574,7 +681,91 @@ export default function SettingsPage() {
               })}
             </div>
           </Card>
-        )}
+
+          <Card title="Footer Payment Badges" subtitle="Small &quot;we accept&quot; pills shown in the storefront footer. Drag to reorder, toggle to hide.">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(form.paymentBadges || []).map((badge: any, i: number) => {
+                const setBadge = (field: string, val: any) => setForm((f: any) => {
+                  const arr = [...(f.paymentBadges || [])];
+                  arr[i] = { ...arr[i], [field]: val };
+                  return { ...f, paymentBadges: arr };
+                });
+                const remove = () => setForm((f: any) => ({ ...f, paymentBadges: (f.paymentBadges || []).filter((_: any, j: number) => j !== i) }));
+                const move = (dir: -1 | 1) => setForm((f: any) => {
+                  const arr = [...(f.paymentBadges || [])];
+                  const j = i + dir;
+                  if (j < 0 || j >= arr.length) return f;
+                  [arr[i], arr[j]] = [arr[j], arr[i]];
+                  return { ...f, paymentBadges: arr };
+                });
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: '1px solid #E8DFD2', borderRadius: 10, background: badge.enabled ? '#FFFBF2' : '#FAF6EF', opacity: badge.enabled ? 1 : 0.6 }}>
+                    {/* Reorder controls */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <button onClick={() => move(-1)} disabled={i === 0} style={{ border: 0, background: 'none', cursor: i === 0 ? 'not-allowed' : 'pointer', color: i === 0 ? '#D8CFBF' : '#8B8176', padding: 0, lineHeight: 1, fontSize: 11 }} aria-label="Move up">▲</button>
+                      <button onClick={() => move(1)} disabled={i === (form.paymentBadges?.length || 0) - 1} style={{ border: 0, background: 'none', cursor: i === (form.paymentBadges?.length || 0) - 1 ? 'not-allowed' : 'pointer', color: i === (form.paymentBadges?.length || 0) - 1 ? '#D8CFBF' : '#8B8176', padding: 0, lineHeight: 1, fontSize: 11 }} aria-label="Move down">▼</button>
+                    </div>
+
+                    {/* Live preview pill */}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 56, padding: '5px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800, background: badge.bg, color: badge.textColor, flexShrink: 0 }}>
+                      {badge.label || '—'}
+                    </span>
+
+                    {/* Label */}
+                    <input
+                      value={badge.label || ''}
+                      onChange={(e) => setBadge('label', e.target.value)}
+                      placeholder="e.g. bKash"
+                      style={{ ...inp, flex: '1 1 140px', minWidth: 0 }}
+                    />
+
+                    {/* Background color */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#8B8176', flexShrink: 0 }}>
+                      Bg
+                      <input
+                        type="color"
+                        value={badge.bg || '#FFCB47'}
+                        onChange={(e) => setBadge('bg', e.target.value)}
+                        style={{ width: 32, height: 28, border: '1px solid #E8DFD2', borderRadius: 6, padding: 0, cursor: 'pointer', background: 'none' }}
+                      />
+                    </label>
+
+                    {/* Text color */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#8B8176', flexShrink: 0 }}>
+                      Text
+                      <input
+                        type="color"
+                        value={badge.textColor || '#1F2F4A'}
+                        onChange={(e) => setBadge('textColor', e.target.value)}
+                        style={{ width: 32, height: 28, border: '1px solid #E8DFD2', borderRadius: 6, padding: 0, cursor: 'pointer', background: 'none' }}
+                      />
+                    </label>
+
+                    <Toggle checked={badge.enabled ?? true} onChange={(v) => setBadge('enabled', v)} />
+
+                    <button
+                      onClick={remove}
+                      aria-label="Remove badge"
+                      style={{ border: 0, background: 'none', cursor: 'pointer', padding: '4px 6px', color: '#A89E92', fontSize: 18, borderRadius: 6, lineHeight: 1, flexShrink: 0 }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#9B2914'; (e.currentTarget as HTMLElement).style.background = '#FBDED8'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#A89E92'; (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                    >×</button>
+                  </div>
+                );
+              })}
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setForm((f: any) => ({
+                  ...f,
+                  paymentBadges: [...(f.paymentBadges || []), { label: '', bg: '#FFCB47', textColor: '#1F2F4A', enabled: true }],
+                }))}
+              >
+                + Add Badge
+              </Button>
+            </div>
+          </Card>
+        </>)}
 
         {/* ── Pages ── */}
         {activeTab === 'pages' && !editingPage && (
@@ -645,7 +836,11 @@ export default function SettingsPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {benefits.map((b: any) => (
                       <SortableBenefitCard key={b._id} benefit={b} onEdit={() => openEditBenefit(b)}
-                        onDelete={() => { if (confirm('Delete this benefit block?')) deleteBenefitMutation.mutate(b._id); }} />
+                        onDelete={async () => {
+                          if (await confirmDialog({ title: 'Delete benefit block?', message: 'This benefit block will be permanently removed. This action cannot be undone.', confirmLabel: 'Delete', danger: true })) {
+                            deleteBenefitMutation.mutate(b._id);
+                          }
+                        }} />
                     ))}
                   </div>
                 </SortableContext>

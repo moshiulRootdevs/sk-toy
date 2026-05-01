@@ -44,6 +44,7 @@ app.use("/api/inventory", require("./routes/inventory"));
 app.use("/api/reports", require("./routes/reports"));
 app.use("/api/audit", require("./routes/audit"));
 app.use("/api/ai", require("./routes/ai"));
+app.use("/api/newsletter", require("./routes/newsletter"));
 
 app.get("/api/health", (_, res) => res.json({ status: "ok", ts: Date.now() }));
 

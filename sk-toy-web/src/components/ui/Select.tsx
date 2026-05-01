@@ -23,13 +23,15 @@ interface SelectProps {
   id?: string;
   /** Pill-shaped trigger for storefront sort controls */
   pill?: boolean;
+  /** Match the storefront Input visual (pink-tinted bg, bold label, rounded-2xl) */
+  storefront?: boolean;
   /** Show search box — defaults to true when options > 5 */
   searchable?: boolean;
 }
 
 export default function Select({
   label, error, hint, options, placeholder, value, onChange,
-  className, style, disabled, id, pill, searchable,
+  className, style, disabled, id, pill, storefront, searchable,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -112,6 +114,16 @@ export default function Select({
     background: '#FFFFFF',
     color: hasValue ? '#1F2F4A' : '#8B8176',
     fontSize: 13,
+    fontWeight: 500,
+    fontFamily: 'inherit',
+    height: 'auto',
+  } : storefront ? {
+    border: error ? '2px solid #FF8FA0' : '2px solid #FFE0EC',
+    borderRadius: 16,
+    padding: '11px 36px 11px 16px',
+    background: '#FFF8FB',
+    color: hasValue ? '#1F2F4A' : '#B591A8',
+    fontSize: 14,
     fontWeight: 500,
     fontFamily: 'inherit',
     height: 'auto',
@@ -236,9 +248,9 @@ export default function Select({
   );
 
   return (
-    <div className={cls('flex flex-col gap-1', className)} style={style}>
+    <div className={cls(storefront ? 'flex flex-col gap-1.5' : 'flex flex-col gap-1', className)} style={style}>
       {label && (
-        <label htmlFor={selectId} className="text-xs font-medium text-[#2A2420]">
+        <label htmlFor={selectId} className={storefront ? 'text-[13px] font-bold text-[#1F2F4A]' : 'text-xs font-medium text-[#2A2420]'}>
           {label}
         </label>
       )}
@@ -264,8 +276,8 @@ export default function Select({
             transition: 'border-color .15s, box-shadow .15s',
             position: 'relative',
           }}
-          onFocus={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px rgba(236,93,74,.25)'; (e.currentTarget as HTMLElement).style.borderColor = '#FF5B6E'; }}
-          onBlur={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = error ? '#F2A89B' : pill ? '#FFE0EC' : '#E8DFD2'; }}
+          onFocus={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = storefront ? 'none' : '0 0 0 2px rgba(236,93,74,.25)'; (e.currentTarget as HTMLElement).style.borderColor = storefront ? '#FF6FB1' : '#FF5B6E'; if (storefront) (e.currentTarget as HTMLElement).style.background = '#FFFFFF'; }}
+          onBlur={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = error ? (storefront ? '#FF8FA0' : '#F2A89B') : storefront ? '#FFE0EC' : pill ? '#FFE0EC' : '#E8DFD2'; if (storefront) (e.currentTarget as HTMLElement).style.background = '#FFF8FB'; }}
         >
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {selected?.label ?? placeholder ?? '— Select —'}

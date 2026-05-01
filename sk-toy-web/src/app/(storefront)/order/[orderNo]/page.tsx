@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { Order } from '@/types';
 import { fmtTk, imgUrl } from '@/lib/utils';
@@ -16,6 +18,18 @@ const STEPS = [
   { key: 'shipped',   label: 'Shipped' },
   { key: 'delivered', label: 'Delivered' },
 ];
+
+// Customer-facing status labels (the API uses 'new' as the initial state, but
+// "Pending" reads more naturally for a buyer just after placing the order).
+const STATUS_LABEL: Record<string, string> = {
+  new:       'Pending',
+  confirmed: 'Confirmed',
+  packed:    'Packed',
+  shipped:   'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  returned:  'Returned',
+};
 
 function fmtDate(s?: string) {
   if (!s) return '';
@@ -80,11 +94,12 @@ export default function OrderConfirmPage() {
             Your order has been placed and is being processed.
             {order.customerEmail && <> A confirmation has been sent to <strong>{order.customerEmail}</strong>.</>}
           </p>
-          <div style={{ display: 'inline-block', background: '#FFFFFF', border: '2px solid #FFCB47', borderRadius: 10, padding: '8px 24px' }}>
-            <span style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 20, fontWeight: 700, color: '#FF5B6E', letterSpacing: '0.04em' }}>
-              #{order.orderNo}
-            </span>
-          </div>
+          <OrderIdBlock orderNo={order.orderNo} />
+
+          <p style={{ marginTop: 14, fontSize: 13, color: '#5A5048', maxWidth: 460, marginInline: 'auto', lineHeight: 1.55 }}>
+            💡 <strong>Save this order ID</strong> — you can use it any time on the{' '}
+            <Link href="/track" style={{ color: '#FF5B6E', fontWeight: 700, textDecoration: 'none' }}>Track Order</Link> page to check your delivery status.
+          </p>
         </div>
 
         {/* Order status tracker */}
@@ -126,7 +141,7 @@ export default function OrderConfirmPage() {
             <Row label="Order No" value={`#${order.orderNo}`} />
             <Row label="Date" value={fmtDate(order.createdAt)} />
             <Row label="Payment" value={PAYMENT_LABEL[order.paymentMethod] || order.paymentMethod} />
-            <Row label="Status" value={order.status} accent />
+            <Row label="Status" value={STATUS_LABEL[order.status] || order.status} accent />
           </div>
 
           {/* Delivery */}
@@ -211,6 +226,60 @@ function TotalRow({ label, value, green }: { label: string; value: string; green
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
       <span style={{ fontSize: 13, color: '#7A8299' }}>{label}</span>
       <span style={{ fontSize: 13, color: green ? '#2D8A4E' : '#1F2F4A' }}>{value}</span>
+    </div>
+  );
+}
+
+function OrderIdBlock({ orderNo }: { orderNo: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(orderNo);
+      setCopied(true);
+      toast.success('Order ID copied');
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error('Could not copy');
+    }
+  }
+
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 10,
+      background: '#FFFFFF', border: '2px solid #FFCB47',
+      borderRadius: 12, padding: '8px 10px 8px 20px',
+    }}>
+      <span style={{ fontFamily: 'var(--font-mono-var, monospace)', fontSize: 20, fontWeight: 700, color: '#FF5B6E', letterSpacing: '0.04em' }}>
+        #{orderNo}
+      </span>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={copied ? 'Copied' : 'Copy order ID'}
+        title={copied ? 'Copied!' : 'Copy order ID'}
+        style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 32, height: 32, borderRadius: 8,
+          border: 0, cursor: 'pointer',
+          background: copied ? '#D6F0DE' : '#FFF1C7',
+          color: copied ? '#2D8A4E' : '#7A5A00',
+          transition: 'background .15s, color .15s',
+        }}
+        onMouseEnter={(e) => { if (!copied) (e.currentTarget as HTMLElement).style.background = '#FFE69E'; }}
+        onMouseLeave={(e) => { if (!copied) (e.currentTarget as HTMLElement).style.background = '#FFF1C7'; }}
+      >
+        {copied ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+        )}
+      </button>
     </div>
   );
 }

@@ -13,12 +13,17 @@ const addressSchema = new mongoose.Schema({
 
 const customerSchema = new mongoose.Schema({
   name:      { type: String, required: true },
-  email:     { type: String, required: true, unique: true, lowercase: true },
-  phone:     { type: String },
+  // Phone is now the primary identity (verified via OTP). Sparse unique so guest
+  // customers without a phone don't collide on null.
+  phone:     { type: String, unique: true, sparse: true, trim: true },
+  phoneVerified: { type: Boolean, default: false },
+  // Email is optional — kept for receipts/notifications only, no longer unique.
+  email:     { type: String, lowercase: true, trim: true },
+  // Legacy password field — retained for backwards-compat with old accounts.
+  // New accounts created via OTP have no password.
   password:  { type: String, select: false },
   addresses: [addressSchema],
   wishlist:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
-  tier:      { type: String, enum: ['Bronze', 'Silver', 'Gold', 'VIP'], default: 'Bronze' },
   area:      String,
   orders:    { type: Number, default: 0 },
   spend:     { type: Number, default: 0 },
@@ -35,6 +40,7 @@ customerSchema.pre('save', async function (next) {
 });
 
 customerSchema.methods.comparePassword = function (candidate) {
+  if (!this.password) return Promise.resolve(false);
   return bcrypt.compare(candidate, this.password);
 };
 

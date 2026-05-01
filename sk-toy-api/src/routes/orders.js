@@ -13,28 +13,36 @@ const { sendOrderConfirmation } = require('../utils/mailer');
 
 // POST /api/orders — place order
 router.post('/', optionalCustomer, async (req, res) => {
-  const { lines, customerName, customerEmail, phone, address, area, district, paymentMethod, coupon: couponCode, giftWrap, note } = req.body;
+  const { lines, customerName, customerEmail, phone, altPhone, address, area, district, paymentMethod, coupon: couponCode, giftWrap, note } = req.body;
 
   if (!lines?.length || !customerName || !phone || !address || !paymentMethod) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  // Resolve products and compute subtotal
-  const productIds = lines.map(l => l.product);
-  const products = await Product.find({ _id: { $in: productIds } });
+  // Resolve products and compute subtotal — lean + Map lookup is O(N+M) instead
+  // of O(N*M) from the previous .find() inside .map().
+  const productIds = lines.map((l) => l.product);
+  const products = await Product.find({ _id: { $in: productIds } })
+    .select('name sku price images')
+    .lean();
+  const productById = new Map(products.map((p) => [String(p._id), p]));
   let subtotal = 0;
-  const resolvedLines = lines.map(l => {
-    const p = products.find(x => String(x._id) === String(l.product));
+  const resolvedLines = lines.map((l) => {
+    const p = productById.get(String(l.product));
     if (!p) throw new Error(`Product ${l.product} not found`);
     const price = p.price;
     subtotal += price * l.qty;
     return { product: p._id, name: p.name, sku: p.sku, image: p.images?.[0] || '', price, qty: l.qty, variant: l.variant };
   });
 
-  // Shipping cost
-  const settings = await Settings.findOne({ key: 'global' });
+  // Shipping cost — fetch settings + matching zone in parallel
+  const [settings, matchedZone, defaultZone] = await Promise.all([
+    Settings.findOne({ key: 'global' }).lean(),
+    ShippingZone.findOne({ areas: { $in: [district || area] } }).lean(),
+    ShippingZone.findOne({ default: true }).lean(),
+  ]);
+  const zone = matchedZone || defaultZone;
   let shippingCost = 60;
-  const zone = await ShippingZone.findOne({ areas: { $in: [district || area] } }) || await ShippingZone.findOne({ default: true });
   if (zone) {
     shippingCost = subtotal >= zone.freeOver ? 0 : zone.flat;
   } else if (settings && subtotal >= settings.policies.freeShippingOver) {
@@ -60,6 +68,7 @@ router.post('/', optionalCustomer, async (req, res) => {
     customerName,
     customerEmail,
     phone,
+    altPhone,
     address,
     area,
     district,
@@ -76,9 +85,14 @@ router.post('/', optionalCustomer, async (req, res) => {
     note,
   });
 
-  // Decrement stock and increment order counter (used for trending)
-  for (const l of resolvedLines) {
-    await Product.findByIdAndUpdate(l.product, { $inc: { stock: -l.qty, orderCount: l.qty } });
+  // Decrement stock and increment order counter (used for trending) — single
+  // round-trip via bulkWrite instead of N sequential updates.
+  if (resolvedLines.length) {
+    await Product.bulkWrite(
+      resolvedLines.map((l) => ({
+        updateOne: { filter: { _id: l.product }, update: { $inc: { stock: -l.qty, orderCount: l.qty } } },
+      })),
+    );
   }
 
   // Update customer stats
@@ -111,9 +125,14 @@ router.get('/track', async (req, res) => {
   res.json(order);
 });
 
-// GET /api/orders/my — customer's own orders
+// GET /api/orders/my — customer's own orders.
+// Match by customer ref OR by phone — covers orders placed before login or
+// where the token didn't attach for some reason, so a registered user always
+// sees orders tied to their verified phone number.
 router.get('/my', customerAuth, async (req, res) => {
-  const orders = await Order.find({ customer: req.customer._id }).sort({ createdAt: -1 }).lean();
+  const conditions = [{ customer: req.customer._id }];
+  if (req.customer.phone) conditions.push({ phone: req.customer.phone });
+  const orders = await Order.find({ $or: conditions }).sort({ createdAt: -1 }).lean();
   res.json(orders);
 });
 

@@ -1,9 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { imgUrl } from '@/lib/utils';
 import { Settings } from '@/types';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function Footer() {
   const { data: settings } = useQuery<Settings>({
@@ -15,6 +20,28 @@ export default function Footer() {
   const s = settings?.store;
   const social = settings?.social;
 
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+  async function handleSubscribe(e: React.FormEvent) {
+    e.preventDefault();
+    const email = newsletterEmail.trim();
+    if (!email) {
+      toast.error('Please enter your email');
+      return;
+    }
+    setNewsletterLoading(true);
+    try {
+      const res = await api.post('/newsletter/subscribe', { email, source: 'footer' });
+      toast.success(res.data?.message || 'Subscribed!');
+      setNewsletterEmail('');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Could not subscribe right now.';
+      toast.error(msg);
+    } finally {
+      setNewsletterLoading(false);
+    }
+  }
+
   const SECTION_COLORS = {
     shop:    '#FF6FB1',
     help:    '#6BC8E6',
@@ -22,11 +49,13 @@ export default function Footer() {
     loop:    '#FFCB47',
   } as const;
 
-  const PAYMENT_STYLES: Record<string, string> = {
-    bKash: 'bg-[#E2136E] text-white',
-    COD:   'bg-[#FFCB47] text-[#1F2F4A]',
-    Nagad: 'bg-[#FF9A4D] text-white',
-  };
+  const DEFAULT_PAYMENT_BADGES = [
+    { label: 'bKash', bg: '#E2136E', textColor: '#FFFFFF', enabled: true },
+    { label: 'COD',   bg: '#FFCB47', textColor: '#1F2F4A', enabled: true },
+    { label: 'Nagad', bg: '#FF9A4D', textColor: '#FFFFFF', enabled: true },
+  ];
+  const paymentBadges = (settings?.paymentBadges?.length ? settings.paymentBadges : DEFAULT_PAYMENT_BADGES)
+    .filter((b) => b.enabled && b.label?.trim());
 
   const TRUST_BADGES = [
     {
@@ -112,14 +141,24 @@ export default function Footer() {
             {/* Brand column */}
             <div className="col-span-6 sm:col-span-2 lg:col-auto">
               <Link href="/" className="inline-flex items-end leading-none select-none mb-3 sm:mb-4">
-                <span className="font-display flex items-end text-[28px] sm:text-[38px]" style={{ fontWeight: 700 }}>
-                  <span style={{ color: '#4FC081' }}>S</span>
-                  <span style={{ color: '#FF5B6E' }}>K</span>
-                  <span className="logo-dot" />
-                  <span style={{ color: '#FF9A4D' }}>T</span>
-                  <span style={{ color: '#6BC8E6' }}>O</span>
-                  <span style={{ color: '#B093E8' }}>Y</span>
-                </span>
+                {s?.logo ? (
+                  <Image
+                    src={imgUrl(s.logo)}
+                    alt={s.name || 'SK Toy'}
+                    width={200}
+                    height={64}
+                    style={{ objectFit: 'contain', maxHeight: 56, width: 'auto' }}
+                  />
+                ) : (
+                  <span className="font-display flex items-end text-[28px] sm:text-[38px]" style={{ fontWeight: 700 }}>
+                    <span style={{ color: '#4FC081' }}>S</span>
+                    <span style={{ color: '#FF5B6E' }}>K</span>
+                    <span className="logo-dot" />
+                    <span style={{ color: '#FF9A4D' }}>T</span>
+                    <span style={{ color: '#6BC8E6' }}>O</span>
+                    <span style={{ color: '#B093E8' }}>Y</span>
+                  </span>
+                )}
               </Link>
               <p className="text-[13px] sm:text-[15px] font-semibold leading-snug mb-3 sm:mb-4 text-[#1F2F4A]">
                 {s?.tagline || (
@@ -130,20 +169,26 @@ export default function Footer() {
               </p>
               <div className="space-y-1.5">
                 {s?.phone && (
-                  <p className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 flex items-center gap-2 font-semibold">
+                  <a
+                    href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}
+                    className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 hover:text-[#4FC081] flex items-center gap-2 font-semibold transition-colors"
+                  >
                     <span className="inline-flex w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#4FC081]/20 items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-[#4FC081]" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
                     </span>
                     {s.phone}
-                  </p>
+                  </a>
                 )}
                 {s?.email && (
-                  <p className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 flex items-center gap-2 font-semibold">
+                  <a
+                    href={`mailto:${s.email}`}
+                    className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 hover:text-[#6BC8E6] flex items-center gap-2 font-semibold transition-colors"
+                  >
                     <span className="inline-flex w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#6BC8E6]/30 items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-[#6BC8E6]" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><path d="m22 6-10 7L2 6" /></svg>
                     </span>
                     <span className="truncate">{s.email}</span>
-                  </p>
+                  </a>
                 )}
                 {s?.address && (
                   <p className="text-[12px] sm:text-[13px] text-[#1F2F4A]/70 mt-2 leading-relaxed font-medium">{s.address}</p>
@@ -226,16 +271,22 @@ export default function Footer() {
               <p className="text-[11.5px] sm:text-[12px] text-[#1F2F4A]/80 mb-2.5 sm:mb-3 leading-relaxed font-semibold">
                 Fresh toy drops & exclusive offers — straight to your inbox 🎁
               </p>
-              <form onSubmit={(e) => e.preventDefault()} className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+              <form onSubmit={handleSubscribe} className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                 <input
                   type="email"
+                  required
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  disabled={newsletterLoading}
                   placeholder="Your email"
-                  className="flex-1 min-w-0 bg-white border-2 border-[#FFD4E6] rounded-full px-3.5 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-sm text-[#1F2F4A] placeholder-[#B591A8] outline-none focus:border-[#FF6FB1] transition-colors font-medium"
+                  aria-label="Email address"
+                  className="flex-1 min-w-0 bg-white border-2 border-[#FFD4E6] rounded-full px-3.5 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-sm text-[#1F2F4A] placeholder-[#B591A8] outline-none focus:border-[#FF6FB1] transition-colors font-medium disabled:opacity-60"
                 />
                 <button type="submit"
-                  className="text-white text-[13px] sm:text-sm font-extrabold px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
+                  disabled={newsletterLoading}
+                  className="text-white text-[13px] sm:text-sm font-extrabold px-4 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
                   style={{ background: 'linear-gradient(135deg,#FF5B6E,#FF6FB1)', boxShadow: '0 8px 18px -8px rgba(255,91,110,.6)' }}>
-                  Go
+                  {newsletterLoading ? '…' : 'Go'}
                 </button>
               </form>
 
@@ -244,25 +295,37 @@ export default function Footer() {
                 <div className="flex gap-1.5 sm:gap-2">
                   {[
                     { href: social?.facebook, label: 'Facebook', color: '#1877F2', icon: (
-                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
+                      <svg className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                        <path d="M13.397 20.997v-8.196h2.765l.411-3.209h-3.176V7.548c0-.926.258-1.56 1.587-1.56h1.684V3.127A22.336 22.336 0 0 0 14.201 3c-2.444 0-4.122 1.492-4.122 4.231v2.355H7.332v3.209h2.747v8.202h3.318z" />
+                      </svg>
                     )},
                     { href: social?.instagram, label: 'Instagram', color: '#E1306C', icon: (
-                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+                      <svg className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                        <path d="M12 2.163c3.204 0 3.584.012 4.849.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.849.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
+                      </svg>
                     )},
                     { href: social?.youtube, label: 'YouTube', color: '#FF0000', icon: (
-                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" /><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white" /></svg>
+                      <svg className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden fillRule="evenodd" clipRule="evenodd">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                      </svg>
                     )},
                   ].filter(s => s.href).map((soc) => (
-                    <a key={soc.label} href={soc.href!} target="_blank" rel="noopener noreferrer" aria-label={soc.label}
-                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110 hover:-rotate-6 shadow-soft"
-                       style={{ background: soc.color }}>
-                      {soc.icon}
-                    </a>
+                    <Tooltip key={soc.label} label={`Follow us on ${soc.label}`} position="top">
+                      <a href={soc.href!} target="_blank" rel="noopener noreferrer" aria-label={`Follow us on ${soc.label}`}
+                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110 hover:-rotate-6 shadow-soft"
+                         style={{ background: soc.color }}>
+                        {soc.icon}
+                      </a>
+                    </Tooltip>
                   ))}
                 </div>
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                  {['bKash', 'COD', 'Nagad'].map((m) => (
-                    <span key={m} className={`text-[10px] font-extrabold px-2 sm:px-2.5 py-1 rounded-full ${PAYMENT_STYLES[m]}`}>{m}</span>
+                  {paymentBadges.map((b) => (
+                    <span key={b.label}
+                          className="text-[10px] font-extrabold px-2 sm:px-2.5 py-1 rounded-full"
+                          style={{ background: b.bg, color: b.textColor }}>
+                      {b.label}
+                    </span>
                   ))}
                 </div>
               </div>

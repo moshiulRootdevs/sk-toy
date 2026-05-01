@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { imgUrl } from '@/lib/utils';
+import { confirm } from '@/lib/confirm';
 import Tooltip from '@/components/ui/Tooltip';
 
 export default function MediaPage() {
@@ -98,7 +99,11 @@ export default function MediaPage() {
                 </Tooltip>
                 <Tooltip label="Delete" position="bottom">
                 <button
-                  onClick={() => deleteMutation.mutate(m._id)}
+                  onClick={async () => {
+                    if (await confirm({ title: 'Delete file?', message: 'This will permanently remove the file. This action cannot be undone.', confirmLabel: 'Delete', danger: true })) {
+                      deleteMutation.mutate(m._id);
+                    }
+                  }}
                   className="p-1.5 bg-red-500 rounded text-white hover:bg-red-600"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

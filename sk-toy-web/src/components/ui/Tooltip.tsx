@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface TooltipProps {
   label: string;
@@ -62,6 +63,28 @@ export default function Tooltip({ label, children, position = 'top' }: TooltipPr
     left:   { top: '50%', transform: 'translateY(-50%)', left: '100%', borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '5px solid #1F2F4A' },
   };
 
+  const tooltipNode = visible && label && typeof document !== 'undefined' ? (
+    <div style={{
+      position: 'fixed',
+      top: coords.top,
+      left: coords.left,
+      transform: transformMap[position],
+      background: '#1F2F4A',
+      color: '#FFFFFF',
+      fontSize: 11,
+      fontWeight: 500,
+      padding: '4px 10px',
+      borderRadius: 6,
+      whiteSpace: 'nowrap',
+      pointerEvents: 'none',
+      zIndex: 9999,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    }}>
+      {label}
+      <div style={{ position: 'absolute', ...arrowStyles[position], width: 0, height: 0 }} />
+    </div>
+  ) : null;
+
   return (
     <div
       ref={wrapRef}
@@ -72,27 +95,10 @@ export default function Tooltip({ label, children, position = 'top' }: TooltipPr
       onBlur={hide}
     >
       {children}
-      {visible && label && (
-        <div style={{
-          position: 'fixed',
-          top: coords.top,
-          left: coords.left,
-          transform: transformMap[position],
-          background: '#1F2F4A',
-          color: '#FFFFFF',
-          fontSize: 11,
-          fontWeight: 500,
-          padding: '4px 10px',
-          borderRadius: 6,
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 9999,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        }}>
-          {label}
-          <div style={{ position: 'absolute', ...arrowStyles[position], width: 0, height: 0 }} />
-        </div>
-      )}
+      {/* Render via portal so the tooltip's fixed positioning is viewport-relative,
+          even when an ancestor has a CSS transform (which would otherwise become
+          the containing block for fixed children). */}
+      {tooltipNode && createPortal(tooltipNode, document.body)}
     </div>
   );
 }

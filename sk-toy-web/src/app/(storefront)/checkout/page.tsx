@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +12,7 @@ import api from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
+import Tooltip from '@/components/ui/Tooltip';
 
 const ALL_DISTRICTS = [
   'Bagerhat', 'Bandarban', 'Barguna', 'Barisal', 'Bhola', 'Bogura',
@@ -31,20 +33,31 @@ const DHAKA_DISTRICT = 'Dhaka';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, clearCart } = useCartStore();
+  const { items, clearCart, removeItem } = useCartStore();
   const subtotal = useCartStore((s) => s.items.reduce((a, i) => a + i.price * i.qty, 0));
   const { customer } = useAuthStore();
 
   const [form, setForm] = useState({
     name: customer?.name || '',
-    email: customer?.email || '',
-    phone: '',
+    phone: customer?.phone || '',
+    altPhone: '',
     line1: '',
     city: '',
     district: '',
-    zip: '',
     note: '',
   });
+
+  // Auth store hydrates after mount, so the initial useState above may miss the
+  // customer. Sync name + phone once when the customer becomes available, but
+  // only into still-empty fields so we don't overwrite something the user typed.
+  useEffect(() => {
+    if (!customer) return;
+    setForm((f) => ({
+      ...f,
+      name: f.name || customer.name || '',
+      phone: f.phone || customer.phone || '',
+    }));
+  }, [customer]);
   const [deliveryZone, setDeliveryZone] = useState<'inside' | 'outside'>('outside');
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -52,6 +65,40 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'bkash'>('cod');
   const [loading, setLoading] = useState(false);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | 'new'>('new');
+
+  // Saved addresses (only fetched for logged-in customers)
+  const { data: savedAddresses = [] } = useQuery<any[]>({
+    queryKey: ['my-addresses'],
+    queryFn: () => api.get('/customers/me/addresses').then((r) => r.data),
+    enabled: !!customer,
+  });
+
+  // When the addresses arrive, default-pick the address marked default
+  useEffect(() => {
+    if (!savedAddresses.length || selectedAddressId !== 'new') return;
+    const def = savedAddresses.find((a) => a.isDefault) || savedAddresses[0];
+    if (def) {
+      setSelectedAddressId(def._id);
+      setForm((f) => ({
+        ...f,
+        line1: def.line1 || '',
+        city: def.area || '',
+        district: def.district || '',
+      }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedAddresses]);
+
+  function pickAddress(id: string) {
+    setSelectedAddressId(id);
+    if (id === 'new') {
+      setForm((f) => ({ ...f, line1: '', city: '', district: '' }));
+      return;
+    }
+    const a = savedAddresses.find((x) => x._id === id);
+    if (a) setForm((f) => ({ ...f, line1: a.line1 || '', city: a.area || '', district: a.district || '' }));
+  }
 
   /* Fetch delivery options + payment methods from settings */
   const { data: shippingOptions } = useQuery<{
@@ -153,8 +200,8 @@ export default function CheckoutPage() {
           variant: i.variant,
         })),
         customerName: form.name,
-        customerEmail: form.email || undefined,
         phone: form.phone,
+        altPhone: form.altPhone || undefined,
         address: form.line1,
         area: form.city,
         district: form.district,
@@ -220,13 +267,63 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Full Name *" value={form.name} onChange={set('name')} placeholder="Moshiul Islam" />
               <Input label="Phone *" value={form.phone} onChange={set('phone')} placeholder="01XXXXXXXXX" type="tel" />
-              <Input label="Email" value={form.email} onChange={set('email')} placeholder="you@email.com" type="email" className="sm:col-span-2" />
+              <Input label="Alternate Phone" value={form.altPhone} onChange={set('altPhone')} placeholder="01XXXXXXXXX (optional)" type="tel" className="sm:col-span-2" />
             </div>
           </section>
 
           {/* Shipping address */}
           <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#4FC081]" /> Shipping Address</h2>
+
+            {/* Saved address picker — shown only when the customer has saved addresses */}
+            {customer && savedAddresses.length > 0 && (
+              <div className="mb-5">
+                <label className="text-[12px] font-bold text-[#7A8299] uppercase tracking-wider mb-2 block">Choose a saved address</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {savedAddresses.map((a) => {
+                    const active = selectedAddressId === a._id;
+                    return (
+                      <button
+                        key={a._id}
+                        type="button"
+                        onClick={() => pickAddress(a._id)}
+                        className={`text-left p-3 rounded-2xl border-2 transition-all ${
+                          active ? 'border-[#FF6FB1] bg-[#FFF5F8] shadow-[0_4px_14px_-6px_rgba(255,111,177,.5)]' : 'border-[#FFE0EC] bg-white hover:border-[#FFD4E6]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-extrabold text-[#FF6FB1] uppercase tracking-[.12em]">{a.label || 'Address'}</span>
+                            {a.isDefault && <span className="text-[8px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#FF6FB1] text-white">Default</span>}
+                          </div>
+                          <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? 'border-[#FF6FB1]' : 'border-[#E5D9DC]'}`}>
+                            {active && <span className="w-2 h-2 rounded-full bg-[#FF6FB1]" />}
+                          </span>
+                        </div>
+                        <div className="text-[12.5px] text-[#1F2F4A] font-medium leading-snug">
+                          {[a.line1, a.area].filter(Boolean).join(', ')}
+                          {a.district && <span className="text-[#7A8299]"> · {a.district}{a.zip ? ` · ${a.zip}` : ''}</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => pickAddress('new')}
+                    className={`text-left p-3 rounded-2xl border-2 border-dashed transition-all ${
+                      selectedAddressId === 'new' ? 'border-[#FF6FB1] bg-[#FFF5F8]' : 'border-[#FFD4E6] bg-white hover:border-[#FF6FB1]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-[13px] font-bold text-[#FF6FB1]">
+                      <span className="w-5 h-5 rounded-full bg-[#FFE0EC] inline-flex items-center justify-center">+</span>
+                      Use a new address
+                    </div>
+                    <div className="text-[11px] text-[#7A8299] mt-0.5">Enter a different shipping address below</div>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Address Line 1 *" value={form.line1} onChange={set('line1')} placeholder="House, Road, Area" className="sm:col-span-2" />
               <Input label="City / Thana *" value={form.city} onChange={set('city')} placeholder="Gulshan" />
@@ -236,9 +333,16 @@ export default function CheckoutPage() {
                 onChange={(e) => setForm((f) => ({ ...f, district: e.target.value }))}
                 options={ALL_DISTRICTS.map((d) => ({ value: d, label: d }))}
                 placeholder="Select district"
+                storefront
               />
-              <Input label="ZIP Code" value={form.zip} onChange={set('zip')} placeholder="1212" />
             </div>
+            {customer && selectedAddressId === 'new' && (
+              <p className="text-[11px] text-[#7A8299] mt-3">
+                Tip: save this address to your{' '}
+                <Link href="/account?tab=addresses" className="text-[#FF6FB1] font-bold hover:underline">address book</Link>{' '}
+                for faster checkout next time.
+              </p>
+            )}
           </section>
 
           {/* Delivery zone */}
@@ -416,7 +520,7 @@ export default function CheckoutPage() {
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 text-lg flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Order Summary</h2>
             <div className="space-y-3 mb-4">
               {items.map((item) => (
-                <div key={item.productId + (item.variant || '')} className="flex items-center gap-3">
+                <div key={item.productId + (item.variant || '')} className="group flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
                     <Image src={imgUrl(item.image)} alt={item.name} fill className="object-cover" />
                   </div>
@@ -426,6 +530,21 @@ export default function CheckoutPage() {
                     <p className="text-xs text-gray-500">Qty: {item.qty}</p>
                   </div>
                   <span className="text-xs font-bold text-gray-900 shrink-0">{fmtTk(item.price * item.qty)}</span>
+                  <Tooltip label="Remove from cart" position="left">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removeItem(item.productId, item.variant);
+                        toast.success(`Removed "${item.name}"`);
+                      }}
+                      aria-label={`Remove ${item.name} from cart`}
+                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[#A89E92] hover:bg-[#FBDED8] hover:text-[#9B2914] transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>

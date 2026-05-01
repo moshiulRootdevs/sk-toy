@@ -26,7 +26,7 @@ const productSchema = new mongoose.Schema({
   stock:       { type: Number, default: 0 },
   trackInventory: { type: Boolean, default: true },
   variants:    [variantSchema],
-  badge:       { type: String, enum: ['new', 'sale', 'hot', 'clearance', ''], default: '' },
+  badge:       { type: String, enum: ['new', 'sale', 'featured', 'hot', 'clearance', ''], default: '' },
   active:      { type: Boolean, default: true },
   rating:      { type: Number, default: 0 },
   reviewCount: { type: Number, default: 0 },

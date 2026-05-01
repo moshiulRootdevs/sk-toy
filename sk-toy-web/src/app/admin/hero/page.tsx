@@ -4,10 +4,34 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import api from '@/lib/api';
 import { imgUrl } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+
+// Preview tile metadata mirrored from src/components/storefront/HomeSections.tsx
+// so the admin preview matches the live hero collage.
+const HERO_CARD_PREVIEW = [
+  { rot: '-6deg', top: '0%',   left: '2%',   right: 'auto', bottom: 'auto', tint: '#FFE0EC' },
+  { rot: '5deg',  top: '4%',   left: 'auto', right: '0%',   bottom: 'auto', tint: '#FFEDB6' },
+  { rot: '4deg',  top: 'auto', left: '12%',  right: 'auto', bottom: '0%',   tint: '#D7F5E2' },
+  { rot: '-8deg', top: 'auto', left: 'auto', right: '6%',   bottom: '6%',   tint: '#D4EEF7' },
+];
 
 /* ── section wrapper ── */
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
@@ -31,8 +55,30 @@ const inp: React.CSSProperties = {
 };
 const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: '#8B8176', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 4, display: 'block' };
 
+/* ── sortable image upload slot ── */
+function SortableImageSlot(props: { id: string; url: string; index: number; onUpload: (url: string) => void; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.45 : 1,
+    position: 'relative',
+  };
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ImageSlot
+        url={props.url}
+        index={props.index}
+        onUpload={props.onUpload}
+        onRemove={props.onRemove}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
 /* ── image upload slot ── */
-function ImageSlot({ url, onUpload, onRemove, index }: { url: string; onUpload: (url: string) => void; onRemove: () => void; index: number }) {
+function ImageSlot({ url, onUpload, onRemove, index, dragHandleProps }: { url: string; onUpload: (url: string) => void; onRemove: () => void; index: number; dragHandleProps?: React.HTMLAttributes<HTMLDivElement> }) {
   const ref = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -52,14 +98,17 @@ function ImageSlot({ url, onUpload, onRemove, index }: { url: string; onUpload: 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <span style={lbl}>Image {index + 1}</span>
       <div
+        {...(dragHandleProps || {})}
         onClick={() => !uploading && !url && ref.current?.click()}
         onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) upload(f); }}
         onDragOver={(e) => e.preventDefault()}
+        title={url ? 'Drag to reorder' : 'Click or drop a file to upload'}
         style={{
+          touchAction: 'none', userSelect: 'none',
           width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
           border: url ? '1px solid #E8DFD2' : '2px dashed #D8CFBF',
           background: url ? 'transparent' : '#FAF6EF',
-          cursor: url ? 'default' : 'pointer',
+          cursor: url ? 'grab' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           position: 'relative',
         }}
@@ -167,10 +216,22 @@ export default function HeroAdminPage() {
     setForm((p: any) => ({ ...p, heroImages: imgs }));
   }
 
+  // Drag-and-drop reorder for the 4 hero collage slots
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  function handleImageReorder(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const ids = form.heroImages.map((_: string, i: number) => `slot-${i}`);
+    const oldIdx = ids.indexOf(String(active.id));
+    const newIdx = ids.indexOf(String(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    setForm((p: any) => ({ ...p, heroImages: arrayMove(p.heroImages, oldIdx, newIdx) }));
+  }
+
   if (isLoading) return <div style={{ textAlign: 'center', paddingTop: 80, color: '#A89E92', fontSize: 13 }}>Loading…</div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 800 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2A2420', margin: 0 }}>Hero Section</h1>
@@ -221,7 +282,7 @@ export default function HeroAdminPage() {
       <Section title="Stats Bar" subtitle="Three numbers shown below the CTA buttons">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {form.stats.map((s: { num: string; label: string }, i: number) => (
-            <div key={i} className="adm-grid-1-2" style={{ alignItems: 'center' }}>
+            <div key={i} className="adm-grid-2" style={{ alignItems: 'center' }}>
               <div>
                 <label style={lbl}>Stat {i + 1} — Number</label>
                 <input style={inp} value={s.num} onChange={(e) => setStat(i, 'num', e.target.value)} placeholder="64+" />
@@ -235,22 +296,97 @@ export default function HeroAdminPage() {
         </div>
       </Section>
 
-      {/* Collage images */}
-      <Section title="Collage Images" subtitle="4 photos displayed as a stacked card collage on the right side">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {form.heroImages.map((url: string, i: number) => (
-            <ImageSlot
-              key={i}
-              index={i}
-              url={url}
-              onUpload={(u) => setImage(i, u)}
-              onRemove={() => setImage(i, '')}
-            />
-          ))}
+      {/* Collage images + live preview side-by-side */}
+      <Section
+        title="Collage Images"
+        subtitle="4 photos displayed as a stacked card collage on the right side of the hero. Drag the ⋮⋮ handle to reorder — the preview updates instantly."
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-20 items-start">
+          {/* Left — image slots */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleImageReorder}>
+              <SortableContext
+                items={form.heroImages.map((_: string, i: number) => `slot-${i}`)}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid grid-cols-4 gap-3">
+                  {form.heroImages.map((url: string, i: number) => (
+                    <SortableImageSlot
+                      key={`slot-${i}`}
+                      id={`slot-${i}`}
+                      index={i}
+                      url={url}
+                      onUpload={(u) => setImage(i, u)}
+                      onRemove={() => setImage(i, '')}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+            <p style={{ fontSize: 11, color: '#A89E92', margin: 0 }}>
+              Recommended: square images, at least 600×600px. Rotations and positions are automatic.
+            </p>
+          </div>
+
+          {/* Right — live preview (centered in its column) */}
+          <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifySelf: 'center', width: '100%' }}>
+            <div style={{ ...lbl, marginBottom: 8, width: '100%', maxWidth: 320, textAlign: 'center' }}>Live preview</div>
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 320,
+              aspectRatio: '5 / 4',
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #FFE0EC 0%, #FFE9D6 35%, #E5F1FB 75%, #E5DEFA 100%)',
+              padding: 6,
+              overflow: 'hidden',
+              border: '1px solid #E8DFD2',
+            }}>
+              {HERO_CARD_PREVIEW.map((card, i) => {
+                const url = form.heroImages[i] || '';
+                return (
+                  <div key={i} style={{
+                    position: 'absolute',
+                    top: card.top, left: card.left, right: card.right, bottom: card.bottom,
+                    width: '54%', aspectRatio: '1',
+                    transform: `rotate(${card.rot})`,
+                    background: card.tint,
+                    border: '4px solid #FFFFFF',
+                    borderRadius: 18,
+                    boxShadow: '0 16px 32px -12px rgba(31,47,74,.25)',
+                    overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {url ? (
+                      <Image src={imgUrl(url)} alt="" fill style={{ objectFit: 'cover' }} sizes="220px" />
+                    ) : (
+                      <span style={{ fontSize: 11, color: '#7A8299', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                        Image {i + 1}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Center sale badge mirror */}
+              <div style={{
+                position: 'absolute',
+                top: '42%', left: '42%',
+                transform: 'translate(-50%, -50%) rotate(-12deg)',
+                width: 64, height: 64, borderRadius: '50%',
+                background: '#FFFBF2',
+                border: '2px dashed rgba(255,111,177,.45)',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+                boxShadow: '0 8px 18px -8px rgba(0,0,0,0.25)',
+                zIndex: 5,
+              }}>
+                <span style={{ fontSize: 6, fontWeight: 700, letterSpacing: '.12em', color: '#7A8299', textTransform: 'uppercase' }}>{form.badgeTopLine || 'Up to'}</span>
+                <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1, color: '#EC5D4A' }}>{form.badgeValue || '40%'}</span>
+                <span style={{ fontSize: 7, color: '#1F2F4A', fontWeight: 700, letterSpacing: '.04em' }}>{form.badgeBottomLine || 'off sale'}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <p style={{ fontSize: 11, color: '#A89E92', margin: 0 }}>
-          Recommended: square images, at least 600×600px. Rotations and positions are automatic.
-        </p>
       </Section>
 
       {/* Sale badge */}
