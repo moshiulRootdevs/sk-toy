@@ -749,27 +749,44 @@ export default function Header({ initialSettings, initialCategories }: { initial
                 return (
                   <li key={item._id}
                       onMouseEnter={() => hasMega ? openMega(item._id) : closeMega()}>
-                    <Link
-                      href={item.link}
-                      onClick={() => setMegaOpen(null)}
-                      className="flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold transition-all whitespace-nowrap rounded-full mx-0.5 my-1"
-                      style={{
-                        color: isOpen ? '#FF6FB1' : '#1F2F4A',
-                        background: isOpen ? '#FFE0EC' : 'transparent',
-                      }}
-                    >
-                      {item.label}
-                      {item.badge && (
-                        <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-md font-extrabold tracking-wider uppercase ${item.badge === 'SALE' ? 'bg-[#FF6FB1]' : 'bg-[#FF5B6E]'}`}>
-                          {item.badge}
-                        </span>
-                      )}
-                      {hasMega && (
+                    {isShopByAge ? (
+                      <button
+                        onClick={() => megaOpen === item._id ? setMegaOpen(null) : openMega(item._id)}
+                        className="flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold transition-all whitespace-nowrap rounded-full mx-0.5 my-1 border-none bg-transparent cursor-pointer"
+                        style={{
+                          color: isOpen ? '#FF6FB1' : '#1F2F4A',
+                          background: isOpen ? '#FFE0EC' : 'transparent',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {item.label}
                         <svg className="w-2.5 h-2.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="m6 9 6 6 6-6" />
                         </svg>
-                      )}
-                    </Link>
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.link}
+                        onClick={() => setMegaOpen(null)}
+                        className="flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold transition-all whitespace-nowrap rounded-full mx-0.5 my-1"
+                        style={{
+                          color: isOpen ? '#FF6FB1' : '#1F2F4A',
+                          background: isOpen ? '#FFE0EC' : 'transparent',
+                        }}
+                      >
+                        {item.label}
+                        {item.badge && (
+                          <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-md font-extrabold tracking-wider uppercase ${item.badge === 'SALE' ? 'bg-[#FF6FB1]' : 'bg-[#FF5B6E]'}`}>
+                            {item.badge}
+                          </span>
+                        )}
+                        {hasMega && (
+                          <svg className="w-2.5 h-2.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="m6 9 6 6 6-6" />
+                          </svg>
+                        )}
+                      </Link>
+                    )}
                   </li>
                 );
               })}

@@ -12,79 +12,9 @@ import Toggle from '@/components/ui/Toggle';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AdminIcon from '@/components/admin/AdminIcon';
 import SelectUI from '@/components/ui/Select';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import Tooltip from '@/components/ui/Tooltip';
 
 const EMPTY_FORM = { name: '', tag: '', icon: '', parent: '', hidden: false, order: 0 };
-
-function SortableCatRow({ cat, level, onEdit, onDelete, allChildren }: {
-  cat: Category; level: number;
-  onEdit: (c: Category) => void; onDelete: (c: Category) => void;
-  allChildren: Category[];
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat._id });
-  const style = {
-    transform: CSS.Transform.toString(transform), transition,
-    opacity: isDragging ? 0.5 : 1,
-    marginLeft: level > 0 ? 20 : 0,
-    borderLeft: level > 0 ? '1px solid #F4EEE3' : 'none',
-  };
-
-  return (
-    <div ref={setNodeRef} style={style}>
-      <div
-        className="group"
-        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8, marginLeft: level > 0 ? 8 : 0 }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FAF6EF'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-      >
-        <button {...attributes} {...listeners} style={{ cursor: 'grab', color: '#A89E92', background: 'none', border: 'none', padding: 4, flexShrink: 0 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
-        </button>
-        {cat.icon && <span style={{ fontSize: 18 }}>{cat.icon}</span>}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ fontWeight: 500, color: '#2A2420', fontSize: level === 0 ? 13 : 12 }}>{cat.name}</span>
-          {cat.tag && <span style={{ fontSize: 11, color: '#A89E92', marginLeft: 8 }}>{cat.tag}</span>}
-          {cat.hidden && <span style={{ fontSize: 11, color: '#9B2914', marginLeft: 8 }}>(hidden)</span>}
-        </div>
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ display: 'flex', gap: 2 }}>
-          <button
-            onClick={() => onEdit(cat)}
-            style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#8B8176' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F4EEE3'; (e.currentTarget as HTMLElement).style.color = '#2A2420'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#8B8176'; }}
-          >
-            <AdminIcon name="edit" size={14} />
-          </button>
-          <button
-            onClick={() => onDelete(cat)}
-            style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#A89E92' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; (e.currentTarget as HTMLElement).style.color = '#9B2914'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
-          >
-            <AdminIcon name="trash" size={14} />
-          </button>
-        </div>
-      </div>
-      {/* Render children (not sortable at this level — only siblings are sortable) */}
-      {allChildren.length > 0 && (
-        <div>
-          {allChildren.map((child) => (
-            <SortableCatRow
-              key={child._id}
-              cat={child}
-              level={level + 1}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              allChildren={(child.children || []) as Category[]}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function CategoriesPage() {
   const qc = useQueryClient();
@@ -92,7 +22,7 @@ export default function CategoriesPage() {
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<any>(EMPTY_FORM);
   const [deleteCat, setDeleteCat] = useState<Category | null>(null);
-  const [localTree, setLocalTree] = useState<Category[]>([]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const { data: tree = [], isLoading } = useQuery<Category[]>({
     queryKey: ['categories-admin-tree'],
@@ -105,32 +35,32 @@ export default function CategoriesPage() {
     staleTime: 5 * 60_000,
   });
 
-  const sorted = localTree.length ? localTree : [...tree].sort((a, b) => a.order - b.order);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sorted = [...tree].sort((a, b) => a.order - b.order);
 
   const reorderMutation = useMutation({
-    mutationFn: (reordered: Category[]) =>
-      api.put('/categories/reorder', { items: reordered.map((c, i) => ({ id: c._id, order: i })) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories-admin-tree'] }); qc.invalidateQueries({ queryKey: ['categories-flat'] }); },
+    mutationFn: (items: { id: string; order: number }[]) =>
+      api.put('/categories/reorder', { items }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['categories-admin-tree'] });
+      qc.invalidateQueries({ queryKey: ['categories-flat'] });
+    },
     onError: () => toast.error('Reorder failed'),
   });
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIdx = sorted.findIndex((c) => c._id === active.id);
-    const newIdx = sorted.findIndex((c) => c._id === over.id);
-    if (oldIdx === -1 || newIdx === -1) return;
-    const reordered = arrayMove(sorted, oldIdx, newIdx);
-    setLocalTree(reordered);
-    reorderMutation.mutate(reordered);
+  function moveCategory(list: Category[], catId: string, direction: 'up' | 'down') {
+    const idx = list.findIndex((c) => c._id === catId);
+    if (idx === -1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= list.length) return;
+    const reordered = [...list];
+    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+    reorderMutation.mutate(reordered.map((c, i) => ({ id: c._id, order: i })));
   }
 
   const saveMutation = useMutation({
     mutationFn: (data: any) => isNew ? api.post('/categories', data) : api.put(`/categories/${editCat?._id}`, data),
     onSuccess: () => {
       toast.success(isNew ? 'Category created!' : 'Category updated!');
-      setLocalTree([]);
       qc.invalidateQueries({ queryKey: ['categories-admin-tree'] });
       qc.invalidateQueries({ queryKey: ['categories-flat'] });
       setEditCat(null);
@@ -142,7 +72,6 @@ export default function CategoriesPage() {
     mutationFn: (id: string) => api.delete(`/categories/${id}`),
     onSuccess: () => {
       toast.success('Category deleted');
-      setLocalTree([]);
       qc.invalidateQueries({ queryKey: ['categories-admin-tree'] });
       qc.invalidateQueries({ queryKey: ['categories-flat'] });
       setDeleteCat(null);
@@ -150,8 +79,8 @@ export default function CategoriesPage() {
     onError: () => toast.error('Failed to delete'),
   });
 
-  function openNew() {
-    setForm(EMPTY_FORM);
+  function openNew(parentId?: string) {
+    setForm({ ...EMPTY_FORM, parent: parentId || '' });
     setIsNew(true);
     setEditCat({} as Category);
   }
@@ -166,50 +95,69 @@ export default function CategoriesPage() {
     setEditCat(cat);
   }
 
+  function toggleExpand(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f: any) => ({ ...f, [k]: e.target.value }));
 
+  const totalCount = flat.length;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2A2420', margin: 0 }}>Categories</h1>
-          <p style={{ fontSize: 13, color: '#8B8176', marginTop: 4 }}>Drag to reorder. Supports unlimited subcategory depth.</p>
+          <p style={{ fontSize: 13, color: '#8B8176', marginTop: 4 }}>
+            {totalCount} categories · Use arrows to reorder
+          </p>
         </div>
-        <Button onClick={openNew} size="sm">
+        <Button onClick={() => openNew()} size="sm">
           <AdminIcon name="plus" size={13} color="#FFF" /> Add Category
         </Button>
       </div>
 
+      {/* Category List */}
       <div style={{ background: '#FFF', border: '1px solid #E8DFD2', borderRadius: 12, overflow: 'hidden' }}>
         {isLoading ? (
           <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ height: 40, background: '#F4EEE3', borderRadius: 8, animation: 'pulse 2s infinite' }} />
+              <div key={i} style={{ height: 48, background: '#F4EEE3', borderRadius: 8, animation: 'pulse 2s infinite' }} />
             ))}
           </div>
         ) : sorted.length === 0 ? (
-          <div style={{ padding: '48px 20px', textAlign: 'center', color: '#A89E92', fontSize: 13 }}>No categories yet</div>
+          <div style={{ padding: '48px 20px', textAlign: 'center', color: '#A89E92', fontSize: 13 }}>
+            No categories yet. Click &ldquo;Add Category&rdquo; to create one.
+          </div>
         ) : (
-          <div style={{ padding: 12 }}>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={sorted.map((c) => c._id)} strategy={verticalListSortingStrategy}>
-                {sorted.map((cat) => (
-                  <SortableCatRow
-                    key={cat._id}
-                    cat={cat}
-                    level={0}
-                    onEdit={openEdit}
-                    onDelete={setDeleteCat}
-                    allChildren={(cat.children || []) as Category[]}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {sorted.map((cat, idx) => (
+              <CategoryRow
+                key={cat._id}
+                cat={cat}
+                index={idx}
+                total={sorted.length}
+                level={0}
+                expandedIds={expandedIds}
+                onToggleExpand={toggleExpand}
+                onEdit={openEdit}
+                onDelete={setDeleteCat}
+                onMove={(id, dir) => moveCategory(sorted, id, dir)}
+                onAddChild={(parentId) => openNew(parentId)}
+              />
+            ))}
           </div>
         )}
       </div>
 
+      {/* Edit/Create Modal */}
       <Modal open={editCat !== null} onClose={() => setEditCat(null)} title={isNew ? 'Add Category' : 'Edit Category'} size="md">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Input label="Category Name *" value={form.name} onChange={set('name')} />
@@ -224,7 +172,6 @@ export default function CategoriesPage() {
               ...flat.filter((c) => c._id !== editCat?._id).map((c) => ({ value: c._id, label: c.name })),
             ]}
           />
-          <Input label="Order" type="number" value={form.order || ''} onChange={set('order')} placeholder="0" />
           <Toggle checked={form.hidden} onChange={(v) => setForm((f: any) => ({ ...f, hidden: v }))} label="Hide from storefront" />
         </div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
@@ -235,6 +182,7 @@ export default function CategoriesPage() {
         </div>
       </Modal>
 
+      {/* Delete Confirm */}
       <ConfirmDialog
         open={!!deleteCat}
         onClose={() => setDeleteCat(null)}
@@ -245,6 +193,175 @@ export default function CategoriesPage() {
         confirmLabel="Delete"
         danger
       />
+    </div>
+  );
+}
+
+/* ─── Category Row ──────────────────────────────────────────────────────── */
+function CategoryRow({
+  cat, index, total, level, expandedIds, onToggleExpand, onEdit, onDelete, onMove, onAddChild,
+}: {
+  cat: Category; index: number; total: number; level: number;
+  expandedIds: Set<string>;
+  onToggleExpand: (id: string) => void;
+  onEdit: (c: Category) => void;
+  onDelete: (c: Category) => void;
+  onMove: (id: string, dir: 'up' | 'down') => void;
+  onAddChild: (parentId: string) => void;
+}) {
+  const children = (cat.children || []) as Category[];
+  const hasChildren = children.length > 0;
+  const isExpanded = expandedIds.has(cat._id);
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
+  return (
+    <div style={{ borderBottom: level === 0 ? '1px solid #F4EEE3' : undefined }}>
+      <div
+        className="group"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: level === 0 ? '12px 16px' : '8px 16px',
+          paddingLeft: 16 + level * 28,
+          transition: 'background .15s',
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FDFAF6'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      >
+        {/* Expand/collapse toggle */}
+        <button
+          onClick={() => hasChildren && onToggleExpand(cat._id)}
+          style={{
+            width: 22, height: 22, borderRadius: 6, border: 'none',
+            background: hasChildren ? '#F4EEE3' : 'transparent',
+            color: hasChildren ? '#5A5048' : 'transparent',
+            cursor: hasChildren ? 'pointer' : 'default',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, transition: 'all .15s',
+          }}
+        >
+          {hasChildren && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                 style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .2s' }}>
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          )}
+        </button>
+
+        {/* Icon */}
+        {cat.icon && <span style={{ fontSize: 20 }}>{cat.icon}</span>}
+
+        {/* Name & meta */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontWeight: level === 0 ? 600 : 500, color: '#2A2420', fontSize: 14 }}>
+              {cat.name}
+            </span>
+            {cat.hidden && (
+              <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 6, background: '#FBE7A8', color: '#7A5A00', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                Hidden
+              </span>
+            )}
+            {hasChildren && (
+              <span style={{ fontSize: 11, color: '#A89E92', fontWeight: 500 }}>
+                ({children.length} sub)
+              </span>
+            )}
+          </div>
+          {cat.tag && (
+            <div style={{ fontSize: 12, color: '#8B8176', marginTop: 2 }}>{cat.tag}</div>
+          )}
+        </div>
+
+        {/* Reorder arrows */}
+        {level === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
+            <Tooltip label="Move up">
+              <button
+                onClick={() => onMove(cat._id, 'up')}
+                disabled={isFirst}
+                style={{
+                  width: 20, height: 16, border: 'none', borderRadius: 4,
+                  background: 'none', cursor: isFirst ? 'default' : 'pointer',
+                  color: isFirst ? '#E8DFD2' : '#8B8176',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m18 15-6-6-6 6" /></svg>
+              </button>
+            </Tooltip>
+            <Tooltip label="Move down">
+              <button
+                onClick={() => onMove(cat._id, 'down')}
+                disabled={isLast}
+                style={{
+                  width: 20, height: 16, border: 'none', borderRadius: 4,
+                  background: 'none', cursor: isLast ? 'default' : 'pointer',
+                  color: isLast ? '#E8DFD2' : '#8B8176',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            </Tooltip>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+          <Tooltip label="Add subcategory">
+            <button
+              onClick={() => onAddChild(cat._id)}
+              style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#8B8176' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#D8EBDC'; (e.currentTarget as HTMLElement).style.color = '#1D5E33'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#8B8176'; }}
+            >
+              <AdminIcon name="plus" size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip label="Edit">
+            <button
+              onClick={() => onEdit(cat)}
+              style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#8B8176' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F4EEE3'; (e.currentTarget as HTMLElement).style.color = '#2A2420'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#8B8176'; }}
+            >
+              <AdminIcon name="edit" size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip label="Delete">
+            <button
+              onClick={() => onDelete(cat)}
+              style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#A89E92' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; (e.currentTarget as HTMLElement).style.color = '#9B2914'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
+            >
+              <AdminIcon name="trash" size={14} />
+            </button>
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Children */}
+      {hasChildren && isExpanded && (
+        <div style={{ background: '#FDFAF6' }}>
+          {children.sort((a, b) => a.order - b.order).map((child, i) => (
+            <CategoryRow
+              key={child._id}
+              cat={child}
+              index={i}
+              total={children.length}
+              level={level + 1}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onMove={(id, dir) => {/* subcategory reorder not needed for now */}}
+              onAddChild={onAddChild}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
