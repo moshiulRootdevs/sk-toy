@@ -20,6 +20,7 @@ function normalizePhone(raw) {
 }
 
 function newCode() {
+  if (process.env.NODE_ENV !== 'production') return '000000';
   return String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
 }
 
