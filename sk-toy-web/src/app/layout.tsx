@@ -26,9 +26,40 @@ export const viewport: Viewport = {
   userScalable: true,
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://sktoy.com';
+
 export const metadata: Metadata = {
-  title: "SK Toy — Bangladesh's Favourite Toy Store",
-  description: 'Shop the widest range of toys for every age. Safe, fun, and delivered to your door.',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "SK Toy — Buy Toys Online in Bangladesh | Best Toy Shop Dhaka",
+    template: '%s | SK Toy',
+  },
+  description: 'Bangladesh\'s favourite online toy store. Shop 1,200+ safe, educational & fun toys for all ages. Fast delivery across Dhaka & nationwide. Trusted by thousands of parents.',
+  keywords: 'buy toys online Bangladesh, toy shop Dhaka, kids toys BD, educational toys, baby toys, SK Toy, toys for children Bangladesh',
+  authors: [{ name: 'SK Toy', url: SITE_URL }],
+  creator: 'SK Toy',
+  publisher: 'SK Toy',
+  openGraph: {
+    type: 'website',
+    locale: 'en_BD',
+    url: SITE_URL,
+    siteName: 'SK Toy',
+    title: "SK Toy — Buy Toys Online in Bangladesh | Best Toy Shop Dhaka",
+    description: 'Bangladesh\'s favourite online toy store. Shop 1,200+ safe, educational & fun toys for all ages. Fast delivery across Dhaka & nationwide.',
+    images: [{ url: '/og-default.jpg', width: 1200, height: 630, alt: 'SK Toy — Bangladesh\'s Favourite Toy Store' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "SK Toy — Buy Toys Online in Bangladesh",
+    description: 'Shop 1,200+ safe, educational & fun toys. Fast delivery across Bangladesh.',
+    images: ['/og-default.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
+  },
+  alternates: { canonical: SITE_URL },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

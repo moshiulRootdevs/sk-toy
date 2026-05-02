@@ -341,8 +341,8 @@ export default function Header({ initialSettings, initialCategories }: { initial
   return (
     <>
       {/* Top strip — solid brand-navy with playful colored dot separators */}
-      <div className="text-white py-2 px-4 text-center hidden sm:block relative overflow-hidden"
-           style={{ background: '#1F2F4A', fontSize: '12.5px', letterSpacing: '0.04em', fontWeight: 600 }}>
+      <div className="text-white py-1.5 sm:py-2 px-3 sm:px-4 text-center relative overflow-hidden text-[10.5px] sm:text-[12.5px]"
+           style={{ background: '#1F2F4A', letterSpacing: '0.04em', fontWeight: 600 }}>
         <div className="max-w-[1360px] mx-auto" style={{ overflow: 'hidden' }}>
           <span
             className="block text-center w-full"
