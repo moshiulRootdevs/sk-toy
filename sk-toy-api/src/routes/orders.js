@@ -23,16 +23,27 @@ router.post('/', optionalCustomer, async (req, res) => {
   // of O(N*M) from the previous .find() inside .map().
   const productIds = lines.map((l) => l.product);
   const products = await Product.find({ _id: { $in: productIds } })
-    .select('name sku price images')
+    .select('name sku price images variants stock')
     .lean();
   const productById = new Map(products.map((p) => [String(p._id), p]));
   let subtotal = 0;
   const resolvedLines = lines.map((l) => {
     const p = productById.get(String(l.product));
     if (!p) throw new Error(`Product ${l.product} not found`);
-    const price = p.price;
+    // Resolve variant price and SKU if a variant is specified
+    let price = p.price;
+    let sku = p.sku;
+    let variantImage = '';
+    if (l.variant && p.variants?.length) {
+      const matchedVariant = p.variants.find((v) => v.name === l.variant);
+      if (matchedVariant) {
+        if (matchedVariant.price) price = matchedVariant.price;
+        if (matchedVariant.sku) sku = matchedVariant.sku;
+        if (matchedVariant.image) variantImage = matchedVariant.image;
+      }
+    }
     subtotal += price * l.qty;
-    return { product: p._id, name: p.name, sku: p.sku, image: p.images?.[0] || '', price, qty: l.qty, variant: l.variant };
+    return { product: p._id, name: p.name, sku, image: variantImage || p.images?.[0] || '', price, qty: l.qty, variant: l.variant };
   });
 
   // Shipping cost — fetch settings + matching zone in parallel
@@ -85,14 +96,28 @@ router.post('/', optionalCustomer, async (req, res) => {
     note,
   });
 
-  // Decrement stock and increment order counter (used for trending) — single
-  // round-trip via bulkWrite instead of N sequential updates.
+  // Decrement stock and increment order counter (used for trending).
+  // For variant products, decrement both the variant stock and product-level stock.
   if (resolvedLines.length) {
-    await Product.bulkWrite(
-      resolvedLines.map((l) => ({
-        updateOne: { filter: { _id: l.product }, update: { $inc: { stock: -l.qty, orderCount: l.qty } } },
-      })),
-    );
+    const bulkOps = [];
+    for (const l of resolvedLines) {
+      const originalLine = lines.find((ol) => String(ol.product) === String(l.product) && (ol.variant || '') === (l.variant || ''));
+      const variantName = originalLine?.variant || l.variant;
+      if (variantName) {
+        // Decrement variant stock + product-level stock + increment orderCount
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: l.product, 'variants.name': variantName },
+            update: { $inc: { stock: -l.qty, orderCount: l.qty, 'variants.$.stock': -l.qty } },
+          },
+        });
+      } else {
+        bulkOps.push({
+          updateOne: { filter: { _id: l.product }, update: { $inc: { stock: -l.qty, orderCount: l.qty } } },
+        });
+      }
+    }
+    await Product.bulkWrite(bulkOps);
   }
 
   // Update customer stats

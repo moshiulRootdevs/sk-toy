@@ -201,11 +201,23 @@ function CmsPageView({ slug }: { slug: string }) {
   );
 }
 
+/* ─── Slug normalization — handle common alternative slugs ─────────────── */
+const SLUG_ALIASES: Record<string, string> = {
+  'privacy-policy': 'privacy',
+  'terms-and-conditions': 'terms',
+  'terms-conditions': 'terms',
+  'about-us': 'about',
+};
+
 /* ─── Router ────────────────────────────────────────────────────────────── */
 export default function PageRouter() {
   const { slug } = useParams();
+  const rawSlug = slug as string;
 
-  if (slug === 'shipping' || slug === 'shipping-info') return <ShippingInfoPage />;
+  if (rawSlug === 'shipping' || rawSlug === 'shipping-info') return <ShippingInfoPage />;
 
-  return <CmsPageView slug={slug as string} />;
+  // Normalize slug via alias map
+  const resolvedSlug = SLUG_ALIASES[rawSlug] || rawSlug;
+
+  return <CmsPageView slug={resolvedSlug} />;
 }

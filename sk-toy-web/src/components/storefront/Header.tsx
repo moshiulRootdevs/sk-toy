@@ -134,6 +134,45 @@ function MegaMenu({ cat, onClose }: { cat: Category; onClose: () => void }) {
   );
 }
 
+const AGE_RANGES = [
+  { label: '0–2', sub: 'Years', href: '/products?age=age-0-2', color: '#FF6FB1', bg: '#FFE0EC', emoji: '🍼' },
+  { label: '3–5', sub: 'Years', href: '/products?age=age-3-5', color: '#FFCB47', bg: '#FFF5DB', emoji: '🧩' },
+  { label: '6–8', sub: 'Years', href: '/products?age=age-6-8', color: '#4FC081', bg: '#D7F5E2', emoji: '🎨' },
+  { label: '9–12', sub: 'Years', href: '/products?age=age-9-12', color: '#6BC8E6', bg: '#D4EEF7', emoji: '🚁' },
+  { label: '12+', sub: 'Teens', href: '/products?age=age-teen', color: '#B093E8', bg: '#E5D9F8', emoji: '🎮' },
+];
+
+function ShopByAgeMega({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{
+      position: 'absolute', top: '100%', left: 0, right: 0,
+      background: '#FFFFFF',
+      borderTop: '2px solid #FFD4E6',
+      boxShadow: '0 22px 50px -16px rgba(31,47,74,0.18)',
+      padding: '24px 0',
+      zIndex: 50,
+    }}>
+      <div className="max-w-[1360px] mx-auto px-8">
+        <div className="flex items-center justify-center gap-4">
+          {AGE_RANGES.map((age) => (
+            <Link
+              key={age.label}
+              href={age.href}
+              onClick={onClose}
+              className="group flex flex-col items-center gap-1.5 px-6 py-4 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-lg"
+              style={{ background: age.bg, minWidth: 110 }}
+            >
+              <span className="text-2xl group-hover:scale-110 transition-transform">{age.emoji}</span>
+              <span className="font-display text-[22px] font-bold leading-none" style={{ color: age.color }}>{age.label}</span>
+              <span className="text-[10px] uppercase tracking-[.14em] font-extrabold" style={{ color: age.color, opacity: 0.7 }}>{age.sub}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Header({ initialSettings, initialCategories }: { initialSettings?: Settings | null; initialCategories?: Category[] | null }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -693,10 +732,21 @@ export default function Header({ initialSettings, initialCategories }: { initial
         >
           <div className="max-w-[1360px] mx-auto px-8">
             <ul className="flex items-center justify-center gap-1">
+              {/* All Products link */}
+              <li onMouseEnter={closeMega}>
+                <Link
+                  href="/products"
+                  onClick={() => setMegaOpen(null)}
+                  className="flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold transition-all whitespace-nowrap rounded-full mx-0.5 my-1 text-[#1F2F4A] hover:bg-[#FFE0EC] hover:text-[#FF6FB1]"
+                >
+                  All Products
+                </Link>
+              </li>
               {(nav || []).filter((item) => item.label?.trim().toLowerCase() !== 'brands').map((item) => {
                 const slug = catSlug(item.link);
+                const isShopByAge = slug === 'shop-by-age';
                 const cat = slug && catMap ? catMap.get(slug) : null;
-                const hasMega = (cat?.children?.length ?? 0) > 0;
+                const hasMega = isShopByAge || (cat?.children?.length ?? 0) > 0;
                 const isOpen = megaOpen === item._id;
 
                 return (
@@ -729,8 +779,23 @@ export default function Header({ initialSettings, initialCategories }: { initial
             </ul>
           </div>
 
-          {/* Mega panel */}
-          {megaOpen && megaCat && megaCat.children?.length ? (
+          {/* Shop by Age mega panel */}
+          {megaOpen && (() => {
+            const navItem = (nav || []).find((n) => n._id === megaOpen);
+            const s = navItem ? catSlug(navItem.link) : null;
+            return s === 'shop-by-age';
+          })() ? (
+            <div onMouseEnter={() => closeTimer.current && clearTimeout(closeTimer.current)} onMouseLeave={closeMega}>
+              <ShopByAgeMega onClose={() => setMegaOpen(null)} />
+            </div>
+          ) : null}
+
+          {/* Regular Mega panel for individual category */}
+          {megaOpen && (() => {
+            const navItem = (nav || []).find((n) => n._id === megaOpen);
+            const s = navItem ? catSlug(navItem.link) : null;
+            return s !== 'shop-by-age';
+          })() && megaCat && megaCat.children?.length ? (
             <div onMouseEnter={() => closeTimer.current && clearTimeout(closeTimer.current)} onMouseLeave={closeMega}>
               <MegaMenu cat={megaCat} onClose={() => setMegaOpen(null)} />
             </div>

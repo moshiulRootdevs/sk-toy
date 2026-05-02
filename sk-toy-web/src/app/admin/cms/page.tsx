@@ -11,7 +11,7 @@ import Toggle from '@/components/ui/Toggle';
 const FIXED_PAGES = [
   { slug: 'shipping-info',    title: 'Shipping Info',      icon: '🚚', desc: 'Delivery zones, timelines & charges' },
   { slug: 'faq',              title: 'FAQ',                icon: '💬', desc: 'Frequently asked questions' },
-  { slug: 'privacy-policy',   title: 'Privacy Policy',     icon: '🔒', desc: 'Data collection & usage policy' },
+  { slug: 'privacy',           title: 'Privacy Policy',     icon: '🔒', desc: 'Data collection & usage policy' },
   { slug: 'terms',            title: 'Terms & Conditions', icon: '📄', desc: 'Rules governing use of the store' },
   { slug: 'about',            title: 'About SK Toy',       icon: '🏪', desc: 'Story, mission & team' },
 ] as const;

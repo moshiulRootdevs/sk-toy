@@ -103,11 +103,15 @@ export default function ProductDetailClient() {
     : 0;
 
   function addToCart() {
+    if (product!.variants.length > 0 && !selectedVariant) {
+      toast.error('Please select a variant');
+      return;
+    }
     addItem({
       productId: product!._id,
       name: product!.name,
       price,
-      image: product!.images[0] || '',
+      image: activeVariant?.image || product!.images[0] || '',
       qty,
       slug: product!.slug,
       variant: selectedVariant,
