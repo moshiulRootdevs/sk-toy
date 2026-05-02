@@ -13,6 +13,9 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AdminIcon from '@/components/admin/AdminIcon';
 import SelectUI from '@/components/ui/Select';
 import Tooltip from '@/components/ui/Tooltip';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const EMPTY_FORM = { name: '', tag: '', icon: '', parent: '', hidden: false, order: 0 };
 
@@ -37,6 +40,10 @@ export default function CategoriesPage() {
 
   const sorted = [...tree].sort((a, b) => a.order - b.order);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
   const reorderMutation = useMutation({
     mutationFn: (items: { id: string; order: number }[]) =>
       api.put('/categories/reorder', { items }),
@@ -47,13 +54,13 @@ export default function CategoriesPage() {
     onError: () => toast.error('Reorder failed'),
   });
 
-  function moveCategory(list: Category[], catId: string, direction: 'up' | 'down') {
-    const idx = list.findIndex((c) => c._id === catId);
-    if (idx === -1) return;
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= list.length) return;
-    const reordered = [...list];
-    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = sorted.findIndex((c) => c._id === active.id);
+    const newIdx = sorted.findIndex((c) => c._id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    const reordered = arrayMove(sorted, oldIdx, newIdx);
     reorderMutation.mutate(reordered.map((c, i) => ({ id: c._id, order: i })));
   }
 
@@ -116,7 +123,7 @@ export default function CategoriesPage() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2A2420', margin: 0 }}>Categories</h1>
           <p style={{ fontSize: 13, color: '#8B8176', marginTop: 4 }}>
-            {totalCount} categories · Use arrows to reorder
+            {totalCount} categories · Drag to reorder
           </p>
         </div>
         <Button onClick={() => openNew()} size="sm">
@@ -138,21 +145,22 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {sorted.map((cat, idx) => (
-              <CategoryRow
-                key={cat._id}
-                cat={cat}
-                index={idx}
-                total={sorted.length}
-                level={0}
-                expandedIds={expandedIds}
-                onToggleExpand={toggleExpand}
-                onEdit={openEdit}
-                onDelete={setDeleteCat}
-                onMove={(id, dir) => moveCategory(sorted, id, dir)}
-                onAddChild={(parentId) => openNew(parentId)}
-              />
-            ))}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={sorted.map((c) => c._id)} strategy={verticalListSortingStrategy}>
+                {sorted.map((cat) => (
+                  <SortableCategoryRow
+                    key={cat._id}
+                    cat={cat}
+                    level={0}
+                    expandedIds={expandedIds}
+                    onToggleExpand={toggleExpand}
+                    onEdit={openEdit}
+                    onDelete={setDeleteCat}
+                    onAddChild={(parentId) => openNew(parentId)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         )}
       </div>
@@ -197,37 +205,66 @@ export default function CategoriesPage() {
   );
 }
 
-/* ─── Category Row ──────────────────────────────────────────────────────── */
-function CategoryRow({
-  cat, index, total, level, expandedIds, onToggleExpand, onEdit, onDelete, onMove, onAddChild,
+/* ─── Sortable Category Row ─────────────────────────────────────────────── */
+function SortableCategoryRow({
+  cat, level, expandedIds, onToggleExpand, onEdit, onDelete, onAddChild,
 }: {
-  cat: Category; index: number; total: number; level: number;
+  cat: Category; level: number;
   expandedIds: Set<string>;
   onToggleExpand: (id: string) => void;
   onEdit: (c: Category) => void;
   onDelete: (c: Category) => void;
-  onMove: (id: string, dir: 'up' | 'down') => void;
   onAddChild: (parentId: string) => void;
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat._id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
   const children = (cat.children || []) as Category[];
   const hasChildren = children.length > 0;
   const isExpanded = expandedIds.has(cat._id);
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
 
   return (
-    <div style={{ borderBottom: level === 0 ? '1px solid #F4EEE3' : undefined }}>
+    <div ref={setNodeRef} style={style}>
       <div
         className="group"
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: level === 0 ? '12px 16px' : '8px 16px',
           paddingLeft: 16 + level * 28,
+          borderBottom: '1px solid #F4EEE3',
           transition: 'background .15s',
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FDFAF6'; }}
+        onMouseEnter={(e) => { if (!isDragging) (e.currentTarget as HTMLElement).style.background = '#FDFAF6'; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
       >
+        {/* Drag handle */}
+        {level === 0 && (
+          <button
+            {...attributes}
+            {...listeners}
+            style={{
+              cursor: isDragging ? 'grabbing' : 'grab',
+              color: '#A89E92', background: 'none', border: 'none',
+              padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center',
+              borderRadius: 4, touchAction: 'none',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#5A5048'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="9" cy="4" r="1.5"/><circle cx="15" cy="4" r="1.5"/>
+              <circle cx="9" cy="10" r="1.5"/><circle cx="15" cy="10" r="1.5"/>
+              <circle cx="9" cy="16" r="1.5"/><circle cx="15" cy="16" r="1.5"/>
+              <circle cx="9" cy="22" r="1.5"/><circle cx="15" cy="22" r="1.5"/>
+            </svg>
+          </button>
+        )}
+
         {/* Expand/collapse toggle */}
         <button
           onClick={() => hasChildren && onToggleExpand(cat._id)}
@@ -273,40 +310,6 @@ function CategoryRow({
           )}
         </div>
 
-        {/* Reorder arrows */}
-        {level === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
-            <Tooltip label="Move up">
-              <button
-                onClick={() => onMove(cat._id, 'up')}
-                disabled={isFirst}
-                style={{
-                  width: 20, height: 16, border: 'none', borderRadius: 4,
-                  background: 'none', cursor: isFirst ? 'default' : 'pointer',
-                  color: isFirst ? '#E8DFD2' : '#8B8176',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m18 15-6-6-6 6" /></svg>
-              </button>
-            </Tooltip>
-            <Tooltip label="Move down">
-              <button
-                onClick={() => onMove(cat._id, 'down')}
-                disabled={isLast}
-                style={{
-                  width: 20, height: 16, border: 'none', borderRadius: 4,
-                  background: 'none', cursor: isLast ? 'default' : 'pointer',
-                  color: isLast ? '#E8DFD2' : '#8B8176',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6" /></svg>
-              </button>
-            </Tooltip>
-          </div>
-        )}
-
         {/* Action buttons */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
           <Tooltip label="Add subcategory">
@@ -342,21 +345,18 @@ function CategoryRow({
         </div>
       </div>
 
-      {/* Children */}
+      {/* Children (not sortable — only top-level is drag-sortable) */}
       {hasChildren && isExpanded && (
         <div style={{ background: '#FDFAF6' }}>
-          {children.sort((a, b) => a.order - b.order).map((child, i) => (
-            <CategoryRow
+          {[...children].sort((a, b) => a.order - b.order).map((child) => (
+            <SortableCategoryRow
               key={child._id}
               cat={child}
-              index={i}
-              total={children.length}
               level={level + 1}
               expandedIds={expandedIds}
               onToggleExpand={onToggleExpand}
               onEdit={onEdit}
               onDelete={onDelete}
-              onMove={(id, dir) => {/* subcategory reorder not needed for now */}}
               onAddChild={onAddChild}
             />
           ))}

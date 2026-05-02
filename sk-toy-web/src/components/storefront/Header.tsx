@@ -380,9 +380,9 @@ export default function Header({ initialSettings, initialCategories }: { initial
   return (
     <>
       {/* Top strip — solid brand-navy with playful colored dot separators */}
-      <div className="text-white py-1.5 sm:py-2 px-3 sm:px-4 text-center relative overflow-hidden text-[10.5px] sm:text-[12.5px]"
-           style={{ background: '#1F2F4A', letterSpacing: '0.04em', fontWeight: 600 }}>
-        <div className="max-w-[1360px] mx-auto" style={{ overflow: 'hidden' }}>
+      <div className="text-white px-3 sm:px-4 text-center relative overflow-hidden text-[10.5px] sm:text-[12.5px]"
+           style={{ background: '#1F2F4A', letterSpacing: '0.04em', fontWeight: 600, height: 32 }}>
+        <div className="max-w-[1360px] mx-auto h-full flex items-center justify-center" style={{ overflow: 'hidden' }}>
           <span
             className="block text-center w-full"
             style={{ transition: 'opacity 0.3s ease', opacity: stripVisible ? 1 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
