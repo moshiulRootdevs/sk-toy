@@ -165,8 +165,11 @@ export default function OrdersPage() {
             </div>
           )},
           { key: 'status', header: 'Status', render: (o: any) => <Pill label={o.status} color={statusColor(o.status)} /> },
-          { key: 'createdAt', header: 'Date', render: (o: any) => (
-            <span style={{ fontSize: 11, color: '#8B8176' }}>{fmtDateTime(o.createdAt)}</span>
+          { key: 'createdAt', header: 'Date & Time', render: (o: any) => (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#2A2420' }}>{new Date(o.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+              <div style={{ fontSize: 11, color: '#8B8176' }}>{new Date(o.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
+            </div>
           )},
         ]}
         data={orders as any[]}

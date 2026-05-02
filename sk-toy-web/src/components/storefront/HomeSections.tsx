@@ -290,11 +290,11 @@ function CategoriesSection({ section }: { section: HomeSection }) {
 
 /* ─── Shop by Age ────────────────────────────────────────────────────────── */
 const AGE_TILES = [
-  { range: '0–2',  label: 'YEARS', sub: 'First rattles & soft toys',     href: '/products?age=0-2',  bg: '#FFE0EC', dot: '#FF6FB1', emoji: '🍼' },
-  { range: '3–5',  label: 'YEARS', sub: 'Building & pretend play',       href: '/products?age=3-5',  bg: '#FFEDB6', dot: '#FFCB47', emoji: '🧩' },
-  { range: '6–8',  label: 'YEARS', sub: 'STEM & outdoor adventure',      href: '/products?age=6-8',  bg: '#D7F5E2', dot: '#4FC081', emoji: '🎨' },
-  { range: '9–12', label: 'YEARS', sub: 'RC, drones & strategy',         href: '/products?age=9-12', bg: '#D4EEF7', dot: '#6BC8E6', emoji: '🚁' },
-  { range: '12+',  label: 'TEENS', sub: 'Tech, models & collectibles',   href: '/products?age=teen', bg: '#E5D9F8', dot: '#B093E8', emoji: '🎮' },
+  { range: '0–2',  label: 'YEARS', sub: 'First rattles & soft toys',     href: '/products?age=age-0-2',  bg: '#FFE0EC', dot: '#FF6FB1', emoji: '🍼' },
+  { range: '3–5',  label: 'YEARS', sub: 'Building & pretend play',       href: '/products?age=age-3-5',  bg: '#FFEDB6', dot: '#FFCB47', emoji: '🧩' },
+  { range: '6–8',  label: 'YEARS', sub: 'STEM & outdoor adventure',      href: '/products?age=age-6-8',  bg: '#D7F5E2', dot: '#4FC081', emoji: '🎨' },
+  { range: '9–12', label: 'YEARS', sub: 'RC, drones & strategy',         href: '/products?age=age-9-12', bg: '#D4EEF7', dot: '#6BC8E6', emoji: '🚁' },
+  { range: '12+',  label: 'TEENS', sub: 'Tech, models & collectibles',   href: '/products?age=age-teen', bg: '#E5D9F8', dot: '#B093E8', emoji: '🎮' },
 ];
 
 function AgesSection({ section }: { section: HomeSection }) {
