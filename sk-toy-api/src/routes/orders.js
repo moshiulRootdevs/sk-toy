@@ -139,7 +139,7 @@ router.get('/my', customerAuth, async (req, res) => {
 // ── Admin ────────────────────────────────────────────────────────────────
 
 router.get('/admin/all', adminAuth, async (req, res) => {
-  const { status, search, page = 1, limit = 50 } = req.query;
+  const { status, search, page = 1, limit = 50, from, to } = req.query;
   const q = {};
   if (status && status !== 'all') q.status = status;
   if (search) q.$or = [
@@ -147,12 +147,68 @@ router.get('/admin/all', adminAuth, async (req, res) => {
     { customerName: { $regex: search, $options: 'i' } },
     { phone: { $regex: search, $options: 'i' } },
   ];
+  if (from || to) {
+    q.createdAt = {};
+    if (from) q.createdAt.$gte = new Date(from);
+    if (to) q.createdAt.$lte = new Date(new Date(to).setHours(23, 59, 59, 999));
+  }
   const skip = (+page - 1) * +limit;
   const [orders, total] = await Promise.all([
     Order.find(q).sort({ createdAt: -1 }).skip(skip).limit(+limit).lean(),
     Order.countDocuments(q),
   ]);
   res.json({ orders, total, page: +page, pages: Math.ceil(total / +limit) });
+});
+
+// GET /api/orders/admin/stats — aggregate stats with optional date range
+router.get('/admin/stats', adminAuth, async (req, res) => {
+  const { from, to } = req.query;
+  const match = {};
+  if (from || to) {
+    match.createdAt = {};
+    if (from) match.createdAt.$gte = new Date(from);
+    if (to) match.createdAt.$lte = new Date(new Date(to).setHours(23, 59, 59, 999));
+  }
+
+  const [stats] = await Order.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: null,
+        totalOrders: { $sum: 1 },
+        totalRevenue: { $sum: '$total' },
+        avgOrderValue: { $avg: '$total' },
+        totalShipping: { $sum: '$shipping' },
+        totalDiscount: { $sum: '$discount' },
+      },
+    },
+  ]);
+
+  const statusCounts = await Order.aggregate([
+    { $match: match },
+    { $group: { _id: '$status', count: { $sum: 1 } } },
+  ]);
+
+  const paymentCounts = await Order.aggregate([
+    { $match: match },
+    { $group: { _id: '$paymentMethod', count: { $sum: 1 }, total: { $sum: '$total' } } },
+  ]);
+
+  const paymentStatusRevenue = await Order.aggregate([
+    { $match: match },
+    { $group: { _id: '$paymentStatus', count: { $sum: 1 }, total: { $sum: '$total' } } },
+  ]);
+
+  res.json({
+    totalOrders: stats?.totalOrders || 0,
+    totalRevenue: stats?.totalRevenue || 0,
+    avgOrderValue: stats?.avgOrderValue || 0,
+    totalShipping: stats?.totalShipping || 0,
+    totalDiscount: stats?.totalDiscount || 0,
+    statusCounts: statusCounts.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {}),
+    paymentCounts: paymentCounts.reduce((acc, p) => { acc[p._id] = { count: p.count, total: p.total }; return acc; }, {}),
+    paymentStatusRevenue: paymentStatusRevenue.reduce((acc, p) => { acc[p._id] = { count: p.count, total: p.total }; return acc; }, {}),
+  });
 });
 
 // GET /api/orders/admin/phone-history/:phone — order count by phone

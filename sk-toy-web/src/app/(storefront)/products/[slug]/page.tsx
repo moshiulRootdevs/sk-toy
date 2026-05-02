@@ -28,7 +28,7 @@ export default function ProductDetailPage() {
   const [reviewStars, setReviewStars] = useState(5);
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  const isVideo = (url: string) => /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(url);
+  const isVideo = (url: string) => /\.(mp4|webm|mov|ogg|avi|mkv)(\?.*)?$/i.test(url);
 
   const { addItem } = useCartStore();
   const { has, toggle } = useWishlistStore();
@@ -154,8 +154,14 @@ export default function ProductDetailPage() {
                 key={product.images[selectedImage]}
                 src={imgUrl(product.images[selectedImage] || product.images[0])}
                 controls
+                controlsList="nodownload"
                 playsInline
-                className="absolute inset-0 w-full h-full object-contain bg-black"
+                autoPlay
+                muted
+                loop
+                onContextMenu={(e) => e.preventDefault()}
+                className="absolute inset-0 w-full h-full object-contain bg-[#1a1a2e] rounded-[24px]"
+                style={{ outline: 'none' }}
               />
             ) : (
               <Image
@@ -193,7 +199,7 @@ export default function ProductDetailPage() {
                 >
                   {isVideo(img) ? (
                     <>
-                      <video src={imgUrl(img)} preload="metadata" muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+                      <video src={`${imgUrl(img)}#t=0.5`} preload="metadata" muted playsInline className="absolute inset-0 w-full h-full object-cover bg-black" />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                         <svg width="14" height="16" viewBox="0 0 10 12" fill="white"><path d="M0 0l10 6-10 6z" /></svg>
                       </div>
@@ -263,53 +269,57 @@ export default function ProductDetailPage() {
           )}
 
           {/* Qty + Cart */}
-          <div className="flex items-center gap-3 mt-6 flex-wrap">
-            <div className="flex items-center bg-[#FFF5F8] border-2 border-[#FFD4E6] rounded-full overflow-hidden">
-              <button
-                onClick={() => setQty(Math.max(1, qty - 1))}
-                className="px-4 py-2.5 text-[#FF6FB1] hover:bg-[#FFE0EC] text-lg font-bold leading-none"
-              >
-                −
-              </button>
-              <span className="px-4 py-2.5 text-sm font-extrabold min-w-[40px] text-center text-[#1F2F4A]">{qty}</span>
-              <button
-                onClick={() => setQty(qty + 1)}
-                className="px-4 py-2.5 text-[#FF6FB1] hover:bg-[#FFE0EC] text-lg font-bold leading-none"
-              >
-                +
-              </button>
+          <div className="mt-6 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-[#FFF5F8] border-2 border-[#FFD4E6] rounded-full overflow-hidden">
+                <button
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="px-3 sm:px-4 py-2 sm:py-2.5 text-[#FF6FB1] hover:bg-[#FFE0EC] text-lg font-bold leading-none"
+                >
+                  −
+                </button>
+                <span className="px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-extrabold min-w-[32px] sm:min-w-[40px] text-center text-[#1F2F4A]">{qty}</span>
+                <button
+                  onClick={() => setQty(qty + 1)}
+                  className="px-3 sm:px-4 py-2 sm:py-2.5 text-[#FF6FB1] hover:bg-[#FFE0EC] text-lg font-bold leading-none"
+                >
+                  +
+                </button>
+              </div>
+              <Tooltip label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'} position="top">
+                <button
+                  onClick={() => toggle(product._id)}
+                  className={cls(
+                    'p-2.5 sm:p-3.5 rounded-full border-2 transition-colors shrink-0',
+                    wishlisted ? 'border-[#FF6FB1] text-white bg-[#FF6FB1]' : 'border-[#FFE0EC] bg-white text-[#FF6FB1] hover:bg-[#FFE0EC]'
+                  )}
+                  aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  <svg className={cls('w-5 h-5', wishlisted && 'fill-current')} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" fill={wishlisted ? 'currentColor' : 'none'} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </button>
+              </Tooltip>
             </div>
-            <Button
-              onClick={addToCart}
-              disabled={!inStock}
-              className="flex-1 min-w-[140px]"
-              size="lg"
-              variant="outline"
-            >
-              {inStock ? 'Add to Cart' : 'Sold Out'}
-            </Button>
-            <Button
-              onClick={() => { addToCart(); router.push('/checkout'); }}
-              disabled={!inStock}
-              className="flex-1 min-w-[140px]"
-              size="lg"
-            >
-              Buy Now 🎁
-            </Button>
-            <Tooltip label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'} position="top">
-              <button
-                onClick={() => toggle(product._id)}
-                className={cls(
-                  'p-3.5 rounded-full border-2 transition-colors',
-                  wishlisted ? 'border-[#FF6FB1] text-white bg-[#FF6FB1]' : 'border-[#FFE0EC] bg-white text-[#FF6FB1] hover:bg-[#FFE0EC]'
-                )}
-                aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            <div className="flex gap-2.5 sm:gap-3">
+              <Button
+                onClick={addToCart}
+                disabled={!inStock}
+                className="flex-1"
+                size="lg"
+                variant="outline"
               >
-                <svg className={cls('w-5 h-5', wishlisted && 'fill-current')} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" fill={wishlisted ? 'currentColor' : 'none'} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              </button>
-            </Tooltip>
+                {inStock ? 'Add to Cart' : 'Sold Out'}
+              </Button>
+              <Button
+                onClick={() => { addToCart(); router.push('/checkout'); }}
+                disabled={!inStock}
+                className="flex-1"
+                size="lg"
+              >
+                Buy Now 🎁
+              </Button>
+            </div>
           </div>
 
           {!inStock && (

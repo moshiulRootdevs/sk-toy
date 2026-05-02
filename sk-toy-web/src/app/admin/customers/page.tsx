@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Customer } from '@/types';
-import { fmtTk, fmtDate } from '@/lib/utils';
+import { fmtTk, fmtDateTime } from '@/lib/utils';
 import Table from '@/components/ui/Table';
 import Pagination from '@/components/ui/Pagination';
-import Modal from '@/components/ui/Modal';
+import Tooltip from '@/components/ui/Tooltip';
 
 const filterInput: React.CSSProperties = {
   border: '1px solid #E8DFD2', borderRadius: 8, padding: '7px 12px',
@@ -16,9 +17,9 @@ const filterInput: React.CSSProperties = {
 };
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Customer | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-customers', { page, search }],
@@ -84,109 +85,36 @@ export default function CustomersPage() {
           )},
           { key: 'lastOrder', header: 'Last Order', render: (c: any) => (
             c.lastOrder
-              ? <span style={{ fontSize: 12, color: '#5A5048' }}>{fmtDate(c.lastOrder)}</span>
+              ? <span style={{ fontSize: 12, color: '#5A5048' }}>{fmtDateTime(c.lastOrder)}</span>
               : <span style={{ fontSize: 11, color: '#C7BDB0' }}>Never</span>
           )},
           { key: 'createdAt', header: 'Joined', render: (c: any) => (
-            <span style={{ fontSize: 11, color: '#8B8176' }}>{fmtDate(c.createdAt)}</span>
+            <span style={{ fontSize: 11, color: '#8B8176' }}>{fmtDateTime(c.createdAt)}</span>
+          )},
+          { key: 'actions', header: '', render: (c: any) => (
+            <Tooltip label="View Details" position="left">
+              <button
+                onClick={(e) => { e.stopPropagation(); router.push(`/admin/customers/${c._id}`); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8176" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              </button>
+            </Tooltip>
           )},
         ]}
         data={customers as any[]}
         loading={isLoading}
-        onRowClick={(c: any) => setSelected(c)}
+        onRowClick={(c: any) => router.push(`/admin/customers/${c._id}`)}
         emptyText="No customers found"
       />
 
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Pagination page={page} pages={data?.pages || 1} onChange={setPage} />
       </div>
-
-      {selected && (
-        <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.name} size="md">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Header strip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 12,
-                textTransform: 'uppercase', letterSpacing: '.06em',
-                background: selected.isGuest ? '#FBE7A8' : '#D8EBDC',
-                color: selected.isGuest ? '#7A5A00' : '#1D5E33',
-              }}>
-                {selected.isGuest ? 'Guest' : 'Registered'}
-              </span>
-              {selected.active === false && (
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: '#FBDED8', color: '#9B2914', textTransform: 'uppercase', letterSpacing: '.06em' }}>
-                  Disabled
-                </span>
-              )}
-            </div>
-
-            {/* KPI strip */}
-            <div className="grid grid-cols-3 gap-3">
-              <KpiBox label="Orders" value={String(selected.orderCount ?? 0)} accent="#6FB8D9" />
-              <KpiBox label="Total Spend" value={fmtTk(selected.totalSpend ?? 0)} accent="#EC5D4A" />
-              <KpiBox label="Last Order" value={selected.lastOrder ? fmtDate(selected.lastOrder) : 'Never'} accent="#4FA36A" />
-            </div>
-
-            {/* Contact info */}
-            <div className="adm-grid-2">
-              <Field label="Email">
-                <a href={`mailto:${selected.email}`} style={{ color: '#3F8FBF', textDecoration: 'none' }}>{selected.email}</a>
-              </Field>
-              <Field label="Phone">
-                {selected.phone
-                  ? <a href={`tel:${String(selected.phone).replace(/[^+\d]/g, '')}`} style={{ color: '#3F8FBF', textDecoration: 'none', fontFamily: 'monospace' }}>{selected.phone}</a>
-                  : <span style={{ color: '#A89E92' }}>—</span>}
-              </Field>
-              <Field label="Joined">
-                <span>{fmtDate(selected.createdAt)}</span>
-              </Field>
-              <Field label="Account">
-                <span>{selected.isGuest ? 'Guest checkout' : 'Registered account'}</span>
-              </Field>
-            </div>
-
-            {/* Addresses */}
-            {selected.addresses && selected.addresses.length > 0 && (
-              <div>
-                <div style={{ fontSize: 11, color: '#8B8176', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>
-                  Saved addresses ({selected.addresses.length})
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {selected.addresses.map((addr, i) => (
-                    <div key={i} style={{ fontSize: 12, color: '#5A5048', background: '#FAF6EF', borderRadius: 8, padding: '8px 12px', border: '1px solid #E8DFD2' }}>
-                      {addr.label && (
-                        <div style={{ fontSize: 10, color: '#8B8176', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600, marginBottom: 2 }}>
-                          {addr.label}{addr.isDefault ? ' · Default' : ''}
-                        </div>
-                      )}
-                      <div>{[addr.line1, addr.line2, addr.area, addr.district, addr.zip].filter(Boolean).join(', ')}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div style={{ fontSize: 11, color: '#8B8176', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>{label}</div>
-      <div style={{ fontSize: 13, color: '#2A2420' }}>{children}</div>
-    </div>
-  );
-}
-
-function KpiBox({ label, value, accent }: { label: string; value: string; accent: string }) {
-  return (
-    <div style={{ background: '#FAF6EF', borderRadius: 10, padding: '12px 14px', textAlign: 'center', border: '1px solid #F4EEE3' }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: accent, lineHeight: 1.1 }}>{value}</div>
-      <div style={{ fontSize: 10, color: '#8B8176', marginTop: 4, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>{label}</div>
     </div>
   );
 }

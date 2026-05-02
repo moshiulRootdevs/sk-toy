@@ -19,9 +19,11 @@ async function backfillProductCategories() {
 
 connect().then(async () => {
   try { await backfillProductCategories(); } catch (e) { console.error('backfill failed:', e.message); }
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`SK Toy API running on http://localhost:${PORT}`);
   });
+  server.timeout = 600000; // 10 minutes for video upload + transcoding
+  server.keepAliveTimeout = 620000;
 }).catch(err => {
   console.error('DB connection failed:', err);
   process.exit(1);

@@ -87,7 +87,10 @@ export default function HomepageSectionsPage() {
 
   const reorderMutation = useMutation({
     mutationFn: (ids: string[]) => api.put('/homepage/reorder', { ids }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['homepage-sections-admin'] }),
+    onSuccess: () => {
+      toast.success('Homepage sections reordered successfully!');
+      qc.invalidateQueries({ queryKey: ['homepage-sections-admin'] });
+    },
     onError: () => toast.error('Failed to reorder'),
   });
 

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Fredoka, Nunito } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '@/providers/QueryProvider';
@@ -18,6 +18,13 @@ const fredoka = Fredoka({
   variable: '--font-fredoka',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
 
 export const metadata: Metadata = {
   title: "SK Toy — Bangladesh's Favourite Toy Store",

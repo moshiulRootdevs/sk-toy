@@ -13,6 +13,7 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Tooltip from '@/components/ui/Tooltip';
 import SelectUI from '@/components/ui/Select';
+import DateRangePicker from '@/components/ui/DateRangePicker';
 import Image from 'next/image';
 import { imgUrl } from '@/lib/utils';
 
@@ -45,13 +46,20 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [selected, setSelected] = useState<Order | null>(null);
   const [newStatus, setNewStatus] = useState('');
   const [trackingNo, setTrackingNo] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-orders', { page, status, search }],
-    queryFn: () => api.get('/orders/admin/all', { params: { page, limit: 20, status, search } }).then((r) => r.data),
+    queryKey: ['admin-orders', { page, status, search, dateFrom, dateTo }],
+    queryFn: () => api.get('/orders/admin/all', { params: { page, limit: 20, status, search, from: dateFrom || undefined, to: dateTo || undefined } }).then((r) => r.data),
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['admin-orders-stats', { dateFrom, dateTo }],
+    queryFn: () => api.get('/orders/admin/stats', { params: { from: dateFrom || undefined, to: dateTo || undefined } }).then((r) => r.data),
   });
 
   const updateStatus = useMutation({
@@ -60,6 +68,7 @@ export default function OrdersPage() {
     onSuccess: () => {
       toast.success('Order updated');
       qc.invalidateQueries({ queryKey: ['admin-orders'] });
+      qc.invalidateQueries({ queryKey: ['admin-orders-stats'] });
       if (selected) {
         api.get(`/orders/admin/${selected._id}`).then((r) => setSelected(r.data));
       }
@@ -69,43 +78,70 @@ export default function OrdersPage() {
 
   const orders: Order[] = data?.orders || [];
 
+  const fmtNum = (n: number) => n?.toLocaleString('en-BD', { maximumFractionDigits: 0 }) || '0';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2A2420', margin: 0 }}>Orders</h1>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 240 }}>
-          <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A89E92" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input
-            type="text"
-            placeholder="Search by order no, customer name, phone..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            style={{
-              border: '1px solid #E8DFD2', borderRadius: 8,
-              padding: '9px 36px 9px 36px',
-              fontSize: 13, color: '#2A2420', background: '#FAF6EF',
-              outline: 'none', fontFamily: 'inherit', width: '100%',
-            }}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <StatCard label="Total Orders" value={fmtNum(stats?.totalOrders || 0)} icon={
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6FB8D9" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        } accent="#6FB8D9" />
+        <RevenueCard stats={stats} fmtNum={fmtNum} />
+        <StatCard label="Avg Order (BDT)" value={fmtNum(Math.round(stats?.avgOrderValue || 0))} icon={
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        } accent="#8B5CF6" />
+        <StatCard label="Discount (BDT)" value={fmtNum(stats?.totalDiscount || 0)} icon={
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><line x1="5" y1="19" x2="19" y2="5"/></svg>
+        } accent="#F59E0B" />
+        <StatCard label="Shipping (BDT)" value={fmtNum(stats?.totalShipping || 0)} icon={
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EC5D4A" strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        } accent="#EC5D4A" />
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 240 }}>
+            <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A89E92" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              type="text"
+              placeholder="Search by order no, customer name, phone..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              style={{
+                border: '1px solid #E8DFD2', borderRadius: 8,
+                padding: '9px 36px 9px 36px',
+                fontSize: 13, color: '#2A2420', background: '#FAF6EF',
+                outline: 'none', fontFamily: 'inherit', width: '100%',
+              }}
+            />
+            {search && (
+              <button onClick={() => { setSearch(''); setPage(1); }}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 0, cursor: 'pointer', color: '#A89E92', padding: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#5A5048'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            )}
+          </div>
+          <SelectUI
+            value={status}
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            options={[{ value: '', label: 'All Status' }, ...ORDER_STATUSES]}
+            style={{ width: 160 }}
           />
-          {search && (
-            <button onClick={() => { setSearch(''); setPage(1); }}
-              style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 0, cursor: 'pointer', color: '#A89E92', padding: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#5A5048'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-          )}
+          <DateRangePicker
+            from={dateFrom}
+            to={dateTo}
+            onChange={(f, t) => { setDateFrom(f); setDateTo(t); setPage(1); }}
+          />
         </div>
-        <SelectUI
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          options={[{ value: '', label: 'All Status' }, ...ORDER_STATUSES]}
-          style={{ width: 160 }}
-        />
       </div>
 
       <Table
@@ -119,8 +155,8 @@ export default function OrdersPage() {
               <div style={{ fontSize: 11, color: '#A89E92' }}>{o.phone || ''}</div>
             </div>
           )},
-          { key: 'total', header: 'Total', render: (o: any) => (
-            <span style={{ fontWeight: 700 }}>{fmtTk(o.total)}</span>
+          { key: 'total', header: 'Total (BDT)', render: (o: any) => (
+            <span style={{ fontWeight: 700 }}>{o.total?.toLocaleString('en-BD', { maximumFractionDigits: 0 })}</span>
           )},
           { key: 'paymentMethod', header: 'Payment', render: (o: any) => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -139,7 +175,10 @@ export default function OrdersPage() {
         emptyText="No orders found"
       />
 
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, color: '#8B8176' }}>
+          {data?.total ? `Showing ${((page - 1) * 20) + 1}–${Math.min(page * 20, data.total)} of ${data.total} orders` : ''}
+        </span>
         <Pagination page={page} pages={data?.pages || 1} onChange={setPage} />
       </div>
 
@@ -147,6 +186,63 @@ export default function OrdersPage() {
         <Modal open={!!selected} onClose={() => setSelected(null)} title={`Order #${selected.orderNo}`} size="full">
           <OrderDetail selected={selected} newStatus={newStatus} setNewStatus={setNewStatus} trackingNo={trackingNo} setTrackingNo={setTrackingNo} updateStatus={updateStatus} ORDER_STATUSES={ORDER_STATUSES} onPhoneClick={(phone: string) => { setSelected(null); setSearch(phone); }} />
         </Modal>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon, accent }: { label: string; value: string; icon: React.ReactNode; accent: string }) {
+  return (
+    <div style={{ background: '#FFF', border: '1px solid #F4EEE3', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: `${accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#2A2420', lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize: 10, color: '#8B8176', marginTop: 3, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
+  paid: '#4FA36A',
+  collected: '#6FB8D9',
+  pending: '#F5C443',
+  refunded: '#9C7BC9',
+  failed: '#EC5D4A',
+};
+
+function RevenueCard({ stats, fmtNum }: { stats: any; fmtNum: (n: number) => string }) {
+  const revenue = stats?.paymentStatusRevenue || {};
+  const entries = Object.entries(revenue) as [string, { count: number; total: number }][];
+  // Sort: paid first, then collected, pending, refunded, failed
+  const order = ['paid', 'collected', 'pending', 'refunded', 'failed'];
+  entries.sort((a, b) => (order.indexOf(a[0]) - order.indexOf(b[0])));
+
+  return (
+    <div style={{ background: '#FFF', border: '1px solid #F4EEE3', borderRadius: 12, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#4FA36A15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4FA36A" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#2A2420', lineHeight: 1.1 }}>{fmtNum(stats?.totalRevenue || 0)}</div>
+          <div style={{ fontSize: 10, color: '#8B8176', marginTop: 3, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>Revenue (BDT)</div>
+        </div>
+      </div>
+      {entries.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, borderTop: '1px solid #F4EEE3', paddingTop: 8 }}>
+          {entries.map(([status, data]) => (
+            <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: PAYMENT_STATUS_COLORS[status] || '#8B8176', flexShrink: 0 }} />
+                <span style={{ color: '#5A5048', textTransform: 'capitalize', fontWeight: 500 }}>{status}</span>
+              </div>
+              <span style={{ fontWeight: 700, color: '#2A2420', fontFamily: 'monospace', fontSize: 11 }}>{fmtNum(data.total)}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

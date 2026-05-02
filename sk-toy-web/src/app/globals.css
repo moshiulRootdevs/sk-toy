@@ -91,9 +91,21 @@ body {
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
+
+/* Mobile touch and scroll fixes for all browsers */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific: fix for fixed position elements */
+  body { -webkit-overflow-scrolling: touch; }
+}
+
+/* Ensure fixed overlays work on all mobile browsers */
+.fixed { -webkit-transform: translateZ(0); }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-fredoka), var(--font-nunito), system-ui, sans-serif;

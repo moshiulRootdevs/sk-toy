@@ -80,7 +80,7 @@ function Field({ label: lbl, children, half }: { label: string; children: React.
 }
 
 /* ── helpers ── */
-const isVideo = (url: string) => /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(url);
+const isVideo = (url: string) => /\.(mp4|webm|mov|ogg|avi|mkv)(\?.*)?$/i.test(url);
 
 /* ── shared upload helper ── */
 async function doUpload(
@@ -219,11 +219,11 @@ function ImageGallery({
             {isVideo(url) ? (
               <>
                 <video
-                  src={imgUrl(url)}
+                  src={`${imgUrl(url)}#t=0.5`}
                   preload="metadata"
                   muted
                   playsInline
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', background: '#000' }}
                   draggable={false}
                 />
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>

@@ -251,18 +251,18 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className="mb-6 sm:mb-8">
         <p className="eyebrow mb-2">🎁 One last step</p>
-        <h1 className="font-display text-3xl sm:text-4xl font-bold text-[#1F2F4A]">Checkout</h1>
+        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-[#1F2F4A]">Checkout</h1>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
         {/* Left: form */}
         <div className="flex-1 space-y-6">
 
           {/* Contact */}
-          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Contact Information</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Full Name *" value={form.name} onChange={set('name')} placeholder="Moshiul Islam" />
@@ -272,7 +272,7 @@ export default function CheckoutPage() {
           </section>
 
           {/* Shipping address */}
-          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#4FC081]" /> Shipping Address</h2>
 
             {/* Saved address picker — shown only when the customer has saved addresses */}
@@ -346,7 +346,7 @@ export default function CheckoutPage() {
           </section>
 
           {/* Delivery zone */}
-          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-1 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FF9A4D]" /> Delivery Option</h2>
             {form.district === DHAKA_DISTRICT && (
               <p className="text-xs text-[#4FC081] mb-3 font-bold">
@@ -440,7 +440,7 @@ export default function CheckoutPage() {
           </section>
 
           {/* Coupon */}
-          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FFCB47]" /> Coupon Code</h2>
             <div className="flex gap-2">
               <input
@@ -464,7 +464,7 @@ export default function CheckoutPage() {
           </section>
 
           {/* Payment */}
-          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#6BC8E6]" /> Payment Method</h2>
             {availablePaymentMethods.length === 0 ? (
               <p className="text-sm text-gray-400">No payment methods are currently available. Please contact support.</p>
@@ -502,7 +502,7 @@ export default function CheckoutPage() {
           </section>
 
           {/* Note */}
-          <section className="bg-white border-2 border-[#FFE0EC] rounded-[24px] p-6 shadow-soft">
+          <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#B093E8]" /> Order Note (Optional)</h2>
             <textarea
               value={form.note}
@@ -515,8 +515,8 @@ export default function CheckoutPage() {
         </div>
 
         {/* Right: order summary */}
-        <div className="lg:w-80 shrink-0">
-          <div className="bg-white border-2 border-[#FFE0EC] rounded-[28px] p-6 sticky top-32 shadow-soft">
+        <div className="w-full lg:w-80 shrink-0">
+          <div className="bg-white border-2 border-[#FFE0EC] rounded-[20px] sm:rounded-[28px] p-4 sm:p-6 lg:sticky lg:top-32 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 text-lg flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Order Summary</h2>
             <div className="space-y-3 mb-4">
               {items.map((item) => (

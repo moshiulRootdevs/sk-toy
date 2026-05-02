@@ -94,18 +94,18 @@ export default function Footer() {
     <footer className="relative text-[#1F2F4A] mt-12 sm:mt-20 overflow-hidden">
       {/* Trust strip — sits on the page background, above the blue footer */}
       <div className="relative">
-        <div className="max-w-[1360px] mx-auto px-4 sm:px-8 py-5 sm:py-10">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
-            {TRUST_BADGES.map((b) => (
+        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 py-5 sm:py-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+            {TRUST_BADGES.map((b, idx) => (
               <div key={b.title}
-                   className="flex items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl bg-white border border-[#FFE0EC] p-2.5 sm:p-4 transition-all hover:-translate-y-0.5 hover:shadow-soft">
-                <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0"
+                   className={`flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-white border border-[#FFE0EC] p-2.5 sm:p-4 transition-all hover:-translate-y-0.5 hover:shadow-soft ${idx === TRUST_BADGES.length - 1 ? 'col-span-2 sm:col-span-1' : ''}`}>
+                <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center flex-shrink-0"
                      style={{ background: `${b.color}22`, color: b.color }}>
-                  <span className="scale-75 sm:scale-100 origin-center">{b.icon}</span>
+                  <span className="scale-[0.7] sm:scale-100 origin-center">{b.icon}</span>
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[12px] sm:text-[13px] font-extrabold leading-tight text-[#1F2F4A] truncate">{b.title}</div>
-                  <div className="text-[10px] sm:text-[11px] text-[#7A8299] mt-0.5 font-semibold truncate">{b.subtitle}</div>
+                  <div className="text-[11px] sm:text-[13px] font-extrabold leading-tight text-[#1F2F4A] truncate">{b.title}</div>
+                  <div className="text-[9px] sm:text-[11px] text-[#7A8299] mt-0.5 font-semibold truncate">{b.subtitle}</div>
                 </div>
               </div>
             ))}
@@ -134,12 +134,12 @@ export default function Footer() {
           <path d="M0 50 Q 60 20 120 50 T 240 50 T 360 50 T 480 50 T 600 50 T 720 50 T 840 50 T 960 50 T 1080 50 T 1200 50 T 1320 50 T 1440 50 V80 H0 Z" fill="url(#grass)" />
         </svg>
 
-        <div className="relative max-w-[1360px] mx-auto px-4 sm:px-8 pt-8 sm:pt-14 pb-14 sm:pb-20">
-          {/* Top grid — 6-col on mobile lets brand+newsletter span full while Shop/Help/Company sit in a 3-col row */}
-          <div className="grid grid-cols-6 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr] gap-x-3 gap-y-5 sm:gap-x-8 sm:gap-y-8 lg:gap-12 pb-5 sm:pb-10">
+        <div className="relative max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 pt-8 sm:pt-14 pb-14 sm:pb-20">
+          {/* Top grid — responsive layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr] gap-x-6 gap-y-7 sm:gap-x-8 sm:gap-y-8 lg:gap-12 pb-5 sm:pb-10">
 
             {/* Brand column */}
-            <div className="col-span-6 sm:col-span-2 lg:col-auto">
+            <div className="sm:col-span-2 lg:col-auto text-center sm:text-center lg:text-left">
               <Link href="/" className="inline-flex items-end leading-none select-none mb-3 sm:mb-4">
                 {s?.logo ? (
                   <Image
@@ -167,11 +167,12 @@ export default function Footer() {
                   </>
                 )}
               </p>
-              <div className="space-y-1.5">
+              {/* Phone & Email in a row */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 mb-2">
                 {s?.phone && (
                   <a
                     href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}
-                    className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 hover:text-[#4FC081] flex items-center gap-2 font-semibold transition-colors"
+                    className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 hover:text-[#4FC081] inline-flex items-center gap-1.5 font-semibold transition-colors"
                   >
                     <span className="inline-flex w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#4FC081]/20 items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-[#4FC081]" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
@@ -182,7 +183,7 @@ export default function Footer() {
                 {s?.email && (
                   <a
                     href={`mailto:${s.email}`}
-                    className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 hover:text-[#6BC8E6] flex items-center gap-2 font-semibold transition-colors"
+                    className="text-[12px] sm:text-[13px] text-[#1F2F4A]/85 hover:text-[#6BC8E6] inline-flex items-center gap-1.5 font-semibold transition-colors"
                   >
                     <span className="inline-flex w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#6BC8E6]/30 items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-[#6BC8E6]" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><path d="m22 6-10 7L2 6" /></svg>
@@ -190,63 +191,64 @@ export default function Footer() {
                     <span className="truncate">{s.email}</span>
                   </a>
                 )}
-                {s?.address && (
-                  <p className="text-[12px] sm:text-[13px] text-[#1F2F4A]/70 mt-2 leading-relaxed font-medium">{s.address}</p>
-                )}
               </div>
+              {s?.address && (
+                <p className="text-[12px] sm:text-[13px] text-[#1F2F4A]/70 leading-relaxed font-medium">{s.address}</p>
+              )}
             </div>
 
-            {/* Shop */}
-            <div className="col-span-3 sm:col-span-1 lg:col-auto min-w-0">
-              <div className="inline-flex items-center gap-1 sm:gap-1.5 mb-2.5 sm:mb-4 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white"
-                   style={{ border: `2px solid ${SECTION_COLORS.shop}` }}>
-                <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full" style={{ background: SECTION_COLORS.shop }} />
-                <h4 className="text-[9px] sm:text-[10px] uppercase tracking-[.1em] sm:tracking-[.16em] font-extrabold" style={{ color: SECTION_COLORS.shop }}>Shop</h4>
+            {/* Shop & Help — side by side on mobile */}
+            <div className="grid grid-cols-2 gap-6 sm:contents text-center sm:text-center lg:text-left">
+              {/* Shop */}
+              <div className="min-w-0">
+                <div className="inline-flex items-center gap-1.5 mb-3 sm:mb-4 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white"
+                     style={{ border: `2px solid ${SECTION_COLORS.shop}` }}>
+                  <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full" style={{ background: SECTION_COLORS.shop }} />
+                  <h4 className="text-[9px] sm:text-[10px] uppercase tracking-[.12em] sm:tracking-[.16em] font-extrabold" style={{ color: SECTION_COLORS.shop }}>Shop</h4>
+                </div>
+                <ul className="space-y-2 sm:space-y-2.5">
+                  {[
+                    { href: '/categories/new-arrivals', label: 'New Arrivals' },
+                    { href: '/products?filter=sale',    label: 'Sale Items' },
+                    { href: '/categories/shop-by-age',  label: 'Shop by Age' },
+                    { href: '/products',                label: 'All Products' },
+                  ].map((l) => (
+                    <li key={l.href}>
+                      <Link href={l.href} className="text-[13px] sm:text-[14px] text-[#1F2F4A]/85 hover:text-[#FF6FB1] transition-colors font-semibold">{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-1.5 sm:space-y-2.5">
-                {[
-                  { href: '/categories/new-arrivals', label: 'New Arrivals' },
-                  { href: '/products?filter=sale',    label: 'Sale Items' },
-                  { href: '/categories/shop-by-age',  label: 'Shop by Age' },
-                  { href: '/products',                label: 'All Products' },
-                ].map((l) => (
-                  <li key={l.href}>
-                    <Link href={l.href} className="text-[12px] sm:text-[14px] text-[#1F2F4A]/85 hover:text-[#FF6FB1] transition-colors font-semibold">{l.label}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
 
-            {/* Help */}
-            <div className="col-span-3 sm:col-span-1 lg:col-auto min-w-0">
-              <div className="inline-flex items-center gap-1 sm:gap-1.5 mb-2.5 sm:mb-4 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white"
-                   style={{ border: `2px solid ${SECTION_COLORS.help}` }}>
-                <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full" style={{ background: SECTION_COLORS.help }} />
-                <h4 className="text-[9px] sm:text-[10px] uppercase tracking-[.1em] sm:tracking-[.16em] font-extrabold" style={{ color: SECTION_COLORS.help }}>Help</h4>
+              {/* Help */}
+              <div className="min-w-0">
+                <div className="inline-flex items-center gap-1.5 mb-3 sm:mb-4 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white"
+                     style={{ border: `2px solid ${SECTION_COLORS.help}` }}>
+                  <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full" style={{ background: SECTION_COLORS.help }} />
+                  <h4 className="text-[9px] sm:text-[10px] uppercase tracking-[.12em] sm:tracking-[.16em] font-extrabold" style={{ color: SECTION_COLORS.help }}>Help</h4>
+                </div>
+                <ul className="space-y-2 sm:space-y-2.5">
+                  {[
+                    { href: '/track',                   label: 'Track Order' },
+                    { href: '/pages/shipping-info',     label: 'Shipping' },
+                    { href: '/pages/faq',               label: 'FAQ' },
+                  ].map((l) => (
+                    <li key={l.href}>
+                      <Link href={l.href} className="text-[13px] sm:text-[14px] text-[#1F2F4A]/85 hover:text-[#6BC8E6] transition-colors font-semibold">{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-1.5 sm:space-y-2.5">
-                {[
-                  { href: '/track',                   label: 'Track Order' },
-                  { href: '/pages/shipping-info',     label: 'Shipping' },
-                  { href: '/pages/faq',               label: 'FAQ' },
-                  { href: '/pages/privacy',           label: 'Privacy' },
-                  { href: '/pages/terms',             label: 'Terms' },
-                ].map((l) => (
-                  <li key={l.href}>
-                    <Link href={l.href} className="text-[12px] sm:text-[14px] text-[#1F2F4A]/85 hover:text-[#6BC8E6] transition-colors font-semibold">{l.label}</Link>
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {/* Company */}
-            <div className="col-span-6 sm:col-span-2 lg:col-auto min-w-0">
-              <div className="inline-flex items-center gap-1 sm:gap-1.5 mb-2.5 sm:mb-4 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white"
+            <div className="sm:col-span-2 lg:col-auto min-w-0 text-center sm:text-center lg:text-left">
+              <div className="inline-flex items-center gap-1.5 mb-3 sm:mb-4 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white"
                    style={{ border: `2px solid ${SECTION_COLORS.company}` }}>
                 <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full" style={{ background: SECTION_COLORS.company }} />
-                <h4 className="text-[9px] sm:text-[10px] uppercase tracking-[.1em] sm:tracking-[.16em] font-extrabold" style={{ color: SECTION_COLORS.company }}>Company</h4>
+                <h4 className="text-[9px] sm:text-[10px] uppercase tracking-[.12em] sm:tracking-[.16em] font-extrabold" style={{ color: SECTION_COLORS.company }}>Company</h4>
               </div>
-              <ul className="flex flex-wrap gap-x-4 gap-y-1.5 sm:flex-col sm:gap-y-2.5 sm:gap-x-0">
+              <ul className="flex flex-wrap justify-center lg:justify-start gap-x-5 gap-y-2 sm:flex-col sm:items-center lg:items-start sm:gap-y-2.5 sm:gap-x-0">
                 {[
                   { href: '/pages/about', label: 'About' },
                   { href: '/blog',        label: 'Journal' },
@@ -254,14 +256,14 @@ export default function Footer() {
                   { href: '/wishlist',    label: 'Wishlist' },
                 ].map((l) => (
                   <li key={l.href}>
-                    <Link href={l.href} className="text-[12px] sm:text-[14px] text-[#1F2F4A]/85 hover:text-[#4FC081] transition-colors font-semibold">{l.label}</Link>
+                    <Link href={l.href} className="text-[13px] sm:text-[14px] text-[#1F2F4A]/85 hover:text-[#4FC081] transition-colors font-semibold">{l.label}</Link>
                   </li>
                 ))}
               </ul>
             </div>
 
             {/* Newsletter + social */}
-            <div className="col-span-6 sm:col-span-2 lg:col-auto rounded-2xl sm:rounded-3xl bg-white p-3.5 sm:p-5 border-2 sm:border-4 border-white shadow-soft"
+            <div className="sm:col-span-2 lg:col-auto rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 border-2 sm:border-4 border-white shadow-soft"
                  style={{ background: 'linear-gradient(160deg, #FFE0EC 0%, #FFEDB6 100%)' }}>
               <div className="inline-flex items-center gap-1.5 mb-2.5 sm:mb-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white"
                    style={{ border: `2px solid ${SECTION_COLORS.loop}` }}>
@@ -290,8 +292,8 @@ export default function Footer() {
                 </button>
               </form>
 
-              {/* Social + payments combined row on mobile, separate on desktop */}
-              <div className="flex items-center justify-between gap-3 flex-wrap">
+              {/* Social + payments combined row */}
+              <div className="flex items-center justify-center gap-3 flex-wrap">
                 <div className="flex gap-1.5 sm:gap-2">
                   {[
                     { href: social?.facebook, label: 'Facebook', color: '#1877F2', icon: (
@@ -333,7 +335,7 @@ export default function Footer() {
           </div>
 
           {/* Bottom row */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 pt-4 sm:pt-6 text-[11px] sm:text-[12px] text-[#1F2F4A]/65 border-t-2 border-dashed border-[#FFFFFF]/60 font-semibold text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-3 pt-5 sm:pt-6 text-[11px] sm:text-[12px] text-[#1F2F4A]/65 border-t-2 border-dashed border-[#FFFFFF]/60 font-semibold text-center sm:text-left">
             <p>© {new Date().getFullYear()} SK Toy. All rights reserved.</p>
             <p className="hidden sm:block">
               Crafted with <span className="text-[#FF6FB1]">♥</span> by{' '}

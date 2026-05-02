@@ -17,8 +17,21 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve locally uploaded files
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// Serve locally uploaded files with proper MIME types for video
+app.use("/uploads", express.static(path.join(__dirname, "../uploads"), {
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeMap = {
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.ogg': 'video/ogg',
+      '.mov': 'video/mp4',
+    };
+    if (mimeMap[ext]) {
+      res.setHeader('Content-Type', mimeMap[ext]);
+    }
+  }
+}));
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
@@ -50,6 +63,13 @@ app.get("/api/health", (_, res) => res.json({ status: "ok", ts: Date.now() }));
 
 // Global error handler
 app.use((err, req, res, next) => {
+  // Handle multer file size errors gracefully
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ message: 'File too large. Maximum allowed size is 200MB.' });
+  }
+  if (err.message && err.message.includes('Only image or video files are allowed')) {
+    return res.status(400).json({ message: err.message });
+  }
   console.error(err.stack);
   res
     .status(err.status || 500)

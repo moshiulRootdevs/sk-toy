@@ -229,7 +229,7 @@ router.get('/admin/:id/orders', adminAuth, async (req, res) => {
   if (customer.phone) conditions.push({ phone: customer.phone });
   const orders = await Order.find({ $or: conditions })
     .sort({ createdAt: -1 })
-    .select('orderNo createdAt status paymentStatus paymentMethod total lines.qty')
+    .populate('lines.product', 'name images sku price discountPrice')
     .lean();
   res.json(orders);
 });

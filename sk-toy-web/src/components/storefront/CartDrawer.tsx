@@ -35,9 +35,16 @@ export default function CartDrawer() {
   return (
     <>
       {cartOpen && (
-        <div className="fixed inset-0 bg-[#1F2F4A]/45 backdrop-blur-sm z-40" onClick={() => setCartOpen(false)} />
+        <div
+          className="fixed inset-0 bg-[#1F2F4A]/45 z-40"
+          style={{ WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setCartOpen(false)}
+        />
       )}
-      <div className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ${cartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-[380px] bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${cartOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ WebkitTransform: cartOpen ? 'translateX(0)' : 'translateX(100%)', willChange: 'transform' }}
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b-2 border-[#FFE0EC]"
              style={{ background: 'linear-gradient(135deg,#FFE0EC,#FFEDB6)' }}>
           <h2 className="font-display font-extrabold text-lg text-[#1F2F4A] flex items-center gap-2">

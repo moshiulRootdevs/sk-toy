@@ -32,9 +32,16 @@ export default function MobileMenu() {
   return (
     <>
       {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-[#1F2F4A]/45 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileMenuOpen(false)} />
+        <div
+          className="fixed inset-0 bg-[#1F2F4A]/45 z-40 lg:hidden"
+          style={{ WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setMobileMenuOpen(false)}
+        />
       )}
-      <div className={`fixed top-0 left-0 h-full w-72 bg-white z-50 flex flex-col transition-transform duration-300 lg:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div
+        className={`fixed top-0 left-0 h-full w-72 bg-white z-50 flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ WebkitTransform: mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)', willChange: 'transform' }}
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b-2 border-[#FFE0EC]"
              style={{ background: 'linear-gradient(135deg,#FFE0EC,#FFEDB6)' }}>
           <span className="font-display font-extrabold text-lg text-[#1F2F4A]">🌈 Menu</span>

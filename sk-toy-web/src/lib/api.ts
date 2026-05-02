@@ -3,6 +3,9 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
   withCredentials: false,
+  timeout: 600000, // 10 minutes — video uploads with transcoding can be slow
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
 });
 
 api.interceptors.request.use((config) => {

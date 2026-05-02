@@ -75,27 +75,27 @@ function HeroSection({ section }: { section: HomeSection }) {
       <div className="absolute inset-0 -z-10 bg-gradient-hero" />
       {/* Decorative shapes */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute w-[220px] h-[220px] rounded-full bg-[#FFCB47] opacity-30 blur-2xl -top-12 left-[6%]" />
-        <div className="absolute w-[180px] h-[180px] rounded-full bg-[#FF6FB1] opacity-25 blur-2xl top-[28%] left-[2%]" />
-        <div className="absolute w-[260px] h-[260px] rounded-full bg-[#6BC8E6] opacity-25 blur-3xl -top-10 -right-10" />
-        <div className="absolute w-[200px] h-[200px] rounded-full bg-[#B093E8] opacity-25 blur-2xl bottom-[-40px] right-[18%]" />
-        {/* Sprinkle of dots */}
-        <div className="absolute w-3 h-3 rounded-full bg-[#FF6FB1] top-[18%] left-[42%]" />
-        <div className="absolute w-2.5 h-2.5 rounded-full bg-[#4FC081] top-[58%] left-[38%]" />
-        <div className="absolute w-2 h-2 rounded-full bg-[#FFCB47] top-[34%] right-[40%]" />
-        <div className="absolute w-3 h-3 rounded-full bg-[#6BC8E6] bottom-[18%] left-[18%]" />
+        <div className="absolute w-[120px] sm:w-[220px] h-[120px] sm:h-[220px] rounded-full bg-[#FFCB47] opacity-20 sm:opacity-30 blur-2xl -top-12 left-[6%]" />
+        <div className="absolute w-[100px] sm:w-[180px] h-[100px] sm:h-[180px] rounded-full bg-[#FF6FB1] opacity-15 sm:opacity-25 blur-2xl top-[28%] left-[2%]" />
+        <div className="absolute w-[140px] sm:w-[260px] h-[140px] sm:h-[260px] rounded-full bg-[#6BC8E6] opacity-15 sm:opacity-25 blur-3xl -top-10 -right-10" />
+        <div className="absolute w-[100px] sm:w-[200px] h-[100px] sm:h-[200px] rounded-full bg-[#B093E8] opacity-15 sm:opacity-25 blur-2xl bottom-[-40px] right-[18%]" />
+        {/* Sprinkle of dots — hidden on mobile */}
+        <div className="hidden sm:block absolute w-3 h-3 rounded-full bg-[#FF6FB1] top-[18%] left-[42%]" />
+        <div className="hidden sm:block absolute w-2.5 h-2.5 rounded-full bg-[#4FC081] top-[58%] left-[38%]" />
+        <div className="hidden sm:block absolute w-2 h-2 rounded-full bg-[#FFCB47] top-[34%] right-[40%]" />
+        <div className="hidden sm:block absolute w-3 h-3 rounded-full bg-[#6BC8E6] bottom-[18%] left-[18%]" />
       </div>
 
-      <div className="relative max-w-[1360px] mx-auto px-6 sm:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-6 lg:gap-10 py-4 lg:py-6 items-center">
+      <div className="relative max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-4 sm:gap-6 lg:gap-10 py-6 sm:py-5 lg:py-6 items-center">
           {/* Left */}
-          <div>
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm text-[#FF6FB1] px-4 py-1.5 rounded-full text-xs font-bold mb-4 border border-[#FFD4E6] shadow-soft">
-              <span className="w-2 h-2 rounded-full bg-[#FF6FB1] inline-block animate-pulse" />
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-white/80 backdrop-blur-sm text-[#FF6FB1] px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold mb-3 sm:mb-4 border border-[#FFD4E6] shadow-soft">
+              <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-[#FF6FB1] inline-block animate-pulse" />
               {eyebrow}
             </div>
 
-            <h1 className="font-display text-[clamp(26px,5.5vw,56px)] font-bold leading-[1.05] tracking-tight mb-3 sm:mb-4 text-[#1F2F4A] break-words">
+            <h1 className="font-display text-[clamp(26px,6vw,56px)] font-bold leading-[1.1] tracking-tight mb-3 sm:mb-4 text-[#1F2F4A]">
               {title.split(',').map((part: string, i: number, arr: string[]) => (
                 <span key={i}>
                   {i === arr.length - 1 ? (
@@ -108,30 +108,30 @@ function HeroSection({ section }: { section: HomeSection }) {
               ))}
             </h1>
 
-            <p className="text-[13px] sm:text-[15px] leading-relaxed text-[#5A5048] max-w-[500px] mb-5 sm:mb-6 font-medium">{subtitle}</p>
+            <p className="text-[13px] sm:text-[15px] leading-relaxed text-[#5A5048] max-w-[500px] mx-auto lg:mx-0 mb-5 sm:mb-6 font-medium">{subtitle}</p>
 
-            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+            <div className="flex items-center justify-center lg:justify-start gap-2.5 sm:gap-3 flex-wrap">
               <Link href={ctaLink}
-                className="inline-flex items-center gap-2 text-white font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                className="inline-flex items-center gap-2 text-white font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-[13px] sm:text-sm hover:-translate-y-0.5 active:translate-y-0 transition-all"
                 style={{ background: 'linear-gradient(135deg, #FF5B6E 0%, #FF6FB1 100%)', boxShadow: '0 12px 24px -10px rgba(255,91,110,.6)' }}>
                 {cta}
                 <span className="text-base">→</span>
               </Link>
               <Link href={secondaryCtaLink}
-                className="inline-flex items-center gap-2 text-[#1F2F4A] bg-white border-2 border-[#FFD4E6] hover:border-[#FF6FB1] font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-sm transition-all">
+                className="inline-flex items-center gap-2 text-[#1F2F4A] bg-white border-2 border-[#FFD4E6] hover:border-[#FF6FB1] font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-[13px] sm:text-sm transition-all">
                 {secondaryCta}
               </Link>
             </div>
 
             {/* Stats */}
-            <div className="flex gap-6 sm:gap-8 mt-4 pt-3 border-t-2 border-dashed border-[#FFD4E6] max-w-[520px]">
+            <div className="flex justify-center lg:justify-start gap-5 sm:gap-8 mt-5 pt-3 border-t-2 border-dashed border-[#FFD4E6] max-w-[520px] mx-auto lg:mx-0">
               {stats.map((s, i) => {
                 const colors = ['#FF6FB1', '#4FC081', '#6BC8E6'];
                 return (
-                  <div key={i}>
-                    <div className="font-display text-[22px] sm:text-[26px] font-bold leading-none mb-1"
+                  <div key={i} className="text-center lg:text-left">
+                    <div className="font-display text-[20px] sm:text-[26px] font-bold leading-none mb-1"
                          style={{ color: colors[i % colors.length] }}>{s.num}</div>
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-[#7A8299] font-bold">{s.label}</div>
+                    <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-[#7A8299] font-bold">{s.label}</div>
                   </div>
                 );
               })}
@@ -213,7 +213,7 @@ function CategoriesSection({ section }: { section: HomeSection }) {
         </>
       )}
 
-      <div className="max-w-[1360px] mx-auto px-6 sm:px-8 relative">
+      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8 relative">
         <SectionHead section={section} />
         {len === 0 ? null : (
           <div className={`${layoutClass} mt-8`}>
@@ -300,16 +300,16 @@ const AGE_TILES = [
 function AgesSection({ section }: { section: HomeSection }) {
   return (
     <section className="py-14 sm:py-16">
-      <div className="max-w-[1360px] mx-auto px-6 sm:px-8">
+      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         <SectionHead section={section} />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
           {AGE_TILES.map((tile) => (
             <Link key={tile.range} href={tile.href}
-              className="group relative rounded-[24px] sm:rounded-[28px] p-5 sm:p-6 text-left hover:-translate-y-1.5 hover:rotate-[-2deg] transition-all duration-200 overflow-hidden border-4 border-white"
+              className="group relative rounded-[18px] sm:rounded-[24px] md:rounded-[28px] p-3 sm:p-5 md:p-6 text-left hover:-translate-y-1.5 hover:rotate-[-2deg] transition-all duration-200 overflow-hidden border-3 sm:border-4 border-white"
               style={{ background: tile.bg, boxShadow: `0 14px 28px -16px ${tile.dot}99` }}>
-              <div className="absolute -top-4 -right-4 text-[60px] sm:text-[80px] opacity-25 group-hover:scale-110 transition-transform">{tile.emoji}</div>
+              <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 text-[40px] sm:text-[60px] md:text-[80px] opacity-25 group-hover:scale-110 transition-transform">{tile.emoji}</div>
               <div className="relative">
-                <div className="font-display text-[44px] sm:text-[60px] font-bold leading-[0.85] tracking-tighter mb-2 sm:mb-3 text-[#1F2F4A]">
+                <div className="font-display text-[28px] sm:text-[44px] md:text-[60px] font-bold leading-[0.85] tracking-tighter mb-1.5 sm:mb-3 text-[#1F2F4A]">
                   {tile.range}
                 </div>
                 <div className="text-[10px] uppercase tracking-[.16em] font-extrabold mb-1.5" style={{ color: tile.dot }}>{tile.label}</div>
@@ -340,7 +340,7 @@ function ProductsSection({ section }: { section: HomeSection }) {
 
   return (
     <section className={`pt-4 sm:pt-6 pb-14 sm:pb-16 relative ${bandClass}`}>
-      <div className="max-w-[1360px] mx-auto px-6 sm:px-8">
+      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         <SectionHead section={section} />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-5 mt-6">
           {products.map((product) => (
@@ -543,7 +543,7 @@ function JournalSection({ section }: { section: HomeSection }) {
   const tints = ['#FFE0EC', '#FFEDB6', '#D7F5E2'];
   return (
     <section className="py-14 sm:py-16">
-      <div className="max-w-[1360px] mx-auto px-6 sm:px-8">
+      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
         <SectionHead section={section} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
           {posts.map((post, i) => (
@@ -597,38 +597,37 @@ function SectionHead({ section }: { section: HomeSection }) {
   const titleAccent = titleWords[titleWords.length - 1] || '';
 
   return (
-    <div className="flex items-end justify-between gap-6 flex-wrap">
-      <div className="min-w-0 flex-1">
-        {section.eyebrow && (
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10.5px] font-extrabold uppercase tracking-[.16em] text-[#E0539B] mb-3"
-                style={{ background: 'linear-gradient(135deg, #FFE0EC 0%, #FFEDB6 100%)', border: '1px solid #FFD4E6' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF6FB1] animate-pulse" />
-            {section.eyebrow}
-          </span>
-        )}
+    <div>
+      {section.eyebrow && (
+        <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-[9.5px] sm:text-[10.5px] font-extrabold uppercase tracking-[.12em] sm:tracking-[.16em] text-[#E0539B] mb-2 sm:mb-3"
+              style={{ background: 'linear-gradient(135deg, #FFE0EC 0%, #FFEDB6 100%)', border: '1px solid #FFD4E6' }}>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6FB1] animate-pulse" />
+          {section.eyebrow}
+        </span>
+      )}
+      <div className="flex items-center justify-between gap-3 sm:gap-6">
         {section.title && (
-          <h2 className="font-display text-[28px] sm:text-[36px] font-bold leading-[1.1] tracking-tight text-[#1F2F4A]">
+          <h2 className="font-display text-[20px] sm:text-[28px] md:text-[36px] font-bold leading-[1.15] tracking-tight text-[#1F2F4A] min-w-0">
             {titleWords.length > 1 && <>{titleLead} </>}
             <span className="relative inline-block">
               <span className="text-[#FF5B6E]">{titleAccent}</span>
-              {/* Subtle single-color underline accent */}
               <span aria-hidden
                     className="absolute left-0 right-0 -bottom-1 h-[3px] rounded-full"
                     style={{ background: '#FF5B6E', opacity: 0.35 }} />
             </span>
           </h2>
         )}
-        {section.subtitle && (
-          <p className="text-[14px] text-[#5A5048] mt-3 max-w-[460px] font-medium leading-relaxed">{section.subtitle}</p>
+        {section.ctaLink && (
+          <Link href={section.ctaLink}
+            className="shrink-0 inline-flex items-center gap-1.5 sm:gap-2 text-white text-[11px] sm:text-sm font-bold px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5 hover:scale-[1.03] active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #FF5B6E 0%, #FF6FB1 100%)', boxShadow: '0 10px 22px -10px rgba(255,91,110,.55)' }}>
+            {section.ctaLabel || 'See all'}
+            <span className="inline-flex w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white/25 items-center justify-center text-[10px] sm:text-xs leading-none">→</span>
+          </Link>
         )}
       </div>
-      {section.ctaLink && (
-        <Link href={section.ctaLink}
-          className="shrink-0 inline-flex items-center gap-2 text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5 hover:scale-[1.03] active:scale-95"
-          style={{ background: 'linear-gradient(135deg, #FF5B6E 0%, #FF6FB1 100%)', boxShadow: '0 10px 22px -10px rgba(255,91,110,.55)' }}>
-          {section.ctaLabel || 'See all'}
-          <span className="inline-flex w-5 h-5 rounded-full bg-white/25 items-center justify-center text-xs leading-none">→</span>
-        </Link>
+      {section.subtitle && (
+        <p className="text-[12px] sm:text-[14px] text-[#5A5048] mt-2 sm:mt-3 max-w-[460px] font-medium leading-relaxed">{section.subtitle}</p>
       )}
     </div>
   );
