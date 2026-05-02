@@ -76,7 +76,7 @@ export default function Table<T extends Record<string, unknown>>({
                 onMouseLeave={(e) => { if (onRowClick) (e.currentTarget as HTMLElement).style.background = '#FFF'; }}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className={cls('px-4 py-3', col.className)} style={{ color: '#2A2420', fontSize: 13 }}>
+                  <td key={col.key} className={cls('px-4 py-3', col.className)} style={{ color: '#2A2420', fontSize: 14 }}>
                     {col.render ? col.render(row) : String(row[col.key] ?? '')}
                   </td>
                 ))}

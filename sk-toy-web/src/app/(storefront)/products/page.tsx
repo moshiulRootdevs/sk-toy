@@ -1,12 +1,11 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { useState, Suspense } from 'react';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import api from '@/lib/api';
 import { Product, Category } from '@/types';
 import ProductCard from '@/components/storefront/ProductCard';
-import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import SelectUI from '@/components/ui/Select';
 import { cls } from '@/lib/utils';
@@ -36,7 +35,6 @@ function ProductsContent() {
   const sort = searchParams.get('sort') || 'newest';
   const age = searchParams.get('age') || '';
   const filter = searchParams.get('filter') || '';
-  const page = Number(searchParams.get('page') || 1);
 
   // Comma-separated filter params parsed into Sets for O(1) lookup.
   const csvToSet = (v: string) => new Set(v.split(',').map((s) => s.trim()).filter(Boolean));
@@ -44,17 +42,49 @@ function ProductsContent() {
   const selectedAges = csvToSet(age);
   const selectedFilters = csvToSet(filter);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['products', { q, category, sort, age, filter, page }],
-    queryFn: () => {
-      const params: Record<string, string | number> = { sort, page, limit: 20 };
+  const ITEMS_PER_PAGE = 20;
+
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['products', { q, category, sort, age, filter }],
+    queryFn: ({ pageParam = 1 }) => {
+      const params: Record<string, string | number> = { sort, page: pageParam, limit: ITEMS_PER_PAGE };
       if (q)        params.search   = q;
       if (category) params.category = category;
       if (age)      params.ageGroup = age;
       if (filter)   params.badge    = filter;
       return api.get('/products', { params }).then((r) => r.data);
     },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const totalFetched = allPages.length * ITEMS_PER_PAGE;
+      if (totalFetched >= (lastPage.total ?? 0)) return undefined;
+      return allPages.length + 1;
+    },
   });
+
+  // Infinite scroll observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ['categories'],
@@ -90,9 +120,8 @@ function ProductsContent() {
     router.push(`/products?${p.toString()}`);
   }
 
-  const products: Product[] = data?.products || [];
-  const total: number = data?.total || 0;
-  const pages: number = data?.pages || 1;
+  const products: Product[] = data?.pages.flatMap((p) => p.products ?? []) ?? [];
+  const total: number = data?.pages[0]?.total || 0;
 
   const title = (() => {
     if (q) return `Results for "${q}"`;
@@ -230,8 +259,8 @@ function ProductsContent() {
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {products.map((p) => <ProductCard key={p._id} product={p} />)}
               </div>
-              <div className="mt-8">
-                <Pagination page={page} pages={pages} onChange={(p) => setParam('page', String(p))} />
+              <div ref={loadMoreRef} className="py-8 flex justify-center">
+                {isFetchingNextPage && <Spinner size="md" />}
               </div>
             </>
           )}

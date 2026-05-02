@@ -1,10 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import api from '@/lib/api';
 import { Category, Product } from '@/types';
 import ProductCard from '@/components/storefront/ProductCard';
@@ -209,30 +209,34 @@ export default function CategoryPage() {
   const isGenderParent = slug === 'by-gender';
   const isSpecialParent = isAgeParent || isGenderParent;
 
-  const { data: productsData, isLoading: prodLoading } = useQuery({
+  const ITEMS_PER_PAGE = 24;
+
+  const {
+    data: productsInfinite,
+    isLoading: prodLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['products-by-category', slug, activeSub, activeSubSlug, sort, filters],
-    queryFn: () => {
-      const params: Record<string, string | number> = { limit: 24 };
+    queryFn: ({ pageParam = 1 }) => {
+      const params: Record<string, string | number> = { limit: ITEMS_PER_PAGE, page: pageParam };
       if (sort && sort !== 'featured') params.sort = sort;
       if (filters.badge.length)       params.badge    = filters.badge.join(',');
       if (filters.maxPrice < 10000)   params.maxPrice = filters.maxPrice;
 
       if (virtual) {
-        // Virtual collection forces its own badge unless the user has picked their own.
         if (filters.badge.length)     params.badge = filters.badge.join(',');
         else if (virtual.badge)       params.badge = virtual.badge;
       } else if (isAgeParent) {
-        // Subcategory pill slug like "age/6-8" → ageGroup "age-6-8"
         if (activeSubSlug?.startsWith('age/')) params.ageGroup = `age-${activeSubSlug.slice(4)}`;
         else if (filters.ageGroup.length) params.ageGroup = filters.ageGroup.join(',');
         if (filters.gender.length) params.gender = filters.gender.join(',');
       } else if (isGenderParent) {
-        // Subcategory pill slug like "gender/boys" → gender "boys"
         if (activeSubSlug?.startsWith('gender/')) params.gender = activeSubSlug.slice(7);
         else if (filters.gender.length) params.gender = filters.gender.join(',');
         if (filters.ageGroup.length) params.ageGroup = filters.ageGroup.join(',');
       } else {
-        // Normal product category — category filter (includes all descendants via backend)
         params.category = activeSub || (category?._id ?? '');
         if (filters.ageGroup.length) params.ageGroup = filters.ageGroup.join(',');
         if (filters.gender.length)   params.gender   = filters.gender.join(',');
@@ -240,8 +244,33 @@ export default function CategoryPage() {
 
       return api.get('/products', { params }).then((r) => r.data);
     },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const totalFetched = allPages.length * ITEMS_PER_PAGE;
+      if (totalFetched >= (lastPage.total ?? 0)) return undefined;
+      return allPages.length + 1;
+    },
     enabled: virtual ? true : isSpecialParent ? true : !!category?._id,
   });
+
+  // Infinite scroll observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const productsData = productsInfinite?.pages[0] ?? null;
 
   if (!virtual && catLoading) return (
     <div className="flex justify-center py-32"><Spinner size="lg" /></div>
@@ -254,7 +283,7 @@ export default function CategoryPage() {
     </div>
   );
 
-  const products: Product[] = productsData?.products || [];
+  const products: Product[] = productsInfinite?.pages.flatMap((p) => p.products ?? []) ?? [];
   const subCats: Category[] = (category as any)?.children || [];
   const words = catName.split(' ');
   const headRest = words.slice(0, -1).join(' ');
@@ -392,9 +421,14 @@ export default function CategoryPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-                {products.map((p) => <ProductCard key={p._id} product={p} />)}
-              </div>
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {products.map((p) => <ProductCard key={p._id} product={p} />)}
+                </div>
+                <div ref={loadMoreRef} className="py-8 flex justify-center">
+                  {isFetchingNextPage && <Spinner size="md" />}
+                </div>
+              </>
             )}
           </div>
         </div>

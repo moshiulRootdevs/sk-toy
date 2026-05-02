@@ -96,7 +96,7 @@ export default function AdminSidebar({ open, collapsed, onClose, onToggleCollaps
           color: active ? '#FFF' : 'rgba(255,255,255,.55)',
           background: active ? `${accent}22` : 'transparent',
           borderRadius: 10,
-          fontSize: 13, fontWeight: active ? 600 : 400,
+          fontSize: 14, fontWeight: active ? 600 : 400,
           textDecoration: 'none', transition: 'all .2s',
           position: 'relative',
         } as React.CSSProperties}

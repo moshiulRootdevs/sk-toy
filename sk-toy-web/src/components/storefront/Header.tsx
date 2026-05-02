@@ -524,6 +524,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
             <Link
               href="/"
               className="flex items-center"
+              suppressHydrationWarning
               onClick={(e) => {
                 if (pathname === '/') {
                   e.preventDefault();
@@ -538,15 +539,11 @@ export default function Header({ initialSettings, initialCategories }: { initial
                   width={200} height={64}
                   style={{ objectFit: 'contain', maxHeight: 56, width: 'auto' }}
                   priority
+                  suppressHydrationWarning
                 />
               ) : (
-                <span className="font-display flex items-end leading-none select-none" style={{ fontSize: '34px', fontWeight: 700 }}>
-                  <span className="logo-letter" style={{ color: '#4FC081', animationDelay: '0s' }}>S</span>
-                  <span className="logo-letter" style={{ color: '#FF5B6E', animationDelay: '.08s' }}>K</span>
-                  <span className="logo-dot" />
-                  <span className="logo-letter" style={{ color: '#FF9A4D', animationDelay: '.24s' }}>T</span>
-                  <span className="logo-letter" style={{ color: '#6BC8E6', animationDelay: '.32s' }}>O</span>
-                  <span className="logo-letter" style={{ color: '#B093E8', animationDelay: '.40s' }}>Y</span>
+                <span className="font-display text-[24px] sm:text-[28px] font-bold text-[#1F2F4A] select-none" suppressHydrationWarning>
+                  Company Logo
                 </span>
               )}
             </Link>
@@ -731,7 +728,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
           onMouseLeave={closeMega}
         >
           <div className="max-w-[1360px] mx-auto px-8">
-            <ul className="flex items-center justify-center gap-1">
+            <ul className="flex items-center justify-center gap-1" suppressHydrationWarning>
               {/* All Products link */}
               <li onMouseEnter={closeMega}>
                 <Link

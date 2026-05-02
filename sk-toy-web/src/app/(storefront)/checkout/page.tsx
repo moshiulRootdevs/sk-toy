@@ -37,6 +37,12 @@ export default function CheckoutPage() {
   const subtotal = useCartStore((s) => s.items.reduce((a, i) => a + i.price * i.qty, 0));
   const { customer } = useAuthStore();
 
+  // Reset body overflow on mount — fixes glitch where cart drawer's overflow:hidden
+  // persists when navigating to checkout on mobile
+  useEffect(() => {
+    document.body.style.overflow = '';
+  }, []);
+
   const [form, setForm] = useState({
     name: customer?.name || '',
     phone: customer?.phone || '',

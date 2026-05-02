@@ -98,6 +98,13 @@ body {
   -ms-text-size-adjust: 100%;
 }
 
+/* Disable background-attachment: fixed on mobile — causes severe scroll jank */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
 /* Mobile touch and scroll fixes for all browsers */
 @supports (-webkit-touch-callout: none) {
   /* iOS-specific: fix for fixed position elements */
@@ -210,6 +217,19 @@ select:focus-visible {
   to   { transform: rotate(360deg); }
 }
 .animate-spin-slow { animation: spin-slow 18s linear infinite; }
+
+/* Disable heavy animations on mobile to reduce scroll jank */
+@media (max-width: 768px) {
+  .animate-float, .animate-wiggle, .animate-spin-slow {
+    animation: none;
+  }
+  /* Reduce paint complexity for blurred decorative blobs on mobile */
+  [class*="blur-2xl"], [class*="blur-3xl"] {
+    filter: none !important;
+    -webkit-filter: none !important;
+    opacity: 0.08;
+  }
+}
 
 /* Mega menu link arrow */
 .mega-link { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; text-decoration: none; color: #1F2F4A; transition: color .15s; }

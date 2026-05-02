@@ -347,7 +347,7 @@ export default function Footer() {
               <a href="https://rootdevs.com" target="_blank" rel="noopener noreferrer" className="text-[#FF6FB1] hover:underline font-extrabold">Rootdevs</a>
             </p>
             <div className="flex gap-4 sm:gap-5">
-              <Link href="/pages/privacy" className="hover:text-[#FF6FB1] transition-colors">Privacy</Link>
+              <Link href="/pages/privacy-policy" className="hover:text-[#FF6FB1] transition-colors">Privacy</Link>
               <Link href="/pages/terms"   className="hover:text-[#FF6FB1] transition-colors">Terms</Link>
               <Link href="/pages/about"   className="hover:text-[#FF6FB1] transition-colors">About</Link>
             </div>
