@@ -48,10 +48,11 @@ export default function CategoriesPage() {
     mutationFn: (items: { id: string; order: number }[]) =>
       api.put('/categories/reorder', { items }),
     onSuccess: () => {
+      toast.success('Order saved');
       qc.invalidateQueries({ queryKey: ['categories-admin-tree'] });
       qc.invalidateQueries({ queryKey: ['categories-flat'] });
     },
-    onError: () => toast.error('Reorder failed'),
+    onError: () => toast.error('Reorder failed — please try again'),
   });
 
   function handleDragEnd(event: DragEndEvent) {

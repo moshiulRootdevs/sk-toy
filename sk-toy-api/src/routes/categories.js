@@ -63,6 +63,18 @@ router.post('/', adminAuth, audit('CREATED', 'Category', (req) => `Created categ
   res.status(201).json(cat);
 });
 
+// PUT /api/categories/reorder — bulk reorder (must be before /:id to avoid matching "reorder" as an ObjectId)
+router.put('/reorder', adminAuth, async (req, res) => {
+  try {
+    const { items } = req.body; // [{ id, order }]
+    if (!items?.length) return res.status(400).json({ message: 'No items provided' });
+    await Promise.all(items.map(i => Category.findByIdAndUpdate(i.id, { order: i.order })));
+    res.json({ message: 'Reordered' });
+  } catch (err) {
+    res.status(500).json({ message: 'Reorder failed' });
+  }
+});
+
 // PUT /api/categories/:id
 router.put('/:id', adminAuth, audit('UPDATED', 'Category', (req) => `Updated category ${req.params.id}`), async (req, res) => {
   const cat = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -82,13 +94,6 @@ router.delete('/:id', adminAuth, audit('DELETED', 'Category', (req) => `Deleted 
   await Category.updateMany({ parent: cat._id }, { parent: null });
   await Category.findByIdAndDelete(req.params.id);
   res.json({ message: 'Deleted' });
-});
-
-// PUT /api/categories/reorder — bulk reorder
-router.put('/reorder', adminAuth, async (req, res) => {
-  const { items } = req.body; // [{ id, order }]
-  await Promise.all(items.map(i => Category.findByIdAndUpdate(i.id, { order: i.order })));
-  res.json({ message: 'Reordered' });
 });
 
 async function uniqueSlug(name) {
