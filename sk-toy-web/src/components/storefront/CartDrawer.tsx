@@ -71,7 +71,8 @@ export default function CartDrawer() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 justify-start">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="px-5 py-4 flex flex-col gap-3">
             {items.map((item) => {
               const slug = item.slug || slugMap[item.productId];
               const href = slug ? `/products/${slug}` : null;
@@ -129,6 +130,7 @@ export default function CartDrawer() {
               </div>
               );
             })}
+            </div>
           </div>
         )}
 
