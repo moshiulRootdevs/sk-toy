@@ -330,7 +330,7 @@ function SortableCategoryRow({
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F4EEE3'; (e.currentTarget as HTMLElement).style.color = '#2A2420'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#8B8176'; }}
             >
-              <AdminIcon name="edit" size={14} />
+              <AdminIcon name="edit" size={18} />
             </button>
           </Tooltip>
           <Tooltip label="Delete">
@@ -340,7 +340,7 @@ function SortableCategoryRow({
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; (e.currentTarget as HTMLElement).style.color = '#9B2914'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#A89E92'; }}
             >
-              <AdminIcon name="trash" size={14} />
+              <AdminIcon name="trash" size={18} />
             </button>
           </Tooltip>
         </div>

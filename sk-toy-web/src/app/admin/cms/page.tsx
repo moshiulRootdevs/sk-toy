@@ -54,7 +54,7 @@ function SortableBlock({ id, block, index, onUpdate, onRemove }: {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: '#FAF6EF', borderBottom: '1px solid #F4EEE3' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
           <button {...attributes} {...listeners} style={{ cursor: 'grab', color: '#A89E92', background: 'none', border: 'none', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
           </button>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
           <span style={{ fontSize: 11, fontWeight: 700, color: '#8B8176', textTransform: 'uppercase', letterSpacing: '.07em' }}>{meta.label}</span>

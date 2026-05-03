@@ -10,6 +10,19 @@ const lineSchema = new mongoose.Schema({
   variant:  String,
 }, { _id: false });
 
+// Audit entry for super-admin edits — every adjustment must carry a note.
+// Used both for amount edits (subtotal/shipping/discount/total) and for line
+// edits ('lines'), where oldValue/newValue store a brief summary string.
+const adjustmentSchema = new mongoose.Schema({
+  field:        { type: String, required: true, enum: ['subtotal', 'shipping', 'discount', 'total', 'lines', 'customerName', 'phone', 'altPhone', 'address', 'area', 'district'] },
+  oldValue:     mongoose.Schema.Types.Mixed,
+  newValue:     mongoose.Schema.Types.Mixed,
+  note:         { type: String, required: true, trim: true },
+  by:           { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  byName:       String,
+  at:           { type: Date, default: Date.now },
+}, { _id: false });
+
 const orderSchema = new mongoose.Schema({
   orderNo:       { type: String, unique: true },
   customer:      { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
@@ -45,6 +58,8 @@ const orderSchema = new mongoose.Schema({
   trackingNo:  String,
   // Internal
   staffNote:   String,
+  // Audit trail of super-admin amount edits (subtotal/shipping/discount/total).
+  adjustments: { type: [adjustmentSchema], default: [] },
 }, { timestamps: true });
 
 // Auto-generate order number before save

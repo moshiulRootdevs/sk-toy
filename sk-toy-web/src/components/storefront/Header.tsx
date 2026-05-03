@@ -563,6 +563,24 @@ export default function Header({ initialSettings, initialCategories }: { initial
                 </svg>
               </button>
 
+              {settings?.store?.phone?.trim() && (
+                <a
+                  href={`tel:${settings.store.phone.replace(/[^+\d]/g, '')}`}
+                  aria-label={`Call us at ${settings.store.phone}`}
+                  className="inline-flex items-center gap-2 sm:gap-2.5 sm:pl-1.5 sm:pr-3 sm:py-1 sm:rounded-full hover:bg-[#FFF5F8] transition-colors"
+                >
+                  <span className="inline-flex w-9 h-9 items-center justify-center rounded-full bg-[#FFE0EC] text-[#FF5B6E] shrink-0">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.07 15.07 0 0 1-6.59-6.59l2.2-2.2a1 1 0 0 0 .25-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z" />
+                    </svg>
+                  </span>
+                  <span className="hidden md:flex flex-col leading-[1.1] text-left">
+                    <span className="text-[9px] font-extrabold uppercase tracking-[.16em] text-[#FF6FB1]">Call Us Now</span>
+                    <span className="text-[13px] font-extrabold text-[#1F2F4A] whitespace-nowrap">{settings.store.phone.replace(/[^+\d]/g, '')}</span>
+                  </span>
+                </a>
+              )}
+
               <Tooltip label="Track Order">
                 <Link href="/track" className="hidden sm:inline-flex w-9 h-9 items-center justify-center rounded-full bg-[#D4EEF7] text-[#3FA1C5] hover:scale-110 hover:bg-[#6BC8E6] hover:text-white transition-all" aria-label="Track order">
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">

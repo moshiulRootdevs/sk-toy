@@ -797,7 +797,7 @@ export default function SettingsPage() {
                           style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: '1px solid #E8DFD2', background: '#FAF6EF', color: '#8B8176', textDecoration: 'none', cursor: 'pointer', transition: 'all .15s' }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#2A2420'; (e.currentTarget as HTMLElement).style.borderColor = '#D8CFBF'; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#8B8176'; (e.currentTarget as HTMLElement).style.borderColor = '#E8DFD2'; }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         </a>
                       </Tooltip>
                       <Tooltip label="Edit page">
@@ -805,7 +805,7 @@ export default function SettingsPage() {
                           style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: '1px solid #E8DFD2', background: '#FAF6EF', color: '#8B8176', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit' }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#2A2420'; (e.currentTarget as HTMLElement).style.borderColor = '#D8CFBF'; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#8B8176'; (e.currentTarget as HTMLElement).style.borderColor = '#E8DFD2'; }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                       </Tooltip>
                     </div>
@@ -1019,7 +1019,7 @@ function DragHandle({ listeners, attributes, color = '#A89E92' }: { listeners?: 
       aria-label="Drag to reorder"
       style={{ cursor: 'grab', touchAction: 'none', border: 0, background: 'transparent', padding: 6, color, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6 }}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
     </button>
   );
 }

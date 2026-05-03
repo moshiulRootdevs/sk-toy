@@ -129,6 +129,15 @@ export interface Order {
   courier?: string;
   trackingNo?: string;
   staffNote?: string;
+  adjustments?: Array<{
+    field: 'subtotal' | 'shipping' | 'discount' | 'total';
+    oldValue: number;
+    newValue: number;
+    note: string;
+    by?: string;
+    byName?: string;
+    at: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

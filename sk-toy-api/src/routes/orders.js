@@ -3,7 +3,6 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
 const Coupon = require('../models/Coupon');
-const ShippingZone = require('../models/ShippingZone');
 const Settings = require('../models/Settings');
 const { adminAuth, customerAuth, optionalCustomer } = require('../middleware/auth');
 const audit = require('../middleware/audit');
@@ -46,17 +45,21 @@ router.post('/', optionalCustomer, async (req, res) => {
     return { product: p._id, name: p.name, sku, image: variantImage || p.images?.[0] || '', price, qty: l.qty, variant: l.variant };
   });
 
-  // Shipping cost — fetch settings + matching zone in parallel
-  const [settings, matchedZone, defaultZone] = await Promise.all([
-    Settings.findOne({ key: 'global' }).lean(),
-    ShippingZone.findOne({ areas: { $in: [district || area] } }).lean(),
-    ShippingZone.findOne({ default: true }).lean(),
-  ]);
-  const zone = matchedZone || defaultZone;
-  let shippingCost = 60;
-  if (zone) {
-    shippingCost = subtotal >= zone.freeOver ? 0 : zone.flat;
-  } else if (settings && subtotal >= settings.policies.freeShippingOver) {
+  // Shipping cost — single source of truth is settings.shipping (admin edits
+  // these in Settings → Shipping). Inside vs Outside Dhaka is determined by
+  // the customer's district, never trusted from the client payload.
+  const settings = await Settings.findOne({ key: 'global' }).lean();
+  const isInsideDhaka = String(district || '').trim().toLowerCase() === 'dhaka';
+  const shippingConfig = isInsideDhaka
+    ? settings?.shipping?.insideDhaka
+    : settings?.shipping?.outsideDhaka;
+
+  const flat = typeof shippingConfig?.amount === 'number'
+    ? shippingConfig.amount
+    : (isInsideDhaka ? 60 : 120);
+  const freeOver = shippingConfig?.freeOver || 0;
+  let shippingCost = (freeOver > 0 && subtotal >= freeOver) ? 0 : flat;
+  if (settings?.policies?.freeShippingOver && subtotal >= settings.policies.freeShippingOver) {
     shippingCost = 0;
   }
 
@@ -251,6 +254,224 @@ router.get('/admin/:id', adminAuth, async (req, res) => {
 router.put('/admin/:id', adminAuth, audit('UPDATED', 'Order', (req) => `Updated order ${req.params.id}`), async (req, res) => {
   const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (!order) return res.status(404).json({ message: 'Not found' });
+  res.json(order);
+});
+
+// PATCH /api/orders/admin/:id/amounts — super-admin edits subtotal/shipping/
+// discount with a mandatory note. Each changed field is recorded in
+// order.adjustments for an audit trail. The total is recomputed from the
+// resulting subtotal + shipping − discount + giftWrapCost so it stays consistent.
+router.patch('/admin/:id/amounts', adminAuth, audit('UPDATED', 'Order', (req) => `Edited amounts on order ${req.params.id}`), async (req, res) => {
+  const note = String(req.body.note || '').trim();
+  if (!note) return res.status(400).json({ message: 'A note is required when editing order amounts.' });
+  if (req.user?.role !== 'super_admin') {
+    return res.status(403).json({ message: 'Only super admins can edit order amounts.' });
+  }
+
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ message: 'Not found' });
+
+  const changes = [];
+  for (const field of ['subtotal', 'shipping', 'discount']) {
+    if (req.body[field] === undefined || req.body[field] === null || req.body[field] === '') continue;
+    const newValue = Number(req.body[field]);
+    if (!Number.isFinite(newValue) || newValue < 0) {
+      return res.status(400).json({ message: `${field} must be a non-negative number.` });
+    }
+    const oldValue = Number(order[field] || 0);
+    if (newValue !== oldValue) {
+      changes.push({ field, oldValue, newValue });
+      order[field] = newValue;
+    }
+  }
+
+  if (!changes.length) return res.status(400).json({ message: 'No changes were made.' });
+
+  const recomputedTotal = Number(order.subtotal || 0) + Number(order.shipping || 0) + Number(order.giftWrapCost || 0) - Number(order.discount || 0);
+  if (recomputedTotal !== Number(order.total || 0)) {
+    changes.push({ field: 'total', oldValue: Number(order.total || 0), newValue: recomputedTotal });
+    order.total = recomputedTotal;
+  }
+
+  const stamp = { note, by: req.user?._id, byName: req.user?.name || req.user?.email || 'admin', at: new Date() };
+  for (const c of changes) order.adjustments.push({ ...c, ...stamp });
+
+  await order.save();
+  res.json(order);
+});
+
+// PATCH /api/orders/admin/:id/lines — super-admin edits an order on behalf of
+// the customer: add / remove / change qty / swap variants, plus optional
+// shipping & discount overrides. Mandatory note. Stock is corrected to match
+// the line diff. Subtotal + total are recomputed automatically.
+router.patch('/admin/:id/lines', adminAuth, audit('UPDATED', 'Order', (req) => `Edited items on order ${req.params.id}`), async (req, res) => {
+  if (req.user?.role !== 'super_admin') {
+    return res.status(403).json({ message: 'Only super admins can edit order items.' });
+  }
+  const note = String(req.body.note || '').trim();
+  if (!note) return res.status(400).json({ message: 'A note is required when editing order items.' });
+
+  const incoming = Array.isArray(req.body.lines) ? req.body.lines : null;
+  if (!incoming || incoming.length === 0) {
+    return res.status(400).json({ message: 'Order must have at least one item.' });
+  }
+
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ message: 'Not found' });
+
+  // Resolve all referenced products in one query.
+  const productIds = [...new Set(incoming.map((l) => String(l.product)).filter(Boolean))];
+  const products = await Product.find({ _id: { $in: productIds } });
+  const byId = new Map(products.map((p) => [String(p._id), p]));
+
+  // Build new line snapshots (price + sku from the current product/variant) and
+  // index the old lines so we can compute stock deltas per product+variant.
+  const oldKey = (l) => `${String(l.product)}::${l.variant || ''}`;
+  const oldQty = new Map();
+  for (const l of order.lines) oldQty.set(oldKey(l), (oldQty.get(oldKey(l)) || 0) + l.qty);
+
+  const resolved = [];
+  for (const raw of incoming) {
+    const qty = Number(raw.qty);
+    if (!Number.isFinite(qty) || qty < 1) {
+      return res.status(400).json({ message: 'Each line must have a qty of at least 1.' });
+    }
+    const product = byId.get(String(raw.product));
+    if (!product) return res.status(400).json({ message: `Product ${raw.product} not found.` });
+
+    let price = product.price;
+    let sku = product.sku;
+    let image = product.images?.[0] || '';
+    const variantName = raw.variant || '';
+    if (variantName && product.variants?.length) {
+      const v = product.variants.find((vv) => vv.name === variantName);
+      if (v) {
+        if (v.price) price = v.price;
+        if (v.sku) sku = v.sku;
+        if (v.image) image = v.image;
+      }
+    }
+    resolved.push({ product: product._id, name: product.name, sku, image, price, qty, variant: variantName });
+  }
+
+  const newQty = new Map();
+  for (const l of resolved) newQty.set(oldKey(l), (newQty.get(oldKey(l)) || 0) + l.qty);
+
+  // Stock adjustment: positive delta = more units sold => decrement stock.
+  const allKeys = new Set([...oldQty.keys(), ...newQty.keys()]);
+  const bulkOps = [];
+  for (const k of allKeys) {
+    const [productId, variantName] = k.split('::');
+    const delta = (newQty.get(k) || 0) - (oldQty.get(k) || 0);
+    if (delta === 0) continue;
+    if (variantName) {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: productId, 'variants.name': variantName },
+          update: { $inc: { stock: -delta, 'variants.$.stock': -delta, orderCount: delta } },
+        },
+      });
+    } else {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: productId },
+          update: { $inc: { stock: -delta, orderCount: delta } },
+        },
+      });
+    }
+  }
+  if (bulkOps.length) await Product.bulkWrite(bulkOps);
+
+  // Build a short before/after summary for the audit log.
+  const summarize = (lines) =>
+    lines.map((l) => `${l.name || l.product}${l.variant ? ` (${l.variant})` : ''} ×${l.qty}`).join(', ') || '—';
+  const oldSummary = summarize(order.lines);
+  const newSummary = summarize(resolved);
+
+  // Optional shipping / discount overrides — validate before applying.
+  const oldShipping = Number(order.shipping || 0);
+  const oldDiscount = Number(order.discount || 0);
+  let newShipping = oldShipping;
+  let newDiscount = oldDiscount;
+  if (req.body.shipping !== undefined && req.body.shipping !== null && req.body.shipping !== '') {
+    const v = Number(req.body.shipping);
+    if (!Number.isFinite(v) || v < 0) return res.status(400).json({ message: 'Shipping must be a non-negative number.' });
+    newShipping = v;
+  }
+  if (req.body.discount !== undefined && req.body.discount !== null && req.body.discount !== '') {
+    const v = Number(req.body.discount);
+    if (!Number.isFinite(v) || v < 0) return res.status(400).json({ message: 'Discount must be a non-negative number.' });
+    newDiscount = v;
+  }
+
+  // Recompute subtotal + total from the new lines and shipping / discount.
+  const newSubtotal = resolved.reduce((a, l) => a + l.price * l.qty, 0);
+  const newTotal = newSubtotal + newShipping + Number(order.giftWrapCost || 0) - newDiscount;
+
+  const stamp = { note, by: req.user._id, byName: req.user.name || req.user.email || 'admin', at: new Date() };
+  if (oldSummary !== newSummary) {
+    order.adjustments.push({ field: 'lines', oldValue: oldSummary, newValue: newSummary, ...stamp });
+  }
+  if (newSubtotal !== order.subtotal) {
+    order.adjustments.push({ field: 'subtotal', oldValue: order.subtotal, newValue: newSubtotal, ...stamp });
+  }
+  if (newShipping !== oldShipping) {
+    order.adjustments.push({ field: 'shipping', oldValue: oldShipping, newValue: newShipping, ...stamp });
+  }
+  if (newDiscount !== oldDiscount) {
+    order.adjustments.push({ field: 'discount', oldValue: oldDiscount, newValue: newDiscount, ...stamp });
+  }
+  if (newTotal !== order.total) {
+    order.adjustments.push({ field: 'total', oldValue: order.total, newValue: newTotal, ...stamp });
+  }
+
+  order.lines = resolved;
+  order.subtotal = newSubtotal;
+  order.shipping = newShipping;
+  order.discount = newDiscount;
+  order.total = newTotal;
+  await order.save();
+
+  res.json(order);
+});
+
+// PATCH /api/orders/admin/:id/address — super-admin updates the customer
+// contact / shipping address on the order. Mandatory note. Each changed
+// field is recorded as a separate adjustment entry. Note: this also
+// re-evaluates the shipping cost zone if district changes — but does NOT
+// auto-recompute, since the admin may have negotiated a custom shipping
+// price already (use Edit Items if shipping needs to follow the new district).
+router.patch('/admin/:id/address', adminAuth, audit('UPDATED', 'Order', (req) => `Edited address on order ${req.params.id}`), async (req, res) => {
+  if (req.user?.role !== 'super_admin') {
+    return res.status(403).json({ message: 'Only super admins can edit order address.' });
+  }
+  const note = String(req.body.note || '').trim();
+  if (!note) return res.status(400).json({ message: 'A note is required when editing the address.' });
+
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ message: 'Not found' });
+
+  const editable = ['customerName', 'phone', 'altPhone', 'address', 'area', 'district'];
+  const required = ['customerName', 'phone', 'address'];
+  const changes = [];
+  for (const field of editable) {
+    if (req.body[field] === undefined) continue;
+    const newValue = String(req.body[field] ?? '').trim();
+    if (required.includes(field) && !newValue) {
+      return res.status(400).json({ message: `${field} cannot be empty.` });
+    }
+    const oldValue = String(order[field] ?? '');
+    if (newValue !== oldValue) {
+      changes.push({ field, oldValue, newValue });
+      order[field] = newValue;
+    }
+  }
+  if (!changes.length) return res.status(400).json({ message: 'No changes were made.' });
+
+  const stamp = { note, by: req.user._id, byName: req.user.name || req.user.email || 'admin', at: new Date() };
+  for (const c of changes) order.adjustments.push({ ...c, ...stamp });
+
+  await order.save();
   res.json(order);
 });
 

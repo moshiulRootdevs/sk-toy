@@ -351,98 +351,61 @@ export default function CheckoutPage() {
             )}
           </section>
 
-          {/* Delivery zone */}
+          {/* Delivery zone — auto-selected from district */}
           <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-1 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FF9A4D]" /> Delivery Option</h2>
-            {form.district === DHAKA_DISTRICT && (
-              <p className="text-xs text-[#4FC081] mb-3 font-bold">
-                ✓ Inside Dhaka automatically selected based on your district
+            {!form.district ? (
+              <p className="text-xs text-gray-400 mt-2">
+                Select your district above — the delivery zone is set automatically.
               </p>
-            )}
-            {form.district && form.district !== DHAKA_DISTRICT && (
-              <p className="text-xs text-gray-400 mb-3">
-                Outside Dhaka selected based on your district
-              </p>
-            )}
-            {!form.district && (
-              <p className="text-xs text-gray-400 mb-3">
-                Select your district above to auto-detect, or choose manually
-              </p>
-            )}
-            <div className="space-y-3">
-              {([
-                {
-                  zone: 'inside' as const,
-                  title: insideTitle,
-                  description: insideDescription,
-                  baseAmount: insideBaseAmount,
-                  amount: insideAmount,
-                  freeOver: insideFreeOver,
-                },
-                {
-                  zone: 'outside' as const,
-                  title: outsideTitle,
-                  description: outsideDescription,
-                  baseAmount: outsideBaseAmount,
-                  amount: outsideAmount,
-                  freeOver: outsideFreeOver,
-                },
-              ]).map(({ zone, title, description, baseAmount, amount, freeOver }) => {
-                const isFree = amount === 0 && baseAmount > 0;
-                const amountUntilFree = freeOver > 0 ? freeOver - subtotal : 0;
-                return (
-                  <label
-                    key={zone}
-                    className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                      deliveryZone === zone
-                        ? 'border-[#FF6FB1] bg-[#FFF5F8]'
-                        : 'border-[#FFE0EC] hover:border-[#FFD4E6]'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="deliveryZone"
-                      value={zone}
-                      checked={deliveryZone === zone}
-                      onChange={() => setDeliveryZone(zone)}
-                      className="accent-[#FF6FB1] mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-gray-900">{title}</div>
-                      {description && (
-                        <div className="text-xs text-gray-500 mt-0.5">{description}</div>
-                      )}
-                      {/* free-delivery threshold hint */}
-                      {freeOver > 0 && !isFree && (
-                        <div className="text-xs text-[#4FC081] font-medium mt-1">
-                          Add {fmtTk(amountUntilFree)} more for free delivery
-                        </div>
-                      )}
-                      {isFree && (
-                        <div className="text-xs text-[#4FC081] font-medium mt-1">
-                          ✓ Free delivery applied on this order
-                        </div>
-                      )}
-                      {freeOver > 0 && (
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          Free for orders over {fmtTk(freeOver)}
-                        </div>
-                      )}
+            ) : (() => {
+              const isInside = form.district === DHAKA_DISTRICT;
+              const title       = isInside ? insideTitle       : outsideTitle;
+              const description = isInside ? insideDescription : outsideDescription;
+              const baseAmount  = isInside ? insideBaseAmount  : outsideBaseAmount;
+              const amount      = isInside ? insideAmount      : outsideAmount;
+              const freeOver    = isInside ? insideFreeOver    : outsideFreeOver;
+              const isFree = amount === 0 && baseAmount > 0;
+              const amountUntilFree = freeOver > 0 ? freeOver - subtotal : 0;
+              return (
+                <div className="mt-3 flex items-start gap-4 p-4 rounded-xl border-2 border-[#FF6FB1] bg-[#FFF5F8]">
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm text-gray-900">{title}</div>
+                    {description && (
+                      <div className="text-xs text-gray-500 mt-0.5">{description}</div>
+                    )}
+                    <div className="text-xs text-[#4FC081] font-bold mt-1">
+                      ✓ Auto-selected based on your district
                     </div>
-                    <div className="text-right shrink-0">
-                      {isFree ? (
-                        <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-sm font-extrabold text-[#4FC081]">FREE</span>
-                          <span className="text-xs text-gray-400 line-through">{fmtTk(baseAmount)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-extrabold text-[#FF5B6E]">{fmtTk(amount)}</span>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
+                    {freeOver > 0 && !isFree && (
+                      <div className="text-xs text-[#4FC081] font-medium mt-1">
+                        Add {fmtTk(amountUntilFree)} more for free delivery
+                      </div>
+                    )}
+                    {isFree && (
+                      <div className="text-xs text-[#4FC081] font-medium mt-1">
+                        ✓ Free delivery applied on this order
+                      </div>
+                    )}
+                    {freeOver > 0 && (
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        Free for orders over {fmtTk(freeOver)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    {isFree ? (
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-sm font-extrabold text-[#4FC081]">FREE</span>
+                        <span className="text-xs text-gray-400 line-through">{fmtTk(baseAmount)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-extrabold text-[#FF5B6E]">{fmtTk(amount)}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </section>
 
           {/* Coupon */}

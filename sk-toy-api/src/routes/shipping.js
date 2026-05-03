@@ -24,14 +24,23 @@ router.get('/options', async (req, res) => {
   });
 });
 
-// Public: get shipping cost for area + subtotal
+// Public: get shipping cost for area + subtotal — uses settings.shipping so
+// it stays in sync with the admin Settings → Shipping page everywhere.
 router.post('/calculate', async (req, res) => {
-  const { area, district, subtotal } = req.body;
-  const zone = await ShippingZone.findOne({ areas: { $in: [district || area] }, active: true }) ||
-               await ShippingZone.findOne({ default: true, active: true });
-  if (!zone) return res.json({ cost: 60, etaDays: '2-4' });
-  const cost = subtotal >= zone.freeOver ? 0 : zone.flat;
-  res.json({ cost, etaDays: zone.etaDays, zoneName: zone.name });
+  const { district, subtotal = 0 } = req.body;
+  const settings = await Settings.findOne({ key: 'global' }).lean();
+  const isInsideDhaka = String(district || '').trim().toLowerCase() === 'dhaka';
+  const cfg = isInsideDhaka ? settings?.shipping?.insideDhaka : settings?.shipping?.outsideDhaka;
+
+  const flat = typeof cfg?.amount === 'number' ? cfg.amount : (isInsideDhaka ? 60 : 120);
+  const freeOver = cfg?.freeOver || 0;
+  let cost = (freeOver > 0 && subtotal >= freeOver) ? 0 : flat;
+  if (settings?.policies?.freeShippingOver && subtotal >= settings.policies.freeShippingOver) cost = 0;
+
+  res.json({
+    cost,
+    zoneName: isInsideDhaka ? (cfg?.title || 'Inside Dhaka') : (cfg?.title || 'Outside Dhaka'),
+  });
 });
 
 // Zones

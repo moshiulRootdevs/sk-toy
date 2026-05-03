@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { Order } from '@/types';
 import { fmtTk, fmtDateTime } from '@/lib/utils';
+import { useAuthStore } from '@/lib/store';
 import Pill, { statusColor } from '@/components/ui/Pill';
 import Table from '@/components/ui/Table';
 import Pagination from '@/components/ui/Pagination';
@@ -49,8 +50,23 @@ export default function OrdersPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selected, setSelected] = useState<Order | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [trackingNo, setTrackingNo] = useState('');
+  const adminUser = useAuthStore((s) => s.adminUser);
+  const isSuperAdmin = adminUser?.role === 'super_admin';
+  const [editItemsOpen, setEditItemsOpen] = useState(false);
+  type DraftLine = { product: string; name: string; sku?: string; image?: string; price: number; qty: number; variant?: string };
+  const [draftLines, setDraftLines] = useState<DraftLine[]>([]);
+  const [draftShipping, setDraftShipping] = useState('');
+  const [draftDiscount, setDraftDiscount] = useState('');
+  const [draftNote, setDraftNote] = useState('');
+  const [productSearch, setProductSearch] = useState('');
+  const [productSearchOpen, setProductSearchOpen] = useState(false);
+  const [editAddressOpen, setEditAddressOpen] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    customerName: '', phone: '', altPhone: '', address: '', area: '', district: '', note: '',
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-orders', { page, status, search, dateFrom, dateTo }],
@@ -75,6 +91,108 @@ export default function OrdersPage() {
     },
     onError: () => toast.error('Failed to update'),
   });
+
+  const editLines = useMutation({
+    mutationFn: ({ id, lines, shipping, discount, note }: { id: string; lines: DraftLine[]; shipping?: number; discount?: number; note: string }) =>
+      api.patch(`/orders/admin/${id}/lines`, {
+        note,
+        shipping,
+        discount,
+        lines: lines.map((l) => ({ product: l.product, qty: l.qty, variant: l.variant })),
+      }).then((r) => r.data),
+    onSuccess: (updated: Order) => {
+      toast.success('Order items updated');
+      qc.invalidateQueries({ queryKey: ['admin-orders'] });
+      qc.invalidateQueries({ queryKey: ['admin-orders-stats'] });
+      setSelected(detailOpen ? updated : null);
+      setEditItemsOpen(false);
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update items'),
+  });
+
+  function openEditItems() {
+    if (!selected) return;
+    setDraftLines(
+      selected.lines.map((l: any) => ({
+        product: typeof l.product === 'object' ? l.product._id : l.product,
+        name: l.name,
+        sku: l.sku,
+        image: l.image,
+        price: l.price,
+        qty: l.qty,
+        variant: l.variant,
+      })),
+    );
+    setDraftShipping(String(selected.shipping ?? 0));
+    setDraftDiscount(String(selected.discount ?? 0));
+    setDraftNote('');
+    setProductSearch('');
+    setProductSearchOpen(false);
+    setEditItemsOpen(true);
+  }
+
+  const editAddress = useMutation({
+    mutationFn: ({ id, ...payload }: any) =>
+      api.patch(`/orders/admin/${id}/address`, payload).then((r) => r.data),
+    onSuccess: (updated: Order) => {
+      toast.success('Address updated');
+      qc.invalidateQueries({ queryKey: ['admin-orders'] });
+      setSelected(updated);
+      setEditAddressOpen(false);
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update address'),
+  });
+
+  function openEditAddress() {
+    if (!selected) return;
+    setAddressForm({
+      customerName: selected.customerName || '',
+      phone:        selected.phone        || '',
+      altPhone:     selected.altPhone     || '',
+      address:      selected.address      || '',
+      area:         selected.area         || '',
+      district:     selected.district     || '',
+      note: '',
+    });
+    setEditAddressOpen(true);
+  }
+
+  function submitEditAddress() {
+    if (!selected) return;
+    if (!addressForm.note.trim()) { toast.error('Please add a note explaining the change'); return; }
+    if (!addressForm.customerName.trim() || !addressForm.phone.trim() || !addressForm.address.trim()) {
+      toast.error('Name, phone, and address are required');
+      return;
+    }
+    editAddress.mutate({
+      id: selected._id,
+      customerName: addressForm.customerName.trim(),
+      phone:        addressForm.phone.trim(),
+      altPhone:     addressForm.altPhone.trim(),
+      address:      addressForm.address.trim(),
+      area:         addressForm.area.trim(),
+      district:     addressForm.district.trim(),
+      note:         addressForm.note.trim(),
+    });
+  }
+
+  function submitEditItems() {
+    if (!selected) return;
+    if (!draftNote.trim()) { toast.error('Please add a note explaining the change'); return; }
+    if (draftLines.length === 0) { toast.error('Order must have at least one item'); return; }
+    if (draftLines.some((l) => l.qty < 1)) { toast.error('Each line must have qty ≥ 1'); return; }
+    const shippingVal = draftShipping === '' ? undefined : Number(draftShipping);
+    const discountVal = draftDiscount === '' ? undefined : Number(draftDiscount);
+    if (shippingVal !== undefined && (!Number.isFinite(shippingVal) || shippingVal < 0)) { toast.error('Shipping must be ≥ 0'); return; }
+    if (discountVal !== undefined && (!Number.isFinite(discountVal) || discountVal < 0)) { toast.error('Discount must be ≥ 0'); return; }
+    editLines.mutate({
+      id: selected._id,
+      lines: draftLines,
+      shipping: shippingVal,
+      discount: discountVal,
+      note: draftNote.trim(),
+    });
+  }
 
   const orders: Order[] = data?.orders || [];
 
@@ -171,10 +289,46 @@ export default function OrdersPage() {
               <div style={{ fontSize: 11, color: '#8B8176' }}>{new Date(o.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
             </div>
           )},
+          ...(isSuperAdmin ? [{
+            key: 'actions',
+            header: '',
+            render: (o: any) => (
+              <Tooltip label="Edit items">
+                <button
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    setSelected(o);
+                    setNewStatus('');
+                    setTrackingNo('');
+                    setDraftLines((o.lines || []).map((l: any) => ({
+                      product: typeof l.product === 'object' ? l.product._id : l.product,
+                      name: l.name, sku: l.sku, image: l.image,
+                      price: l.price, qty: l.qty, variant: l.variant,
+                    })));
+                    setDraftShipping(String(o.shipping ?? 0));
+                    setDraftDiscount(String(o.discount ?? 0));
+                    setDraftNote('');
+                    setProductSearch('');
+                    setProductSearchOpen(false);
+                    setEditItemsOpen(true);
+                  }}
+                  style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, borderRadius: 6, color: '#9B2914', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                  aria-label="Edit items"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              </Tooltip>
+            ),
+          }] : []),
         ]}
         data={orders as any[]}
         loading={isLoading}
-        onRowClick={(o: any) => { setSelected(o); setNewStatus(''); setTrackingNo(''); }}
+        onRowClick={(o: any) => { setSelected(o); setDetailOpen(true); setNewStatus(''); setTrackingNo(''); }}
         emptyText="No orders found"
       />
 
@@ -185,11 +339,312 @@ export default function OrdersPage() {
         <Pagination page={page} pages={data?.pages || 1} onChange={setPage} />
       </div>
 
-      {selected && (
-        <Modal open={!!selected} onClose={() => setSelected(null)} title={`Order #${selected.orderNo}`} size="full">
-          <OrderDetail selected={selected} newStatus={newStatus} setNewStatus={setNewStatus} trackingNo={trackingNo} setTrackingNo={setTrackingNo} updateStatus={updateStatus} ORDER_STATUSES={ORDER_STATUSES} onPhoneClick={(phone: string) => { setSelected(null); setSearch(phone); }} />
+      {selected && detailOpen && (
+        <Modal open={detailOpen} onClose={() => { setDetailOpen(false); setSelected(null); }} title={`Order #${selected.orderNo}`} size="full">
+          <OrderDetail
+            selected={selected}
+            newStatus={newStatus}
+            setNewStatus={setNewStatus}
+            trackingNo={trackingNo}
+            setTrackingNo={setTrackingNo}
+            updateStatus={updateStatus}
+            ORDER_STATUSES={ORDER_STATUSES}
+            onPhoneClick={(phone: string) => { setDetailOpen(false); setSelected(null); setSearch(phone); }}
+            isSuperAdmin={isSuperAdmin}
+            onEditItems={openEditItems}
+            onEditAddress={openEditAddress}
+          />
         </Modal>
       )}
+
+      {selected && editItemsOpen && (
+        <Modal open={editItemsOpen} onClose={() => { setEditItemsOpen(false); if (!detailOpen) setSelected(null); }} title={`Edit items — Order #${selected.orderNo}`} size="lg">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 4 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {draftLines.map((l, i) => (
+                <div key={`${l.product}-${l.variant || ''}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8, border: '1px solid #F4EEE3', borderRadius: 10, background: '#FDFAF6' }}>
+                  {l.image && (
+                    <Image src={imgUrl(l.image)} alt={l.name} width={44} height={44} style={{ borderRadius: 6, objectFit: 'cover' }} unoptimized />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#2A2420', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+                    <div style={{ fontSize: 11.5, color: '#8B8176' }}>
+                      {l.variant ? `${l.variant} · ` : ''}{fmtTk(l.price)} each
+                    </div>
+                  </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <button
+                      onClick={() => setDraftLines((dl) => dl.map((x, xi) => xi === i ? { ...x, qty: Math.max(1, x.qty - 1) } : x))}
+                      style={{ width: 26, height: 26, border: '1px solid #E8DFD2', borderRadius: 6, background: '#FFF', cursor: 'pointer', fontSize: 14, color: '#5A5048', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' }}
+                    >−</button>
+                    <input
+                      type="number"
+                      min={1}
+                      value={l.qty}
+                      onChange={(e) => {
+                        const q = Math.max(1, Number(e.target.value) || 1);
+                        setDraftLines((dl) => dl.map((x, xi) => xi === i ? { ...x, qty: q } : x));
+                      }}
+                      style={{ width: 50, textAlign: 'center', padding: '4px 6px', border: '1px solid #E8DFD2', borderRadius: 6, fontSize: 13, background: '#FAF6EF', outline: 'none', fontFamily: 'inherit', color: '#2A2420' }}
+                    />
+                    <button
+                      onClick={() => setDraftLines((dl) => dl.map((x, xi) => xi === i ? { ...x, qty: x.qty + 1 } : x))}
+                      style={{ width: 26, height: 26, border: '1px solid #E8DFD2', borderRadius: 6, background: '#FFF', cursor: 'pointer', fontSize: 14, color: '#5A5048', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' }}
+                    >+</button>
+                  </div>
+                  <div style={{ width: 80, textAlign: 'right', fontWeight: 600, fontSize: 13, color: '#2A2420' }}>{fmtTk(l.price * l.qty)}</div>
+                  <button
+                    onClick={() => setDraftLines((dl) => dl.filter((_, xi) => xi !== i))}
+                    title="Remove"
+                    style={{ border: 0, background: 'none', cursor: 'pointer', color: '#EC5D4A', padding: 4, display: 'inline-flex', borderRadius: 6, fontFamily: 'inherit' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              ))}
+              {draftLines.length === 0 && (
+                <div style={{ padding: 16, border: '1px dashed #FFD4E6', borderRadius: 8, color: '#9B2914', fontSize: 12, textAlign: 'center' }}>
+                  Order has no items. Add at least one product below to save.
+                </div>
+              )}
+            </div>
+
+            <ProductSearchAdder
+              search={productSearch}
+              setSearch={setProductSearch}
+              open={productSearchOpen}
+              setOpen={setProductSearchOpen}
+              onPick={(p: any, variant?: string) => {
+                const variantPrice = variant ? p.variants?.find((v: any) => v.name === variant)?.price : undefined;
+                const variantSku = variant ? p.variants?.find((v: any) => v.name === variant)?.sku : undefined;
+                const variantImage = variant ? p.variants?.find((v: any) => v.name === variant)?.image : undefined;
+                setDraftLines((dl) => {
+                  const existingIdx = dl.findIndex((l) => l.product === p._id && (l.variant || '') === (variant || ''));
+                  if (existingIdx >= 0) {
+                    return dl.map((x, i) => i === existingIdx ? { ...x, qty: x.qty + 1 } : x);
+                  }
+                  return [...dl, {
+                    product: p._id,
+                    name: p.name,
+                    sku: variantSku || p.sku,
+                    image: variantImage || p.images?.[0],
+                    price: variantPrice || p.price,
+                    qty: 1,
+                    variant: variant || '',
+                  }];
+                });
+                setProductSearch('');
+                setProductSearchOpen(false);
+              }}
+            />
+
+            <div style={{ borderTop: '1px solid #F4EEE3', paddingTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <AmountInput label="Shipping" value={draftShipping} onChange={setDraftShipping} />
+              <AmountInput label="Discount" value={draftDiscount} onChange={setDraftDiscount} />
+            </div>
+            {(() => {
+              const sub = draftLines.reduce((a, l) => a + l.price * l.qty, 0);
+              const ship = Number(draftShipping || 0);
+              const disc = Number(draftDiscount || 0);
+              const gw   = Number((selected as any)?.giftWrapCost || 0);
+              const tot  = sub + ship + gw - disc;
+              return (
+                <div style={{ background: '#FFF8FB', border: '1px solid #FFE0EC', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12.5 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8B8176' }}><span>Subtotal</span><span>{fmtTk(sub)}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8B8176' }}><span>Shipping</span><span>{fmtTk(ship)}</span></div>
+                  {gw > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#8B8176' }}><span>Gift wrap</span><span>{fmtTk(gw)}</span></div>
+                  )}
+                  {disc > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4FA36A' }}><span>Discount</span><span>−{fmtTk(disc)}</span></div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 14, color: '#2A2420', borderTop: '1px solid #FFE0EC', paddingTop: 6, marginTop: 4 }}>
+                    <span>New total</span><span>{fmtTk(tot)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2A2420', marginBottom: 4 }}>
+                Reason / Note <span style={{ color: '#EC5D4A' }}>*</span>
+              </label>
+              <textarea
+                value={draftNote}
+                onChange={(e) => setDraftNote(e.target.value)}
+                placeholder="Why are you editing the items? (e.g. customer called to remove a product, item out of stock, swap to a different variant…)"
+                rows={3}
+                style={{
+                  width: '100%', padding: '9px 12px', border: '1px solid #E8DFD2', borderRadius: 8,
+                  background: '#FAF6EF', fontSize: 13, color: '#2A2420', outline: 'none', fontFamily: 'inherit', resize: 'vertical',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <Button onClick={() => { setEditItemsOpen(false); if (!detailOpen) setSelected(null); }} variant="ghost">Cancel</Button>
+              <Button onClick={submitEditItems} loading={editLines.isPending} disabled={!draftNote.trim() || draftLines.length === 0}>
+                Save changes
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {selected && editAddressOpen && (
+        <Modal open={editAddressOpen} onClose={() => setEditAddressOpen(false)} title={`Edit address — Order #${selected.orderNo}`} size="md">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 4 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <TextInput label="Customer name *" value={addressForm.customerName} onChange={(v) => setAddressForm((f) => ({ ...f, customerName: v }))} />
+              <TextInput label="Phone *"         value={addressForm.phone}        onChange={(v) => setAddressForm((f) => ({ ...f, phone: v }))} />
+              <TextInput label="Alternate phone" value={addressForm.altPhone}     onChange={(v) => setAddressForm((f) => ({ ...f, altPhone: v }))} />
+              <TextInput label="District"        value={addressForm.district}     onChange={(v) => setAddressForm((f) => ({ ...f, district: v }))} />
+              <TextInput label="Area / Thana"    value={addressForm.area}         onChange={(v) => setAddressForm((f) => ({ ...f, area: v }))} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2A2420', marginBottom: 4 }}>Address (line 1) <span style={{ color: '#EC5D4A' }}>*</span></label>
+              <textarea
+                value={addressForm.address}
+                onChange={(e) => setAddressForm((f) => ({ ...f, address: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #E8DFD2', borderRadius: 8, background: '#FAF6EF', fontSize: 13, color: '#2A2420', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
+              />
+            </div>
+            <div style={{ background: '#FFF8FB', border: '1px solid #FFE0EC', borderRadius: 8, padding: 10, fontSize: 12, color: '#5A5048' }}>
+              Changing district does <strong>not</strong> auto-update shipping cost. If the new district falls in a different shipping zone, use <strong>Edit Items</strong> to adjust shipping.
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2A2420', marginBottom: 4 }}>
+                Reason / Note <span style={{ color: '#EC5D4A' }}>*</span>
+              </label>
+              <textarea
+                value={addressForm.note}
+                onChange={(e) => setAddressForm((f) => ({ ...f, note: e.target.value }))}
+                placeholder="Why are you updating the address? (e.g. customer requested delivery to a different address, typo in original entry…)"
+                rows={3}
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid #E8DFD2', borderRadius: 8, background: '#FAF6EF', fontSize: 13, color: '#2A2420', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <Button onClick={() => setEditAddressOpen(false)} variant="ghost">Cancel</Button>
+              <Button onClick={submitEditAddress} loading={editAddress.isPending} disabled={!addressForm.note.trim()}>
+                Save changes
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+    </div>
+  );
+}
+
+function ProductSearchAdder({ search, setSearch, open, setOpen, onPick }: {
+  search: string; setSearch: (v: string) => void;
+  open: boolean; setOpen: (v: boolean) => void;
+  onPick: (product: any, variant?: string) => void;
+}) {
+  const { data, isFetching } = useQuery({
+    queryKey: ['order-edit-product-search', search],
+    queryFn: () => api.get('/products/admin/all', { params: { search: search.trim(), limit: 10 } }).then((r) => r.data),
+    enabled: open && search.trim().length >= 2,
+    staleTime: 30_000,
+  });
+  const products: any[] = data?.products || [];
+
+  return (
+    <div style={{ borderTop: '1px solid #F4EEE3', paddingTop: 10, position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89E92" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            placeholder="Search products to add (name or SKU, min 2 chars)"
+            style={{
+              width: '100%', padding: '8px 12px 8px 32px', border: '1px solid #E8DFD2', borderRadius: 8,
+              background: '#FAF6EF', fontSize: 13, color: '#2A2420', outline: 'none', fontFamily: 'inherit',
+            }}
+          />
+        </div>
+      </div>
+      {open && search.trim().length >= 2 && (
+        <div style={{ marginTop: 6, border: '1px solid #F4EEE3', borderRadius: 8, background: '#FFF', maxHeight: 240, overflowY: 'auto' }}>
+          {isFetching && <div style={{ padding: 10, fontSize: 12, color: '#8B8176' }}>Searching…</div>}
+          {!isFetching && products.length === 0 && <div style={{ padding: 10, fontSize: 12, color: '#8B8176' }}>No matches</div>}
+          {!isFetching && products.map((p: any) => (
+            <div key={p._id} style={{ borderBottom: '1px solid #F4EEE3' }}>
+              {(p.variants?.length ? p.variants : [null]).map((v: any) => {
+                const variantName = v?.name || '';
+                const price = v?.price || p.price;
+                const stock = v ? v.stock : p.stock;
+                return (
+                  <button
+                    key={`${p._id}-${variantName}`}
+                    type="button"
+                    onClick={() => onPick(p, variantName)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px',
+                      border: 0, background: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FFF8FB'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                  >
+                    {p.images?.[0] && (
+                      <Image src={imgUrl(v?.image || p.images[0])} alt={p.name} width={32} height={32} style={{ borderRadius: 4, objectFit: 'cover' }} unoptimized />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: '#2A2420', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.name}{variantName ? ` — ${variantName}` : ''}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#8B8176' }}>{fmtTk(price)} · stock {stock}</div>
+                    </div>
+                    <span style={{ fontSize: 11, color: '#9B2914', fontWeight: 600 }}>+ Add</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2A2420', marginBottom: 4 }}>{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width: '100%', padding: '9px 12px', border: '1px solid #E8DFD2', borderRadius: 8,
+          background: '#FAF6EF', fontSize: 13, color: '#2A2420', outline: 'none', fontFamily: 'inherit',
+        }}
+      />
+    </div>
+  );
+}
+
+function AmountInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2A2420', marginBottom: 4 }}>{label}</label>
+      <input
+        type="number"
+        min="0"
+        step="1"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width: '100%', padding: '9px 12px', border: '1px solid #E8DFD2', borderRadius: 8,
+          background: '#FAF6EF', fontSize: 13, color: '#2A2420', outline: 'none', fontFamily: 'inherit',
+        }}
+      />
     </div>
   );
 }
@@ -259,7 +714,7 @@ const PAYMENT_STATUSES = [
   { value: 'failed',    label: 'Failed',    color: '#EC5D4A' },
 ];
 
-function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackingNo, updateStatus, ORDER_STATUSES, onPhoneClick }: any) {
+function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackingNo, updateStatus, ORDER_STATUSES, onPhoneClick, isSuperAdmin, onEditItems, onEditAddress }: any) {
   const [paymentStatus, setPaymentStatus] = useState(selected.paymentStatus || 'pending');
   const [staffNote, setStaffNote] = useState(selected.staffNote || '');
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
@@ -318,7 +773,17 @@ function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackin
                 )}
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#8B8176', marginBottom: 3 }}>Shipping address</div>
+                <div style={{ fontSize: 11, color: '#8B8176', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Shipping address</span>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={onEditAddress}
+                      style={{ border: 0, background: 'none', padding: 0, color: '#9B2914', cursor: 'pointer', fontSize: 10.5, fontWeight: 600, fontFamily: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
                 <div style={{ fontWeight: 500, color: '#2A2420' }}>{selected.address}</div>
                 <div style={{ fontSize: 11, color: '#A89E92' }}>{[selected.area, selected.district].filter(Boolean).join(', ')}</div>
               </div>
@@ -339,7 +804,25 @@ function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackin
             </div>
 
             <div>
-              <div style={{ fontWeight: 600, color: '#2A2420', fontSize: 13, marginBottom: 10 }}>Items</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontWeight: 600, color: '#2A2420', fontSize: 13 }}>Items</div>
+                {isSuperAdmin && (
+                  <button
+                    onClick={onEditItems}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '5px 11px', borderRadius: 8, border: '1px solid #FFD4E6', background: '#FFF5F8',
+                      color: '#9B2914', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Edit Items
+                  </button>
+                )}
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {selected.lines.map((line: any, i: number) => {
                   const productId = typeof line.product === 'object' ? (line.product as any)?._id : line.product;
@@ -434,6 +917,20 @@ function OrderDetail({ selected, newStatus, setNewStatus, trackingNo, setTrackin
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 15, borderTop: '1px solid #F4EEE3', paddingTop: 8 }}>
                   <span>Total</span><span>{fmtTk(selected.total)}</span>
                 </div>
+                {selected.adjustments && selected.adjustments.length > 0 && (
+                  <div style={{ marginTop: 10, padding: 10, background: '#FFF8FB', border: '1px solid #FFE0EC', borderRadius: 8, fontSize: 11.5 }}>
+                    <div style={{ fontWeight: 700, color: '#9B2914', marginBottom: 6 }}>Adjustment history</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {selected.adjustments.slice().reverse().map((a: any, i: number) => (
+                        <div key={i} style={{ borderLeft: '2px solid #FF6FB1', paddingLeft: 8, color: '#5A5048' }}>
+                          <div><strong style={{ color: '#1F2F4A', textTransform: 'capitalize' }}>{a.field}</strong>: {fmtTk(a.oldValue)} → {fmtTk(a.newValue)}</div>
+                          <div style={{ fontStyle: 'italic', marginTop: 2 }}>"{a.note}"</div>
+                          <div style={{ fontSize: 10.5, color: '#A89E92', marginTop: 2 }}>{a.byName || 'admin'} · {fmtDateTime(a.at)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

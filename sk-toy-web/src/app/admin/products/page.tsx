@@ -213,7 +213,7 @@ export default function AdminProductsPage() {
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = '#E8F1FA'; el.style.color = '#3F8FBF'; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'none'; el.style.color = '#8B8176'; }}
                 >
-                  <AdminIcon name="eye" size={14} />
+                  <AdminIcon name="eye" size={18} />
                 </a>
                 </Tooltip>
                 <Tooltip label="Edit">
@@ -223,7 +223,7 @@ export default function AdminProductsPage() {
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = '#F4EEE3'; el.style.color = '#2A2420'; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'none'; el.style.color = '#8B8176'; }}
                 >
-                  <AdminIcon name="edit" size={14} />
+                  <AdminIcon name="edit" size={18} />
                 </button>
                 </Tooltip>
                 <Tooltip label="Delete">
@@ -233,7 +233,7 @@ export default function AdminProductsPage() {
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = '#FBDED8'; el.style.color = '#9B2914'; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'none'; el.style.color = '#A89E92'; }}
                 >
-                  <AdminIcon name="trash" size={14} />
+                  <AdminIcon name="trash" size={18} />
                 </button>
                 </Tooltip>
               </div>
