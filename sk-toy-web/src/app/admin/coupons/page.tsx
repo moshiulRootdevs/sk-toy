@@ -15,7 +15,7 @@ import Pill, { statusColor } from '@/components/ui/Pill';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AdminIcon from '@/components/admin/AdminIcon';
 
-const EMPTY = { code: '', type: 'percent', value: '', minSpend: '', limit: '', startsAt: '', endsAt: '', status: 'active' };
+const EMPTY = { code: '', type: 'percent', value: '', maxDiscount: '', minSpend: '', limit: '', startsAt: '', endsAt: '', status: 'active' };
 
 export default function CouponsPage() {
   const qc = useQueryClient();
@@ -50,7 +50,9 @@ export default function CouponsPage() {
 
   function openEdit(c: Coupon) {
     setForm({
-      code: c.code, type: c.type, value: c.value, minSpend: c.minSpend || '',
+      code: c.code, type: c.type, value: c.value,
+      maxDiscount: c.maxDiscount || '',
+      minSpend: c.minSpend || '',
       limit: c.limit || '', startsAt: c.startsAt ? c.startsAt.split('T')[0] : '',
       endsAt: c.endsAt ? c.endsAt.split('T')[0] : '', status: c.status,
     });
@@ -114,26 +116,37 @@ export default function CouponsPage() {
       <Modal open={editCoupon !== null} onClose={() => setEditCoupon(null)} title={isNew ? 'Add Coupon' : 'Edit Coupon'} size="md">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="Code *" value={form.code} onChange={(e) => setForm((f: any) => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="SAVE20" />
-          <Select label="Type" value={form.type} onChange={set('type')} options={[
+          <Select label="Type" value={form.type} onChange={set('type')} storefront options={[
             { value: 'percent', label: 'Percentage' },
-            { value: 'fixed', label: 'Fixed Amount' },
-            { value: 'shipping', label: 'Free Shipping' },
+            { value: 'fixed',   label: 'Flat' },
           ]} />
-          <Input label="Value" type="number" value={form.value} onChange={set('value')} placeholder={form.type === 'percent' ? '20 (%)' : '100 (৳)'} />
+          <Input label={form.type === 'percent' ? 'Value (%)' : 'Value (৳)'} type="number" value={form.value} onChange={set('value')} placeholder={form.type === 'percent' ? '20' : '100'} />
+          <Input
+            label="Max Discount (৳)"
+            type="number"
+            value={form.maxDiscount}
+            onChange={set('maxDiscount')}
+            disabled={form.type !== 'percent'}
+            hint={form.type === 'percent' ? 'Cap on percent discount (optional)' : 'Only applies to percentage coupons'}
+            placeholder="e.g. 500"
+          />
           <Input label="Min. Spend (৳)" type="number" value={form.minSpend} onChange={set('minSpend')} />
           <Input label="Usage Limit" type="number" value={form.limit} onChange={set('limit')} hint="Leave blank for unlimited" />
-          <Select label="Status" value={form.status} onChange={set('status')} options={[
-            { value: 'active', label: 'Active' },
-            { value: 'inactive', label: 'Inactive' },
-          ]} />
           <Input label="Start Date" type="date" value={form.startsAt} onChange={set('startsAt')} />
           <Input label="End Date" type="date" value={form.endsAt} onChange={set('endsAt')} />
+          <div className="sm:col-span-2">
+            <Select label="Status" value={form.status} onChange={set('status')} storefront options={[
+              { value: 'active',   label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+            ]} />
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
           <Button variant="outline" size="sm" onClick={() => setEditCoupon(null)}>Cancel</Button>
           <Button size="sm" onClick={() => saveMutation.mutate({
             ...form,
             value: Number(form.value),
+            maxDiscount: form.type === 'percent' && form.maxDiscount ? Number(form.maxDiscount) : undefined,
             minSpend: form.minSpend ? Number(form.minSpend) : undefined,
             limit: form.limit ? Number(form.limit) : undefined
           })} loading={saveMutation.isPending}>

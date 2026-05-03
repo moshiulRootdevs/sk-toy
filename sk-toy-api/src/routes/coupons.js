@@ -12,10 +12,13 @@ router.post('/validate', async (req, res) => {
   if (subtotal < coupon.minSpend) return res.status(400).json({ message: `Minimum order ৳${coupon.minSpend} required` });
 
   let discount = 0;
-  if (coupon.type === 'percent') discount = Math.round(subtotal * coupon.value / 100);
+  if (coupon.type === 'percent') {
+    discount = Math.round(subtotal * coupon.value / 100);
+    if (coupon.maxDiscount && discount > coupon.maxDiscount) discount = coupon.maxDiscount;
+  }
   else if (coupon.type === 'fixed') discount = coupon.value;
 
-  res.json({ valid: true, discount, coupon: { code: coupon.code, type: coupon.type, value: coupon.value, description: coupon.description } });
+  res.json({ valid: true, discount, coupon: { code: coupon.code, type: coupon.type, value: coupon.value, maxDiscount: coupon.maxDiscount, description: coupon.description } });
 });
 
 // Admin CRUD

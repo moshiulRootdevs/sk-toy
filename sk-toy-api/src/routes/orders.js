@@ -12,7 +12,7 @@ const { sendOrderConfirmation } = require('../utils/mailer');
 
 // POST /api/orders — place order
 router.post('/', optionalCustomer, async (req, res) => {
-  const { lines, customerName, customerEmail, phone, altPhone, address, area, district, paymentMethod, coupon: couponCode, giftWrap, note } = req.body;
+  const { lines, customerName, customerEmail, phone, altPhone, address, area, district, deliveryZone, paymentMethod, coupon: couponCode, giftWrap, note } = req.body;
 
   if (!lines?.length || !customerName || !phone || !address || !paymentMethod) {
     return res.status(400).json({ message: 'Missing required fields' });
@@ -46,10 +46,13 @@ router.post('/', optionalCustomer, async (req, res) => {
   });
 
   // Shipping cost — single source of truth is settings.shipping (admin edits
-  // these in Settings → Shipping). Inside vs Outside Dhaka is determined by
-  // the customer's district, never trusted from the client payload.
+  // these in Settings → Shipping). The customer chooses Inside/Outside Dhaka
+  // at checkout; fall back to district-based selection if the client omits it.
   const settings = await Settings.findOne({ key: 'global' }).lean();
-  const isInsideDhaka = String(district || '').trim().toLowerCase() === 'dhaka';
+  const districtIsDhaka = String(district || '').trim().toLowerCase() === 'dhaka';
+  const isInsideDhaka = deliveryZone === 'inside' || deliveryZone === 'outside'
+    ? deliveryZone === 'inside'
+    : districtIsDhaka;
   const shippingConfig = isInsideDhaka
     ? settings?.shipping?.insideDhaka
     : settings?.shipping?.outsideDhaka;
@@ -68,7 +71,10 @@ router.post('/', optionalCustomer, async (req, res) => {
   if (couponCode) {
     const couponDoc = await Coupon.findOne({ code: couponCode.toUpperCase(), status: 'active' });
     if (couponDoc && (!couponDoc.endsAt || couponDoc.endsAt > new Date()) && subtotal >= couponDoc.minSpend) {
-      if (couponDoc.type === 'percent') discount = Math.round(subtotal * couponDoc.value / 100);
+      if (couponDoc.type === 'percent') {
+        discount = Math.round(subtotal * couponDoc.value / 100);
+        if (couponDoc.maxDiscount && discount > couponDoc.maxDiscount) discount = couponDoc.maxDiscount;
+      }
       else if (couponDoc.type === 'fixed') discount = couponDoc.value;
       else if (couponDoc.type === 'shipping') discount = shippingCost;
       await Coupon.findByIdAndUpdate(couponDoc._id, { $inc: { uses: 1 } });

@@ -147,6 +147,7 @@ export interface Coupon {
   code: string;
   type: 'percent' | 'fixed' | 'shipping';
   value: number;
+  maxDiscount?: number;
   minSpend?: number;
   limit?: number;
   uses: number;
