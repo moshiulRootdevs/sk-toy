@@ -54,9 +54,9 @@ export default function CartDrawer() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-          {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-[#7A8299]">
+        {items.length === 0 ? (
+          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center gap-3 text-[#7A8299]">
               <div className="inline-flex w-20 h-20 rounded-full bg-[#FFE0EC] items-center justify-center border-4 border-dashed border-[#FF6FB1]">
                 <svg className="w-10 h-10 text-[#FF6FB1]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
@@ -69,12 +69,14 @@ export default function CartDrawer() {
                 Continue Shopping →
               </button>
             </div>
-          ) : (
-            items.map((item) => {
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 justify-start">
+            {items.map((item) => {
               const slug = item.slug || slugMap[item.productId];
               const href = slug ? `/products/${slug}` : null;
               return (
-              <div key={item.productId + (item.variant || '')} className="flex gap-3 bg-white border-2 border-[#FFE0EC] rounded-2xl p-3">
+              <div key={item.productId + (item.variant || '')} className="shrink-0 flex gap-3 bg-white border-2 border-[#FFE0EC] rounded-2xl p-3">
                 {href ? (
                   <Link href={href} onClick={() => setCartOpen(false)} className="w-16 h-16 rounded-xl overflow-hidden bg-[#FFE0EC] shrink-0 block">
                     <Image src={imgUrl(item.image)} alt={item.name} width={64} height={64} className="w-full h-full object-cover hover:opacity-80 transition-opacity" />
@@ -126,9 +128,9 @@ export default function CartDrawer() {
                 </Tooltip>
               </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
 
         {items.length > 0 && (
           <div className="px-5 py-4 border-t-2 border-[#FFE0EC] space-y-3 bg-white">

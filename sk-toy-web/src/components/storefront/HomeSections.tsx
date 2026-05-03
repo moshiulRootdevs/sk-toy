@@ -340,9 +340,9 @@ function ProductsSection({ section }: { section: HomeSection }) {
 
   return (
     <section className={`pt-4 sm:pt-6 pb-14 sm:pb-16 relative ${bandClass}`}>
-      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-8">
+      <div className="max-w-[1360px] mx-auto px-3 sm:px-6 md:px-8">
         <SectionHead section={section} />
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-5 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2.5 sm:gap-5 mt-6">
           {products.map((product) => (
             <ProductCard key={product._id} product={product} />
           ))}

@@ -369,7 +369,7 @@ export default function CategoryPage() {
       </div>
 
       {/* Main layout: sidebar + products */}
-      <div className="max-w-[1360px] mx-auto px-4 sm:px-8 pb-24">
+      <div className="max-w-[1360px] mx-auto px-3 sm:px-8 pb-24">
         {/* Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #FFE0EC', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -422,7 +422,7 @@ export default function CategoryPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
                   {products.map((p) => <ProductCard key={p._id} product={p} />)}
                 </div>
                 <div ref={loadMoreRef} className="py-8 flex justify-center">
