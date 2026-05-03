@@ -9,6 +9,7 @@ import ProductCard from '@/components/storefront/ProductCard';
 import Spinner from '@/components/ui/Spinner';
 import SelectUI from '@/components/ui/Select';
 import { cls } from '@/lib/utils';
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock';
 
 const SORT_OPTIONS = [
   { value: 'newest',     label: 'Newest' },
@@ -29,6 +30,7 @@ function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useBodyScrollLock(sidebarOpen);
 
   const q = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';

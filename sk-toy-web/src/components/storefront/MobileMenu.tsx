@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { useUIStore, useAuthStore } from '@/lib/store';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock';
 import { NavigationItem, Category } from '@/types';
 
 export default function MobileMenu() {
@@ -23,11 +23,7 @@ export default function MobileMenu() {
     staleTime: 5 * 60 * 1000,
   });
 
-  useEffect(() => {
-    if (mobileMenuOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileMenuOpen]);
+  useBodyScrollLock(mobileMenuOpen);
 
   return (
     <>

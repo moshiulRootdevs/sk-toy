@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCartStore, useUIStore, useAuthStore } from '@/lib/store';
 import { useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { NavigationItem, Category, Settings, Product } from '@/types';
 import { imgUrl, fmtTk } from '@/lib/utils';
@@ -683,6 +684,7 @@ export default function Header({ initialSettings, initialCategories }: { initial
                             setAccountMenuOpen(false);
                             logoutCustomer();
                             router.push('/');
+                            toast.success('Logged out');
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#9B2914] hover:bg-[#FBDED8] transition-colors"
                         >

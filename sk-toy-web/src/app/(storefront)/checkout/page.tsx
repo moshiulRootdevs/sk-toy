@@ -271,7 +271,7 @@ export default function CheckoutPage() {
           <section className="bg-white border-2 border-[#FFE0EC] rounded-[18px] sm:rounded-[24px] p-4 sm:p-6 shadow-soft">
             <h2 className="font-display font-bold text-[#1F2F4A] mb-4 flex items-center gap-2 text-lg"><span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Contact Information</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Full Name *" value={form.name} onChange={set('name')} placeholder="Moshiul Islam" />
+              <Input label="Full Name *" value={form.name} onChange={set('name')} placeholder="John Doe" />
               <Input label="Phone *" value={form.phone} onChange={set('phone')} placeholder="01XXXXXXXXX" type="tel" />
               <Input label="Alternate Phone" value={form.altPhone} onChange={set('altPhone')} placeholder="01XXXXXXXXX (optional)" type="tel" className="sm:col-span-2" />
             </div>

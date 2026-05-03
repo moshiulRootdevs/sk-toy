@@ -72,60 +72,65 @@ const BRAND_NAME = process.env.BRAND_NAME || 'SK Toy';
 // POST /api/auth/otp/request — body: { phone, purpose? }
 // purpose = 'signup' (default) — phone must NOT already have an account
 // purpose = 'reset'            — phone MUST already have an account
-router.post('/otp/request', async (req, res) => {
-  const phone = normalizePhone(req.body.phone);
-  const purpose = ['signup', 'reset'].includes(req.body.purpose) ? req.body.purpose : 'signup';
-  if (!phone) return res.status(400).json({ message: 'Please enter a valid Bangladeshi phone number.' });
+router.post('/otp/request', async (req, res, next) => {
+  try {
+    const phone = normalizePhone(req.body.phone);
+    const purpose = ['signup', 'reset'].includes(req.body.purpose) ? req.body.purpose : 'signup';
+    if (!phone) return res.status(400).json({ message: 'Please enter a valid Bangladeshi phone number.' });
 
-  // Validate phone state matches the requested purpose
-  const existing = await Customer.findOne({ phone, isGuest: { $ne: true } });
-  if (purpose === 'signup' && existing) {
-    return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
-  }
-  if (purpose === 'reset' && !existing) {
-    return res.status(404).json({ message: 'No account found for this number.', noAccount: true });
-  }
-
-  // Resend cooldown — block if a recent OTP was issued for this phone+purpose
-  const recent = await Otp.findOne({ phone, purpose, consumed: false }).sort({ createdAt: -1 });
-  if (recent) {
-    const ageMs = Date.now() - new Date(recent.createdAt).getTime();
-    if (ageMs < OTP_RESEND_COOLDOWN_S * 1000) {
-      const wait = Math.ceil((OTP_RESEND_COOLDOWN_S * 1000 - ageMs) / 1000);
-      return res.status(429).json({ message: `Please wait ${wait}s before requesting another code.` });
+    // Validate phone state matches the requested purpose
+    const existing = await Customer.findOne({ phone, isGuest: { $ne: true } });
+    if (purpose === 'signup' && existing) {
+      return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
     }
-  }
+    if (purpose === 'reset' && !existing) {
+      return res.status(404).json({ message: 'No account found for this number.', noAccount: true });
+    }
 
-  // Invalidate prior OTPs for this phone+purpose so only the freshest is valid
-  await Otp.updateMany({ phone, purpose, consumed: false }, { $set: { consumed: true } });
+    // Resend cooldown — block if a recent OTP was issued for this phone+purpose
+    const recent = await Otp.findOne({ phone, purpose, consumed: false }).sort({ createdAt: -1 });
+    if (recent) {
+      const ageMs = Date.now() - new Date(recent.createdAt).getTime();
+      if (ageMs < OTP_RESEND_COOLDOWN_S * 1000) {
+        const wait = Math.ceil((OTP_RESEND_COOLDOWN_S * 1000 - ageMs) / 1000);
+        return res.status(429).json({ message: `Please wait ${wait}s before requesting another code.` });
+      }
+    }
 
-  const code = newCode();
-  const expiresAt = new Date(Date.now() + OTP_TTL_MIN * 60 * 1000);
-  await Otp.create({ phone, code, purpose, expiresAt });
+    // Invalidate prior OTPs for this phone+purpose so only the freshest is valid
+    await Otp.updateMany({ phone, purpose, consumed: false }, { $set: { consumed: true } });
 
-  // Dispatch via sms.net.bd in the format required by BD SMS providers.
-  const message = `Your ${BRAND_NAME} OTP Code is ${code}`;
-  const smsResult = await sendSms(phone, message);
-  if (smsResult.ok) {
-    console.log(`[OTP/${purpose}] ${phone} → sent via SMS gateway`);
-  } else if (smsResult.skipped) {
-    // No SMS gateway configured — log the code so devs can complete the flow
-    console.log(`[OTP/${purpose}] ${phone} → ${code} (SMS_API_KEY not set; expires in ${OTP_TTL_MIN} min)`);
-  } else {
-    // Gateway returned an error — log details. In production reject so the user
-    // sees a real error rather than a silent failure.
-    console.error(`[OTP/${purpose}] ${phone} → SMS gateway error:`, smsResult.error);
-    if (process.env.NODE_ENV === 'production') {
+    const code = newCode();
+    const expiresAt = new Date(Date.now() + OTP_TTL_MIN * 60 * 1000);
+    await Otp.create({ phone, code, purpose, expiresAt });
+
+    const body = { message: 'OTP sent. It will expire in ' + OTP_TTL_MIN + ' minutes.', expiresInMin: OTP_TTL_MIN };
+
+    // Skip SMS gateway in non-production to avoid charges; the OTP is the fixed dev code.
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[OTP/${purpose}] ${phone} → ${code} (dev mode; SMS not sent)`);
+      body.devCode = code;
+      return res.json(body);
+    }
+
+    // Dispatch via sms.net.bd in the format required by BD SMS providers.
+    const message = `Your ${BRAND_NAME} OTP Code is ${code}`;
+    const smsResult = await sendSms(phone, message);
+    if (smsResult.ok) {
+      console.log(`[OTP/${purpose}] ${phone} → sent via SMS gateway`);
+    } else if (smsResult.skipped) {
+      // No SMS gateway configured — log the code so devs can complete the flow
+      console.log(`[OTP/${purpose}] ${phone} → ${code} (SMS_API_KEY not set; expires in ${OTP_TTL_MIN} min)`);
+    } else {
+      // Gateway returned an error — log details and reject so the user sees a real error.
+      console.error(`[OTP/${purpose}] ${phone} → SMS gateway error:`, smsResult.error);
       return res.status(502).json({ message: 'Could not send SMS right now. Please try again in a moment.' });
     }
-  }
 
-  const body = { message: 'OTP sent. It will expire in ' + OTP_TTL_MIN + ' minutes.', expiresInMin: OTP_TTL_MIN };
-  // In dev, surface the code if SMS isn't actually sending so testing isn't blocked.
-  if (process.env.NODE_ENV !== 'production' && (smsResult.skipped || !smsResult.ok)) {
-    body.devCode = code;
+    res.json(body);
+  } catch (err) {
+    next(err);
   }
-  res.json(body);
 });
 
 // Internal helper — verify an OTP for a given phone+purpose. Returns the OTP
@@ -156,59 +161,83 @@ async function consumeOtp(phone, code, purpose) {
 // POST /api/auth/otp/verify — body: { phone, code, name, password }
 // Final step of signup: verifies OTP then creates the customer with a hashed
 // password. Rejects if an account already exists for this phone (use login).
-router.post('/otp/verify', async (req, res) => {
-  const phone = normalizePhone(req.body.phone);
-  const code = String(req.body.code || '').trim();
-  const name = String(req.body.name || '').trim();
-  const password = String(req.body.password || '');
+router.post('/otp/verify', async (req, res, next) => {
+  try {
+    const phone = normalizePhone(req.body.phone);
+    const code = String(req.body.code || '').trim();
+    const name = String(req.body.name || '').trim();
+    const password = String(req.body.password || '');
 
-  if (!phone) return res.status(400).json({ message: 'Invalid phone number.' });
-  if (!name) return res.status(400).json({ message: 'Name is required.' });
-  if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    if (!phone) return res.status(400).json({ message: 'Invalid phone number.' });
+    if (!name) return res.status(400).json({ message: 'Name is required.' });
+    if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters.' });
 
-  // Block signup if an account already exists for this phone
-  const existing = await Customer.findOne({ phone, isGuest: { $ne: true } });
-  if (existing) {
-    return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
+    // If an account already exists for this phone, reuse it instead of creating a duplicate
+    // (which would throw on the unique phone index and hang the request).
+    const existing = await Customer.findOne({ phone });
+    if (existing && !existing.isGuest) {
+      return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
+    }
+
+    const result = await consumeOtp(phone, code, 'signup');
+    if (result.error) return res.status(result.status).json({ message: result.error });
+
+    let customer;
+    if (existing) {
+      // Promote a previously-created guest customer into a real account.
+      existing.name = name;
+      existing.password = password;
+      existing.phoneVerified = true;
+      existing.isGuest = false;
+      await existing.save();
+      customer = existing;
+    } else {
+      customer = await Customer.create({ name, phone, password, phoneVerified: true });
+    }
+
+    res.json({
+      token: sign(customer._id, 'customer'),
+      customer: customerPayload(customer),
+      isNew: true,
+    });
+  } catch (err) {
+    if (err && err.code === 11000) {
+      return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
+    }
+    next(err);
   }
-
-  const result = await consumeOtp(phone, code, 'signup');
-  if (result.error) return res.status(result.status).json({ message: result.error });
-
-  const customer = await Customer.create({ name, phone, password, phoneVerified: true });
-  res.json({
-    token: sign(customer._id, 'customer'),
-    customer: customerPayload(customer),
-    isNew: true,
-  });
 });
 
 // POST /api/auth/password/reset — body: { phone, code, newPassword }
 // Final step of forgot-password: verifies the OTP issued for purpose='reset'
 // and updates the customer's password. The customer is also signed in.
-router.post('/password/reset', async (req, res) => {
-  const phone = normalizePhone(req.body.phone);
-  const code = String(req.body.code || '').trim();
-  const newPassword = String(req.body.newPassword || '');
+router.post('/password/reset', async (req, res, next) => {
+  try {
+    const phone = normalizePhone(req.body.phone);
+    const code = String(req.body.code || '').trim();
+    const newPassword = String(req.body.newPassword || '');
 
-  if (!phone) return res.status(400).json({ message: 'Invalid phone number.' });
-  if (newPassword.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    if (!phone) return res.status(400).json({ message: 'Invalid phone number.' });
+    if (newPassword.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters.' });
 
-  const customer = await Customer.findOne({ phone, isGuest: { $ne: true } });
-  if (!customer) return res.status(404).json({ message: 'No account found for this number.' });
+    const customer = await Customer.findOne({ phone, isGuest: { $ne: true } });
+    if (!customer) return res.status(404).json({ message: 'No account found for this number.' });
 
-  const result = await consumeOtp(phone, code, 'reset');
-  if (result.error) return res.status(result.status).json({ message: result.error });
+    const result = await consumeOtp(phone, code, 'reset');
+    if (result.error) return res.status(result.status).json({ message: result.error });
 
-  customer.password = newPassword; // hashed by pre-save hook
-  customer.phoneVerified = true;
-  await customer.save();
+    customer.password = newPassword; // hashed by pre-save hook
+    customer.phoneVerified = true;
+    await customer.save();
 
-  res.json({
-    token: sign(customer._id, 'customer'),
-    customer: customerPayload(customer),
-    message: 'Password updated. You are now signed in.',
-  });
+    res.json({
+      token: sign(customer._id, 'customer'),
+      customer: customerPayload(customer),
+      message: 'Password updated. You are now signed in.',
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // POST /api/auth/login — body: { phone, password }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore, useUIStore } from '@/lib/store';
 import { fmtTk, imgUrl } from '@/lib/utils';
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock';
 import Button from '@/components/ui/Button';
 import api from '@/lib/api';
 import Tooltip from '@/components/ui/Tooltip';
@@ -26,11 +27,7 @@ export default function CartDrawer() {
   const count = useCartStore((s) => s.items.reduce((a, i) => a + i.qty, 0));
   const subtotal = useCartStore((s) => s.items.reduce((a, i) => a + i.price * i.qty, 0));
 
-  useEffect(() => {
-    if (cartOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
-  }, [cartOpen]);
+  useBodyScrollLock(cartOpen);
 
   return (
     <>
