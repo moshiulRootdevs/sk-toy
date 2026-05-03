@@ -172,27 +172,47 @@ router.post('/otp/verify', async (req, res, next) => {
     if (!name) return res.status(400).json({ message: 'Name is required.' });
     if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters.' });
 
-    // If an account already exists for this phone, reuse it instead of creating a duplicate
-    // (which would throw on the unique phone index and hang the request).
+    // Validate the OTP first. This consumes it (so a wrong/expired code can't
+    // be paired with a different action later), and gives the user a clear
+    // OTP-specific error message if the code is invalid.
+    const result = await consumeOtp(phone, code, 'signup');
+    if (result.error) return res.status(result.status).json({ message: result.error });
+
+    // Look up any prior customer doc for this phone. If a real (non-guest)
+    // account already exists, the request endpoint should have blocked the
+    // OTP request in the first place — but we re-check here for safety.
     const existing = await Customer.findOne({ phone });
     if (existing && !existing.isGuest) {
       return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
     }
 
-    const result = await consumeOtp(phone, code, 'signup');
-    if (result.error) return res.status(result.status).json({ message: result.error });
-
     let customer;
-    if (existing) {
-      // Promote a previously-created guest customer into a real account.
-      existing.name = name;
-      existing.password = password;
-      existing.phoneVerified = true;
-      existing.isGuest = false;
-      await existing.save();
-      customer = existing;
-    } else {
-      customer = await Customer.create({ name, phone, password, phoneVerified: true });
+    try {
+      if (existing) {
+        // Promote a previously-created guest customer into a real account.
+        existing.name = name;
+        existing.password = password;
+        existing.phoneVerified = true;
+        existing.isGuest = false;
+        await existing.save();
+        customer = existing;
+      } else {
+        customer = await Customer.create({ name, phone, password, phoneVerified: true });
+      }
+    } catch (err) {
+      // Distinguish the two duplicate-key cases: phone conflict (real
+      // account-exists) vs anything else (most commonly a stale unique
+      // index on `email` from an older schema). The latter shouldn't be
+      // shown to the user as "account exists".
+      if (err && err.code === 11000) {
+        const conflictKey = Object.keys(err.keyValue || err.keyPattern || {})[0];
+        if (conflictKey === 'phone') {
+          return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
+        }
+        console.error('[otp/verify] non-phone duplicate-key error during signup:', err.keyValue || err.keyPattern, err.message);
+        return res.status(500).json({ message: 'Signup failed due to a database conflict. Please contact support.' });
+      }
+      throw err;
     }
 
     res.json({
@@ -201,9 +221,6 @@ router.post('/otp/verify', async (req, res, next) => {
       isNew: true,
     });
   } catch (err) {
-    if (err && err.code === 11000) {
-      return res.status(409).json({ message: 'An account with this number already exists. Please log in.', accountExists: true });
-    }
     next(err);
   }
 });

@@ -45,7 +45,16 @@ export default function RegisterPage() {
       setResendIn(30);
       setTimeout(() => otpRef.current?.focus(), 50);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Could not send OTP');
+      const data = err.response?.data;
+      if (data?.accountExists) {
+        // An account already exists — drop the user on the login screen
+        // instead of leaving them stranded on the OTP form.
+        toast.error(data.message || 'An account already exists. Please log in.');
+        setStep('details');
+        router.push('/login');
+        return;
+      }
+      toast.error(data?.message || 'Could not send OTP');
     } finally {
       setLoading(false);
     }
