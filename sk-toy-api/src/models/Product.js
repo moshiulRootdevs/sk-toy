@@ -5,7 +5,8 @@ const variantSchema = new mongoose.Schema({
   sku:   String,
   stock: { type: Number, default: 0 },
   price: Number,              // override price if different
-  image: String,
+  image: String,              // legacy single image (backwards compat)
+  images: [String],           // multiple images/videos for this variant
 }, { _id: true });
 
 const productSchema = new mongoose.Schema({

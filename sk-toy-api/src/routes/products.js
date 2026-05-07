@@ -364,6 +364,9 @@ router.post('/:id/images', adminAuth, ...uploadProduct.array('images', 10), asyn
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Not found' });
+    if (!req.files || !req.files.length) {
+      return res.status(400).json({ message: 'No files were uploaded successfully' });
+    }
     const urls = req.files.map(f => f.url);
     product.images.push(...urls);
     await product.save();

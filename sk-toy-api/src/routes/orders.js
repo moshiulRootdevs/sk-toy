@@ -8,6 +8,59 @@ const { adminAuth, customerAuth, optionalCustomer } = require('../middleware/aut
 const audit = require('../middleware/audit');
 const { sendOrderConfirmation } = require('../utils/mailer');
 
+// ── Stock management helpers ─────────────────────────────────────────────
+
+// Statuses where stock has been released (not held by the order)
+const STOCK_RELEASED_STATUSES = new Set(['cancelled', 'returned']);
+
+/**
+ * Restore stock for all lines in an order (when cancelled/returned).
+ * Increments product stock and variant stock back.
+ */
+async function restoreStock(order) {
+  if (!order.lines || !order.lines.length) return;
+  const bulkOps = [];
+  for (const line of order.lines) {
+    if (line.variant) {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: line.product, 'variants.name': line.variant },
+          update: { $inc: { stock: line.qty, 'variants.$.stock': line.qty, orderCount: -line.qty } },
+        },
+      });
+    } else {
+      bulkOps.push({
+        updateOne: { filter: { _id: line.product }, update: { $inc: { stock: line.qty, orderCount: -line.qty } } },
+      });
+    }
+  }
+  if (bulkOps.length) await Product.bulkWrite(bulkOps);
+}
+
+/**
+ * Deduct stock for all lines in an order (when reactivating a cancelled/returned order).
+ * Decrements product stock and variant stock.
+ */
+async function deductStock(order) {
+  if (!order.lines || !order.lines.length) return;
+  const bulkOps = [];
+  for (const line of order.lines) {
+    if (line.variant) {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: line.product, 'variants.name': line.variant },
+          update: { $inc: { stock: -line.qty, 'variants.$.stock': -line.qty, orderCount: line.qty } },
+        },
+      });
+    } else {
+      bulkOps.push({
+        updateOne: { filter: { _id: line.product }, update: { $inc: { stock: -line.qty, orderCount: line.qty } } },
+      });
+    }
+  }
+  if (bulkOps.length) await Product.bulkWrite(bulkOps);
+}
+
 // ── Public / customer ────────────────────────────────────────────────────
 
 // POST /api/orders — place order
@@ -28,7 +81,11 @@ router.post('/', optionalCustomer, async (req, res) => {
   let subtotal = 0;
   const resolvedLines = lines.map((l) => {
     const p = productById.get(String(l.product));
-    if (!p) throw new Error(`Product ${l.product} not found`);
+    if (!p) return res.status(400).json({ message: `Product ${l.product} not found` });
+    // Require variant selection for products that have variants
+    if (p.variants?.length && !l.variant) {
+      return res.status(400).json({ message: `Please select a variant for "${p.name}"` });
+    }
     // Resolve variant price and SKU if a variant is specified
     let price = p.price;
     let sku = p.sku;
@@ -484,13 +541,29 @@ router.patch('/admin/:id/address', adminAuth, audit('UPDATED', 'Order', (req) =>
 // PATCH /api/orders/admin/:id/status
 router.patch('/admin/:id/status', adminAuth, audit('UPDATED', 'Order', (req) => `Status → ${req.body.status} for order ${req.params.id}`), async (req, res) => {
   const { status, paymentStatus, trackingNo, staffNote } = req.body;
-  const updates = {};
-  if (status) updates.status = status;
-  if (paymentStatus) updates.paymentStatus = paymentStatus;
-  if (trackingNo !== undefined) updates.trackingNo = trackingNo;
-  if (staffNote !== undefined) updates.staffNote = staffNote;
-  const order = await Order.findByIdAndUpdate(req.params.id, updates, { new: true });
+
+  const order = await Order.findById(req.params.id);
   if (!order) return res.status(404).json({ message: 'Not found' });
+
+  // Handle stock changes when status transitions
+  if (status && status !== order.status) {
+    const wasReleased = STOCK_RELEASED_STATUSES.has(order.status);
+    const willRelease = STOCK_RELEASED_STATUSES.has(status);
+
+    if (!wasReleased && willRelease) {
+      // Moving to cancelled/returned → restore stock
+      await restoreStock(order);
+    } else if (wasReleased && !willRelease) {
+      // Reactivating from cancelled/returned → deduct stock again
+      await deductStock(order);
+    }
+  }
+
+  if (status) order.status = status;
+  if (paymentStatus) order.paymentStatus = paymentStatus;
+  if (trackingNo !== undefined) order.trackingNo = trackingNo;
+  if (staffNote !== undefined) order.staffNote = staffNote;
+  await order.save();
   res.json(order);
 });
 

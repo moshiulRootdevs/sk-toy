@@ -15,6 +15,7 @@ import Pill from '@/components/ui/Pill';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import AdminIcon from '@/components/admin/AdminIcon';
 import SelectUI from '@/components/ui/Select';
+import Toggle from '@/components/ui/Toggle';
 import Tooltip from '@/components/ui/Tooltip';
 
 const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235A5048' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
@@ -59,6 +60,15 @@ export default function AdminProductsPage() {
       setDeleteId(null);
     },
     onError: () => toast.error('Failed to delete'),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      api.put(`/products/${id}`, { active }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-products'] });
+    },
+    onError: () => toast.error('Failed to update status'),
   });
 
   const products: Product[] = data?.products || [];
@@ -198,7 +208,18 @@ export default function AdminProductsPage() {
           },
           {
             key: 'status', header: 'Status',
-            render: (p: any) => <Pill label={p.active ? 'Active' : 'Draft'} color={p.active ? 'green' : 'gray'} />,
+            render: (p: any) => (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={(e) => e.stopPropagation()}>
+                <Toggle
+                  size="sm"
+                  checked={p.active}
+                  onChange={(val) => toggleActiveMutation.mutate({ id: p._id, active: val })}
+                />
+                <span style={{ fontSize: 11, color: p.active ? '#2E7D32' : '#8B8176', fontWeight: 500 }}>
+                  {p.active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            ),
           },
           {
             key: 'actions', header: '',

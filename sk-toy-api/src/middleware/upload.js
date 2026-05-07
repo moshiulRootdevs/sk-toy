@@ -1,7 +1,6 @@
 const multer = require('multer');
 const path = require('path');
 const { uploadFile } = require('../utils/storage');
-const { convertToMp4 } = require('../utils/convertVideo');
 
 const imageFilter = (req, file, cb) => {
   const allowed = /jpg|jpeg|png|gif|webp|svg/;
@@ -17,6 +16,21 @@ const mediaFilter = (req, file, cb) => {
   cb(new Error('Only image or video files are allowed'), false);
 };
 
+/**
+ * Process a single file: upload to storage.
+ * Returns true on success, false on failure (file is marked with f.uploadError).
+ */
+async function processFile(f, folder) {
+  try {
+    f.url = await uploadFile(f.buffer, f.originalname, f.mimetype, folder);
+    return true;
+  } catch (err) {
+    console.error(`[upload] Failed to process file "${f.originalname}":`, err.message);
+    f.uploadError = err.message;
+    return false;
+  }
+}
+
 function makeUpload(folder, maxSizeMb = 5, fileFilter = imageFilter) {
   const multerInstance = multer({
     storage: multer.memoryStorage(),
@@ -27,20 +41,28 @@ function makeUpload(folder, maxSizeMb = 5, fileFilter = imageFilter) {
   const storageMiddleware = async (req, res, next) => {
     try {
       if (req.file) {
-        const converted = await convertToMp4(req.file.buffer, req.file.originalname, req.file.mimetype);
-        req.file.buffer = converted.buffer;
-        req.file.originalname = converted.originalname;
-        req.file.mimetype = converted.mimetype;
-        req.file.url = await uploadFile(converted.buffer, converted.originalname, converted.mimetype, folder);
+        const ok = await processFile(req.file, folder);
+        if (!ok) {
+          return next(new Error(`Upload failed: ${req.file.uploadError}`));
+        }
       }
       if (req.files && req.files.length) {
-        await Promise.all(req.files.map(async (f) => {
-          const converted = await convertToMp4(f.buffer, f.originalname, f.mimetype);
-          f.buffer = converted.buffer;
-          f.originalname = converted.originalname;
-          f.mimetype = converted.mimetype;
-          f.url = await uploadFile(converted.buffer, converted.originalname, converted.mimetype, folder);
-        }));
+        // Process files sequentially to avoid memory pressure from parallel video conversions
+        for (const f of req.files) {
+          await processFile(f, folder);
+        }
+        // Filter out failed files but continue with successful ones
+        const failed = req.files.filter(f => f.uploadError);
+        req.files = req.files.filter(f => !f.uploadError);
+
+        if (failed.length && !req.files.length) {
+          // All files failed — report error
+          return next(new Error(`All uploads failed. First error: ${failed[0].uploadError}`));
+        }
+        if (failed.length) {
+          // Some files failed — attach info for the route handler to report
+          req.uploadErrors = failed.map(f => ({ name: f.originalname, error: f.uploadError }));
+        }
       }
       next();
     } catch (err) {

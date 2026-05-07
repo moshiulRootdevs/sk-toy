@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 const { adminAuth } = require('../middleware/auth');
 const bkash = require('../utils/bkash');
 
@@ -75,6 +76,19 @@ router.post('/bkash/refund', adminAuth, async (req, res) => {
       orderId:   order.orderNo,
     });
     if (result.statusCode === '0000') {
+      // Restore stock if order was not already cancelled/returned
+      const STOCK_RELEASED = new Set(['cancelled', 'returned']);
+      if (!STOCK_RELEASED.has(order.status)) {
+        const bulkOps = [];
+        for (const line of order.lines) {
+          if (line.variant) {
+            bulkOps.push({ updateOne: { filter: { _id: line.product, 'variants.name': line.variant }, update: { $inc: { stock: line.qty, 'variants.$.stock': line.qty, orderCount: -line.qty } } } });
+          } else {
+            bulkOps.push({ updateOne: { filter: { _id: line.product }, update: { $inc: { stock: line.qty, orderCount: -line.qty } } } });
+          }
+        }
+        if (bulkOps.length) await Product.bulkWrite(bulkOps);
+      }
       await Order.findByIdAndUpdate(orderId, { paymentStatus: 'refunded', status: 'returned' });
       return res.json({ message: 'Refunded successfully' });
     }

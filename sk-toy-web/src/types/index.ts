@@ -18,6 +18,7 @@ export interface ProductVariant {
   stock: number;
   price?: number;
   image?: string;
+  images?: string[];
 }
 
 export interface Product {

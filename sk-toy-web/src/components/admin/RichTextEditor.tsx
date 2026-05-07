@@ -3,8 +3,6 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
 import { useEffect } from 'react';
 import Tooltip from '@/components/ui/Tooltip';
 
@@ -62,10 +60,9 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Write a
         heading: { levels: [2, 3] },
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
+        link: { openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } },
       }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Underline,
-      Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
     ],
     content: value || '',
     onUpdate: ({ editor }) => onChange(editor.getHTML()),

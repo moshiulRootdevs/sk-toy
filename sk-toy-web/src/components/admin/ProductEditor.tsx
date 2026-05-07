@@ -16,6 +16,7 @@ import Toggle from '@/components/ui/Toggle';
 import Select from '@/components/ui/Select';
 import AdminIcon from '@/components/admin/AdminIcon';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import { processFilesForUpload, needsConversion } from '@/lib/convertVideo';
 
 /* ── helpers ── */
 const AGE_GROUPS = [
@@ -91,10 +92,18 @@ async function doUpload(
   if (!files.length) return;
   setUploading(true);
   try {
+    // Convert non-mp4 videos to mp4 in the browser before uploading
+    const hasVideosToConvert = files.some(f => needsConversion(f));
+    let processedFiles = files;
+    if (hasVideosToConvert) {
+      toast('Converting video to MP4...', { icon: '🎬', duration: 3000 });
+      processedFiles = await processFilesForUpload(files);
+    }
+
     const fd = new FormData();
     // Do NOT set Content-Type manually — axios sets multipart/form-data with the
     // correct boundary automatically when the body is a FormData instance.
-    files.forEach((f) => fd.append('files', f));
+    processedFiles.forEach((f) => fd.append('files', f));
     const res = await api.post('/media/upload', fd);
     // API returns the saved Media docs directly as an array: [{ url, name, ... }]
     const saved: any[] = Array.isArray(res.data) ? res.data : (res.data?.files ?? []);
@@ -310,6 +319,108 @@ function ImageGallery({
   );
 }
 
+/* ── variant images gallery with drag-to-reorder + drag-to-upload ── */
+function VariantImagesGallery({ images, onChange, uploading, setUploading }: {
+  images: string[];
+  onChange: (imgs: string[]) => void;
+  uploading: boolean;
+  setUploading: (v: boolean) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [fileDropOver, setFileDropOver] = useState(false);
+
+  const isFileDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
+
+  function onTileDragStart(e: React.DragEvent, i: number) { setDragIdx(i); e.dataTransfer.effectAllowed = 'move'; }
+  function onTileDragOver(e: React.DragEvent, i: number) {
+    e.preventDefault();
+    if (isFileDrag(e)) { e.dataTransfer.dropEffect = 'copy'; return; }
+    e.dataTransfer.dropEffect = 'move';
+    if (dragIdx !== null && dragIdx !== i) setOverIdx(i);
+  }
+  function onTileDrop(e: React.DragEvent, i: number) {
+    e.preventDefault(); e.stopPropagation();
+    if (isFileDrag(e)) { doUpload(Array.from(e.dataTransfer.files), setUploading, (urls) => onChange([...images, ...urls])); resetDrag(); return; }
+    if (dragIdx === null || dragIdx === i) { resetDrag(); return; }
+    const next = [...images]; const [moved] = next.splice(dragIdx, 1); next.splice(i, 0, moved);
+    onChange(next); resetDrag();
+  }
+  function resetDrag() { setDragIdx(null); setOverIdx(null); setFileDropOver(false); }
+
+  function onAreaDragOver(e: React.DragEvent) { if (!isFileDrag(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setFileDropOver(true); }
+  function onAreaDragLeave(e: React.DragEvent) { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setFileDropOver(false); }
+  function onAreaDrop(e: React.DragEvent) { if (!isFileDrag(e)) return; e.preventDefault(); setFileDropOver(false); doUpload(Array.from(e.dataTransfer.files), setUploading, (urls) => onChange([...images, ...urls])); }
+
+  return (
+    <div
+      onDragOver={onAreaDragOver} onDragLeave={onAreaDragLeave} onDrop={onAreaDrop}
+      style={{
+        marginTop: 8, borderRadius: 8,
+        border: fileDropOver ? '2px dashed #EC5D4A' : '2px dashed transparent',
+        background: fileDropOver ? '#FEF7F5' : 'transparent',
+        padding: fileDropOver ? 4 : 0, transition: 'border-color .15s, background .15s',
+      }}
+    >
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {images.map((url, i) => (
+          <div
+            key={`vi-${i}`} draggable
+            onDragStart={(e) => onTileDragStart(e, i)}
+            onDragOver={(e) => onTileDragOver(e, i)}
+            onDrop={(e) => onTileDrop(e, i)}
+            onDragEnd={resetDrag}
+            style={{
+              position: 'relative', width: 56, height: 56, borderRadius: 8, overflow: 'hidden',
+              background: '#F5F1EA', border: overIdx === i ? '2px solid #EC5D4A' : '1px solid #E8DFD2',
+              cursor: 'grab', opacity: dragIdx === i ? 0.4 : 1, transition: 'opacity .15s',
+            }}
+          >
+            {isVideo(url) ? (
+              <video src={`${imgUrl(url)}#t=0.5`} preload="metadata" muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }} draggable={false} />
+            ) : (
+              <Image src={imgUrl(url)} alt="" fill sizes="56px" className="object-cover" draggable={false} />
+            )}
+            <button
+              onClick={() => onChange(images.filter((_, idx) => idx !== i))}
+              style={{ position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: '50%', background: 'rgba(0,0,0,.55)', border: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <AdminIcon name="x" size={8} color="#FFF" />
+            </button>
+          </div>
+        ))}
+        {/* Upload tile */}
+        <div
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          style={{
+            width: 56, height: 56, borderRadius: 8, border: '1.5px dashed #D8CFBF',
+            background: '#FAF6EF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+            cursor: uploading ? 'wait' : 'pointer',
+          }}
+        >
+          {uploading ? (
+            <svg className="animate-spin" style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#8B8176" strokeWidth="3" opacity=".25" />
+              <path fill="#8B8176" d="M4 12a8 8 0 018-8v8H4z" opacity=".75" />
+            </svg>
+          ) : (
+            <>
+              <AdminIcon name="upload" size={13} color="#8B8176" />
+              <span style={{ fontSize: 8, color: '#A89E92' }}>Add</span>
+            </>
+          )}
+        </div>
+      </div>
+      <input
+        ref={fileInputRef} type="file" accept="image/*,video/*" multiple style={{ display: 'none' }}
+        onChange={(e) => { if (e.target.files?.length) doUpload(Array.from(e.target.files), setUploading, (urls) => onChange([...images, ...urls])); e.target.value = ''; }}
+      />
+      {fileDropOver && <p style={{ fontSize: 10, color: '#EC5D4A', marginTop: 4, fontWeight: 500 }}>Drop to upload</p>}
+    </div>
+  );
+}
+
 const toSlug = (s: string) =>
   s.toLowerCase().trim()
     .replace(/[^\w\s-]/g, '')
@@ -434,7 +545,12 @@ export default function ProductEditor({ productId }: ProductEditorProps) {
       price: Number(form.price),
       comparePrice: form.comparePrice ? Number(form.comparePrice) : undefined,
       stock: Number(form.stock) || 0,
-      variants: form.variants.map((v: any) => ({ ...v, stock: Number(v.stock) || 0 })),
+      variants: form.variants.map((v: any) => ({
+        ...v,
+        stock: Number(v.stock) || 0,
+        images: v.images || (v.image ? [v.image] : []),
+        image: (v.images?.length ? v.images[0] : v.image) || '',
+      })),
     });
   }
 
@@ -442,7 +558,7 @@ export default function ProductEditor({ productId }: ProductEditorProps) {
   function addVariant() {
     const n = form.variants.length + 1;
     const variantSku = form.sku ? `${form.sku}-V${n}` : '';
-    setVal('variants', [...form.variants, { name: '', sku: variantSku, stock: 0, price: '' }]);
+    setVal('variants', [...form.variants, { name: '', sku: variantSku, stock: 0, price: '', images: [] }]);
   }
   function updateVariant(i: number, k: string, v: any) {
     setVal('variants', form.variants.map((vt: any, idx: number) => idx === i ? { ...vt, [k]: v } : vt));
@@ -576,28 +692,37 @@ export default function ProductEditor({ productId }: ProductEditorProps) {
                 No variants. Add one if this product comes in different options.
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 36px', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {form.variants.map((v: any, i: number) => (
+                  <div key={i} style={{ border: '1px solid #E8DFD2', borderRadius: 10, padding: 12, background: '#FDFBF8' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 36px', gap: 8, alignItems: 'center' }}>
+                      <input style={input} value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} placeholder="e.g. Red / Large" />
+                      <input style={input} value={v.sku} onChange={(e) => updateVariant(i, 'sku', e.target.value)} placeholder="SKU" />
+                      <input style={input} type="number" value={v.price || ''} onChange={(e) => updateVariant(i, 'price', e.target.value)} placeholder="Same" />
+                      <input style={input} type="number" value={v.stock} onChange={(e) => updateVariant(i, 'stock', e.target.value)} placeholder="0" />
+                      <button
+                        onClick={() => removeVariant(i)}
+                        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E8DFD2', borderRadius: 7, background: '#FFF', cursor: 'pointer', color: '#A89E92', flexShrink: 0 }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; (e.currentTarget as HTMLElement).style.color = '#9B2914'; (e.currentTarget as HTMLElement).style.borderColor = '#F2A89B'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#FFF'; (e.currentTarget as HTMLElement).style.color = '#A89E92'; (e.currentTarget as HTMLElement).style.borderColor = '#E8DFD2'; }}
+                      >
+                        <AdminIcon name="trash" size={13} />
+                      </button>
+                    </div>
+                    {/* Variant images/videos */}
+                    <VariantImagesGallery
+                      images={v.images || (v.image ? [v.image] : [])}
+                      onChange={(imgs) => updateVariant(i, 'images', imgs)}
+                      uploading={uploading}
+                      setUploading={setUploading}
+                    />
+                  </div>
+                ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 36px', gap: 8, paddingLeft: 12 }}>
                   {['Variant name', 'SKU', 'Price (৳)', 'Stock', ''].map((h) => (
                     <span key={h} style={{ fontSize: 10, fontWeight: 600, color: '#8B8176', textTransform: 'uppercase', letterSpacing: '.07em' }}>{h}</span>
                   ))}
                 </div>
-                {form.variants.map((v: any, i: number) => (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 36px', gap: 8, alignItems: 'center' }}>
-                    <input style={input} value={v.name} onChange={(e) => updateVariant(i, 'name', e.target.value)} placeholder="e.g. Red / Large" />
-                    <input style={input} value={v.sku} onChange={(e) => updateVariant(i, 'sku', e.target.value)} placeholder="SKU" />
-                    <input style={input} type="number" value={v.price || ''} onChange={(e) => updateVariant(i, 'price', e.target.value)} placeholder="Same" />
-                    <input style={input} type="number" value={v.stock} onChange={(e) => updateVariant(i, 'stock', e.target.value)} placeholder="0" />
-                    <button
-                      onClick={() => removeVariant(i)}
-                      style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E8DFD2', borderRadius: 7, background: '#FFF', cursor: 'pointer', color: '#A89E92', flexShrink: 0 }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#FBDED8'; (e.currentTarget as HTMLElement).style.color = '#9B2914'; (e.currentTarget as HTMLElement).style.borderColor = '#F2A89B'; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#FFF'; (e.currentTarget as HTMLElement).style.color = '#A89E92'; (e.currentTarget as HTMLElement).style.borderColor = '#E8DFD2'; }}
-                    >
-                      <AdminIcon name="trash" size={13} />
-                    </button>
-                  </div>
-                ))}
               </div>
             )}
           </Card>

@@ -97,27 +97,34 @@ export default function ProductDetailClient() {
     : null;
   const price = activeVariant?.price ?? product.price;
   const inStock = activeVariant ? activeVariant.stock > 0 : product.stock > 0;
+
+  // If the selected variant has its own images, use those; otherwise fall back to product gallery
+  const variantImages = activeVariant?.images?.length ? activeVariant.images : (activeVariant?.image ? [activeVariant.image] : []);
+  const displayImages = variantImages.length ? variantImages : product.images;
+  const displayImage = displayImages[selectedImage] || displayImages[0];
   const wishlisted = has(product._id);
   const discount = product.comparePrice && product.comparePrice > product.price
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
 
-  function addToCart() {
+  /** Returns true if the item was added, false if blocked (e.g. no variant). */
+  function addToCart(): boolean {
     if (product!.variants.length > 0 && !selectedVariant) {
       toast.error('Please select a variant');
-      return;
+      return false;
     }
     addItem({
       productId: product!._id,
       name: product!.name,
       price,
-      image: activeVariant?.image || product!.images[0] || '',
+      image: (activeVariant?.images?.[0] || activeVariant?.image) || product!.images[0] || '',
       qty,
       slug: product!.slug,
       variant: selectedVariant,
       sku: activeVariant?.sku || product!.sku,
     });
     toast.success('Added to cart!');
+    return true;
   }
 
   async function submitReview() {
@@ -153,10 +160,10 @@ export default function ProductDetailClient() {
         {/* Images */}
         <div>
           <div className="relative aspect-square rounded-[28px] overflow-hidden bg-gradient-to-br from-[#FFE0EC] to-[#FFEDB6] border-4 border-white shadow-soft">
-            {isVideo(product.images[selectedImage] || product.images[0]) ? (
+            {isVideo(displayImage) ? (
               <video
-                key={product.images[selectedImage]}
-                src={imgUrl(product.images[selectedImage] || product.images[0])}
+                key={displayImage}
+                src={imgUrl(displayImage)}
                 controls
                 controlsList="nodownload"
                 playsInline
@@ -169,12 +176,13 @@ export default function ProductDetailClient() {
               />
             ) : (
               <Image
-                src={imgUrl(product.images[selectedImage] || product.images[0])}
+                src={imgUrl(displayImage)}
                 alt={product.name}
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
                 priority
-                unoptimized={isAnimatedImage(product.images[selectedImage] || product.images[0])}
+                unoptimized={isAnimatedImage(displayImage)}
               />
             )}
             {discount > 0 && (
@@ -189,9 +197,9 @@ export default function ProductDetailClient() {
               </span>
             )}
           </div>
-          {product.images.length > 1 && (
+          {displayImages.length > 1 && (
             <div className="flex gap-2.5 mt-4 overflow-x-auto pb-2">
-              {product.images.map((img, i) => (
+              {displayImages.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => setSelectedImage(i)}
@@ -209,7 +217,7 @@ export default function ProductDetailClient() {
                       </div>
                     </>
                   ) : (
-                    <Image src={imgUrl(img)} alt={`View ${i + 1}`} fill className="object-cover" unoptimized={isAnimatedImage(img)} />
+                    <Image src={imgUrl(img)} alt={`View ${i + 1}`} fill sizes="80px" className="object-cover" unoptimized={isAnimatedImage(img)} />
                   )}
                 </button>
               ))}
@@ -248,26 +256,34 @@ export default function ProductDetailClient() {
           {product.variants.length > 0 && (
             <div className="mt-6">
               <p className="text-sm font-bold text-[#1F2F4A] mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Choose a variant
+                <span className="w-2 h-2 rounded-full bg-[#FF6FB1]" /> Choose a variant <span className="text-[#FF5B6E]">*</span>
               </p>
               <div className="flex flex-wrap gap-2">
-                {product.variants.map((v) => (
-                  <button
-                    key={v.name}
-                    onClick={() => setSelectedVariant(v.name === selectedVariant ? undefined : v.name)}
-                    disabled={v.stock === 0}
-                    className={cls(
-                      'px-5 py-2.5 rounded-full text-sm font-bold border-2 transition-colors',
-                      selectedVariant === v.name
-                        ? 'border-[#FF6FB1] bg-[#FFE0EC] text-[#FF5B6E]'
-                        : 'border-[#FFE0EC] bg-white text-[#1F2F4A] hover:border-[#FFD4E6]',
-                      v.stock === 0 && 'opacity-40 line-through pointer-events-none'
-                    )}
-                  >
-                    {v.name}
-                    {v.price && v.price !== product.price && ` (+${fmtTk(v.price - product.price)})`}
-                  </button>
-                ))}
+                {product.variants.map((v) => {
+                  const outOfStock = v.stock === 0;
+                  const btn = (
+                    <button
+                      key={v.name}
+                      onClick={() => { if (!outOfStock) { setSelectedVariant(v.name === selectedVariant ? undefined : v.name); setSelectedImage(0); } }}
+                      disabled={outOfStock}
+                      className={cls(
+                        'px-5 py-2.5 rounded-full text-sm font-bold border-2 transition-colors',
+                        selectedVariant === v.name
+                          ? 'border-[#FF6FB1] bg-[#FFE0EC] text-[#FF5B6E]'
+                          : 'border-[#FFE0EC] bg-white text-[#1F2F4A] hover:border-[#FFD4E6]',
+                        outOfStock && 'opacity-40 line-through cursor-not-allowed'
+                      )}
+                    >
+                      {v.name}
+                      {v.price && v.price !== product.price && ` (+${fmtTk(v.price - product.price)})`}
+                    </button>
+                  );
+                  return outOfStock ? (
+                    <Tooltip key={v.name} label="Out of stock">{btn}</Tooltip>
+                  ) : (
+                    <span key={v.name}>{btn}</span>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -316,7 +332,7 @@ export default function ProductDetailClient() {
                 {inStock ? 'Add to Cart' : 'Sold Out'}
               </Button>
               <Button
-                onClick={() => { addToCart(); router.push('/checkout'); }}
+                onClick={() => { if (addToCart()) router.push('/checkout'); }}
                 disabled={!inStock}
                 className="flex-1"
                 size="lg"

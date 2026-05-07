@@ -49,8 +49,15 @@ export default function ProductCard({ product, className, tint }: ProductCardPro
   const tintKey = tint || tintFor(product._id);
   const tintBg = TINT_BG[tintKey];
 
+  const hasVariants = product.variants && product.variants.length > 0;
+
   function handleAddToCart() {
     if (product.stock === 0) return;
+    if (hasVariants) {
+      router.push(`/products/${product.slug}`);
+      toast('Please select a variant', { icon: '👆' });
+      return;
+    }
     addItem({ productId: product._id, name: product.name, price: product.price, image: product.images?.[0] ?? '', qty: 1, slug: product.slug, sku: product.sku });
     toast.success(`Added "${product.name}" to cart`);
     setAdded(true);
@@ -60,6 +67,11 @@ export default function ProductCard({ product, className, tint }: ProductCardPro
 
   function handleBuyNow() {
     if (product.stock === 0) return;
+    if (hasVariants) {
+      router.push(`/products/${product.slug}`);
+      toast('Please select a variant', { icon: '👆' });
+      return;
+    }
     addItem({ productId: product._id, name: product.name, price: product.price, image: product.images?.[0] ?? '', qty: 1, slug: product.slug, sku: product.sku });
     router.push('/checkout');
   }
